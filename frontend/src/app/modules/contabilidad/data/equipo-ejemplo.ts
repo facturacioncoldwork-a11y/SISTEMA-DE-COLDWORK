@@ -4,7 +4,7 @@ import type { Actividad, Persona } from '../models/contabilidad.model';
  * Personas de EJEMPLO para simular el trabajo en equipo.
  * Cuando se conecte a la base de datos saldrán de Equipo y accesos.
  */
-export const DUENO: Persona = { id: 'p-dueno', nombre: 'Tú', rol: 'dueno' };
+export const DUENO: Persona = { id: 'p-dueno', nombre: 'El dueño', rol: 'dueno' };
 export const CONTADORA: Persona = { id: 'p-contadora', nombre: 'María Quispe', rol: 'contador' };
 
 export const PERSONAS: Persona[] = [DUENO, CONTADORA];

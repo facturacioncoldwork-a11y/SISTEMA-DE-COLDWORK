@@ -11,7 +11,6 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { AsientoDialogo, type AsientoGuardado } from '../../components/asiento-dialogo/asiento-dialogo';
-import { nombrePersona } from '../../data/equipo-ejemplo';
 import { nombreComprobante, nombreOrigen } from '../../data/sunat';
 import { ESTADOS, mensajeGuardado } from '../../data/textos';
 import type { Asiento, EstadoAsiento } from '../../models/contabilidad.model';
@@ -53,7 +52,6 @@ export class LibroDiario {
   protected readonly nombreOrigen = nombreOrigen;
   protected readonly nombreComprobante = nombreComprobante;
   protected readonly totales = totales;
-  protected readonly nombrePersona = nombrePersona;
   protected readonly estados = ESTADOS;
 
   protected readonly dialogoVisible = signal(false);

@@ -1,0 +1,59 @@
+<!-- Franja de simulación (se quita al conectar cuentas reales) -->
+<aside class="simulacion" aria-label="Simulación del prototipo">
+  <span><i class="pi pi-eye"></i> <strong>Simulación:</strong> así ve la app {{ conta.persona().nombre }} (contadora) desde su computadora.</span>
+  <span class="acciones-sim">
+    <button type="button" (click)="simularDueno()"><i class="pi pi-play"></i> Simular que el dueño revisa</button>
+    <button type="button" (click)="salir()"><i class="pi pi-arrow-left"></i> Volver a la vista del dueño</button>
+  </span>
+</aside>
+
+<!-- Barra superior propia del portal -->
+<header class="barra">
+  <div class="marca">
+    <app-emoji nombre="copo" />
+    <strong>COLDWORK</strong>
+    <span class="area">Área contable</span>
+  </div>
+
+  <nav aria-label="Secciones del portal">
+    @for (e of enlaces(); track e.ruta) {
+      <a
+        [routerLink]="e.ruta"
+        routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: !!e.exacto }"
+        ariaCurrentWhenActive="page"
+      >
+        <i [class]="e.icono"></i>
+        <span>{{ e.etiqueta }}</span>
+        @if (e.exacto && porCorregir()) {
+          <span class="alerta">{{ porCorregir() }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <div class="derecha">
+    <p-select
+      [options]="conta.periodos()"
+      [ngModel]="conta.periodo()"
+      (ngModelChange)="conta.periodo.set($event)"
+      size="small"
+      ariaLabel="Periodo"
+    >
+      <ng-template #selectedItem let-p>{{ p | periodo }}</ng-template>
+      <ng-template #item let-p>{{ p | periodo }}</ng-template>
+    </p-select>
+
+    <div class="usuario">
+      <span class="avatar">MQ</span>
+      <span class="datos">
+        <strong>{{ conta.persona().nombre }}</strong>
+        <small>Contadora</small>
+      </span>
+    </div>
+  </div>
+</header>
+
+<main class="contenido">
+  <router-outlet />
+</main>

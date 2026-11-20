@@ -1,7 +1,8 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { ASIENTOS_EJEMPLO } from '../data/ejemplo';
-import { ACTIVIDAD_EJEMPLO, CONTADORA, DUENO, PERSONAS } from '../data/equipo-ejemplo';
+import { ACTIVIDAD_EJEMPLO, CONTADORA, DUENO, nombrePersona, PERSONAS } from '../data/equipo-ejemplo';
 import { PCGE } from '../data/pcge';
+import { ACCIONES } from '../data/textos';
 import type {
   AccionActividad,
   Actividad,
@@ -40,7 +41,7 @@ export class ContabilidadService {
   readonly personas = PERSONAS;
   readonly vista = signal<RolContable>('dueno');
   readonly persona = computed<Persona>(() => (this.vista() === 'dueno' ? DUENO : CONTADORA));
-  readonly config = signal<ConfigAprobacion>({ contadorRegistraDirecto: false });
+  readonly config = signal<ConfigAprobacion>({ contadorRegistraDirecto: false, contadorVeLibros: false });
   readonly permisos = computed(() => permisosDe(this.persona(), this.config()));
 
   // ─── Periodo, asientos y actividad ────────────────────────────
@@ -65,6 +66,17 @@ export class ContabilidadService {
 
   nombreCuenta(codigo: string): string {
     return this.porCodigo.get(codigo)?.nombre ?? '';
+  }
+
+  /** "Tú" si es quien mira la pantalla; si no, el nombre de la persona. */
+  nombrePersona(id: string | undefined): string {
+    return id === this.persona().id ? 'Tú' : nombrePersona(id);
+  }
+
+  /** Frase de una actividad desde el punto de vista de quien mira: "Tú aprobaste" / "María aprobó". */
+  describir(personaId: string, accion: AccionActividad): string {
+    const yo = personaId === this.persona().id;
+    return `${this.nombrePersona(personaId)} ${yo ? ACCIONES[accion].textoYo : ACCIONES[accion].texto}`;
   }
 
   buscar(id: string): Asiento {
@@ -198,6 +210,25 @@ export class ContabilidadService {
       true,
       CONTADORA,
     );
+  }
+
+  /**
+   * Simula que el dueño, desde su computadora, revisa el asiento más antiguo
+   * que envió la contadora: lo aprueba o lo devuelve con una observación.
+   */
+  simularDueno(): Actividad | null {
+    const pendiente = [...this.porAprobar()].sort((a, b) => a.numero - b.numero)[0];
+    if (!pendiente) return null;
+
+    if (pendiente.numero % 2 === 0) {
+      this.reemplazar({ ...pendiente, estado: 'registrado', registradoPor: DUENO.id });
+      this.anotar(pendiente, 'aprobo', DUENO);
+    } else {
+      const comentario = 'Adjunta la foto del comprobante, por favor.';
+      this.reemplazar({ ...pendiente, estado: 'observado', observacion: comentario });
+      this.anotar(pendiente, 'observo', DUENO, comentario);
+    }
+    return this.actividad()[0];
   }
 
   // ─── Internos ────────────────────────────────────────────────

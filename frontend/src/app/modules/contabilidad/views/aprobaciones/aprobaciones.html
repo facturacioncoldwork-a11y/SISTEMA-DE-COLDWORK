@@ -34,7 +34,7 @@
         <p-toggleswitch
           inputId="perm-directo"
           [ngModel]="conta.config().contadorRegistraDirecto"
-          (ngModelChange)="cambiarPermiso($event)"
+          (ngModelChange)="cambiarPermiso('contadorRegistraDirecto', $event)"
         />
         <span>
           <strong>{{ contadora.nombre }} puede registrar sin mi aprobación</strong>
@@ -45,6 +45,18 @@
               Sus asientos llegan aquí y tú decides si se registran.
             }
           </small>
+        </span>
+      </label>
+
+      <label class="permiso" for="perm-libros">
+        <p-toggleswitch
+          inputId="perm-libros"
+          [ngModel]="conta.config().contadorVeLibros"
+          (ngModelChange)="cambiarPermiso('contadorVeLibros', $event)"
+        />
+        <span>
+          <strong>Puede ver los libros de la empresa</strong>
+          <small>Diario, Mayor y Balance completos. Si está apagado, solo ve sus propios asientos.</small>
         </span>
       </label>
       <p class="fijo"><i class="pi pi-lock"></i> Anular asientos y cambiar permisos es solo del dueño.</p>

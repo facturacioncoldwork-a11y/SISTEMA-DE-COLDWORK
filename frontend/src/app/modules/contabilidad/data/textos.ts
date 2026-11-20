@@ -12,15 +12,16 @@ export const ESTADOS: Record<EstadoAsiento, { nombre: string; severidad: Severid
   anulado: { nombre: 'Anulado', severidad: 'danger', icono: 'pi pi-ban' },
 };
 
-export const ACCIONES: Record<AccionActividad, { texto: string; icono: string }> = {
-  creo: { texto: 'creó el borrador', icono: 'pi pi-file-edit' },
-  edito: { texto: 'editó', icono: 'pi pi-pencil' },
-  envio: { texto: 'envió a aprobación', icono: 'pi pi-send' },
-  aprobo: { texto: 'aprobó', icono: 'pi pi-check-circle' },
-  observo: { texto: 'observó', icono: 'pi pi-comment' },
-  registro: { texto: 'registró', icono: 'pi pi-check' },
-  anulo: { texto: 'anuló', icono: 'pi pi-ban' },
-  elimino: { texto: 'eliminó el borrador', icono: 'pi pi-trash' },
+/** `texto` para otra persona ("María aprobó"); `textoYo` para uno mismo ("Tú aprobaste"). */
+export const ACCIONES: Record<AccionActividad, { texto: string; textoYo: string; icono: string }> = {
+  creo: { texto: 'creó el borrador', textoYo: 'creaste el borrador', icono: 'pi pi-file-edit' },
+  edito: { texto: 'editó', textoYo: 'editaste', icono: 'pi pi-pencil' },
+  envio: { texto: 'envió a aprobación', textoYo: 'enviaste a aprobación', icono: 'pi pi-send' },
+  aprobo: { texto: 'aprobó', textoYo: 'aprobaste', icono: 'pi pi-check-circle' },
+  observo: { texto: 'observó', textoYo: 'observaste', icono: 'pi pi-comment' },
+  registro: { texto: 'registró', textoYo: 'registraste', icono: 'pi pi-check' },
+  anulo: { texto: 'anuló', textoYo: 'anulaste', icono: 'pi pi-ban' },
+  elimino: { texto: 'eliminó el borrador', textoYo: 'eliminaste el borrador', icono: 'pi pi-trash' },
 };
 
 /** Mensaje de confirmación después de guardar, según cómo quedó el asiento. */

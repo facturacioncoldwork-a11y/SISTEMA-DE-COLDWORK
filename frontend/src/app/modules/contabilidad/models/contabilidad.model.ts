@@ -103,6 +103,8 @@ export interface Persona {
 export interface ConfigAprobacion {
   /** Si es true, el contador registra directo; si no, envía a aprobación. */
   contadorRegistraDirecto: boolean;
+  /** Si es true, el contador consulta el Diario, el Mayor y el Balance de la empresa. */
+  contadorVeLibros: boolean;
 }
 
 /** Lo que cada persona puede hacer en Contabilidad. */
@@ -112,6 +114,7 @@ export interface Permisos {
   anular: boolean;
   configurar: boolean;
   verActividad: boolean;
+  verLibros: boolean;
 }
 
 export type AccionActividad = 'creo' | 'edito' | 'envio' | 'aprobo' | 'observo' | 'registro' | 'anulo' | 'elimino';

@@ -60,7 +60,7 @@
                 @if (a.moneda === 'USD') {
                   · US$ (T.C. {{ a.tipoCambio }})
                 }
-                · {{ nombrePersona(a.creadoPor) }}
+                · {{ conta.nombrePersona(a.creadoPor) }}
               </span>
 
               @if (a.estado !== 'registrado') {

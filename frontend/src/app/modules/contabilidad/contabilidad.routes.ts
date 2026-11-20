@@ -7,7 +7,10 @@ import { ContabilidadService } from './services/contabilidad.service';
 const soloQuienAprueba = () =>
   inject(ContabilidadService).permisos().aprobar || inject(Router).parseUrl('/contabilidad');
 
-/** Rutas del módulo Contabilidad (dentro del shell). Área: contabilidad. */
+/**
+ * Rutas de Contabilidad para el DUEÑO (dentro del shell del ERP). Área: contabilidad.
+ * El portal del contador está aparte, en portal/portal.routes.ts (/trabajo).
+ */
 export const CONTABILIDAD_ROUTES: Routes = [
   {
     path: 'contabilidad',
@@ -17,7 +20,7 @@ export const CONTABILIDAD_ROUTES: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        loadComponent: () => import('./views/inicio-contable/inicio-contable').then((m) => m.InicioContable),
+        loadComponent: () => import('./views/resumen/resumen').then((m) => m.Resumen),
       },
       {
         path: 'aprobaciones',

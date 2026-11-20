@@ -89,6 +89,10 @@ aside {
   align-items: flex-start;
   cursor: pointer;
 
+  & + & {
+    margin-top: 1rem;
+  }
+
   small {
     display: block;
     margin-top: 0.2rem;

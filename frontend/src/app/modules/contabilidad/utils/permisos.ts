@@ -13,6 +13,7 @@ export function permisosDe(persona: Persona, config: ConfigAprobacion): Permisos
     anular: esDueno,
     configurar: esDueno,
     verActividad: esDueno,
+    verLibros: esDueno || config.contadorVeLibros,
   };
 }
 

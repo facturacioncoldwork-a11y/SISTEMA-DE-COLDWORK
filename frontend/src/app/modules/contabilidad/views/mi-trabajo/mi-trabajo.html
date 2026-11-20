@@ -1,5 +1,11 @@
 @let p = pendientes();
 
+<!-- Saludo -->
+<header class="saludo">
+  <h1>Hola, {{ conta.persona().nombre.split(' ')[0] }} <app-emoji nombre="saludo" etiqueta="saludo" /></h1>
+  <p>Esto es lo que tienes pendiente en {{ conta.periodo() | periodo }}.</p>
+</header>
+
 <!-- Resumen rápido -->
 <div class="barra">
   <div class="cifras">

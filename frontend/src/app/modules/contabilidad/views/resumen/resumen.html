@@ -38,7 +38,7 @@
             <span class="numero">{{ a.numero | correlativo }}</span>
             <div class="detalle">
               <strong>{{ a.glosa }}</strong>
-              <small>{{ a.fecha.slice(8) }}/{{ a.fecha.slice(5, 7) }} · {{ nombreOrigen(a.origen) }} · {{ nombrePersona(a.creadoPor) }}</small>
+              <small>{{ a.fecha.slice(8) }}/{{ a.fecha.slice(5, 7) }} · {{ nombreOrigen(a.origen) }} · {{ conta.nombrePersona(a.creadoPor) }}</small>
             </div>
             <span class="monto">S/ {{ totales(a.lineas).debe | importe: true }}</span>
             @if (a.estado !== 'registrado') {

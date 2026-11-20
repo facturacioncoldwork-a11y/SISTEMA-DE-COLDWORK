@@ -16,7 +16,9 @@
           · {{ d.nombreTercero }}
         }
       }
-      · hecho por <strong>{{ nombrePersona(a.creadoPor) }}</strong>
+      @if (a.creadoPor !== conta.persona().id) {
+        · hecho por <strong>{{ conta.nombrePersona(a.creadoPor) }}</strong>
+      }
     </p>
   </header>
 

@@ -16,10 +16,6 @@
     font-weight: 600;
     color: var(--p-primary-color);
   }
-
-  ::ng-deep .p-togglebutton-content {
-    gap: 0.4rem;
-  }
 }
 
 .en-linea {
@@ -37,9 +33,16 @@
   }
 }
 
-.simular {
+.botones {
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.simular {
+  display: flex;
+  text-decoration: none;
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.8rem;

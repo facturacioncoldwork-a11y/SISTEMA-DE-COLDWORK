@@ -3,7 +3,6 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ActividadLista } from '../../components/actividad-lista/actividad-lista';
-import { nombrePersona } from '../../data/equipo-ejemplo';
 import { nombreOrigen } from '../../data/sunat';
 import { ESTADOS } from '../../data/textos';
 import { CorrelativoPipe, ImportePipe, PeriodoPipe } from '../../pipes/formato.pipes';
@@ -28,7 +27,6 @@ interface Indicador {
 export class Resumen {
   protected readonly conta = inject(ContabilidadService);
   protected readonly nombreOrigen = nombreOrigen;
-  protected readonly nombrePersona = nombrePersona;
   protected readonly estados = ESTADOS;
   protected readonly totales = totales;
 

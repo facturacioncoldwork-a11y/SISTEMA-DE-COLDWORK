@@ -4,6 +4,7 @@ import { conArea, soloAdmin } from './core/permisos/permisos.guards';
 import type { Area } from './core/permisos/areas';
 import { AUTH_ROUTES } from './modules/auth/auth.routes';
 import { CONTABILIDAD_ROUTES } from './modules/contabilidad/contabilidad.routes';
+import { PORTAL_TRABAJO_ROUTES } from './modules/contabilidad/portal/portal.routes';
 import { EMPRESAS_ROUTES } from './modules/empresas/empresas.routes';
 import { EQUIPO_ROUTES } from './modules/equipo/equipo.routes';
 
@@ -24,6 +25,10 @@ function enConstruccion(path: string, titulo: string, acceso: Area | 'admin'): R
 
 export const routes: Routes = [
   ...AUTH_ROUTES,
+
+  // Portales de trabajadores: interfaz propia, sin el menú del ERP
+  ...PORTAL_TRABAJO_ROUTES,
+
   {
     path: '',
     canActivate: [conSesion],

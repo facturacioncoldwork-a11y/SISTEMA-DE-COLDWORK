@@ -8,7 +8,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ActividadLista } from '../../components/actividad-lista/actividad-lista';
 import { AsientoTarjeta } from '../../components/asiento-tarjeta/asiento-tarjeta';
 import { CONTADORA } from '../../data/equipo-ejemplo';
-import type { Asiento } from '../../models/contabilidad.model';
+import type { Asiento, ConfigAprobacion } from '../../models/contabilidad.model';
 import { ContabilidadService } from '../../services/contabilidad.service';
 
 /** Bandeja del dueño: asientos que envió el contador, permisos y actividad del equipo. */
@@ -29,13 +29,13 @@ export class Aprobaciones {
   protected readonly observando = signal<Asiento | null>(null);
   protected comentario = '';
 
-  protected cambiarPermiso(registraDirecto: boolean) {
-    this.conta.config.set({ contadorRegistraDirecto: registraDirecto });
-    this.avisos.add({
-      severity: 'success',
-      summary: registraDirecto ? 'El contador registra directo' : 'El contador necesita tu aprobación',
-      life: 3000,
-    });
+  protected cambiarPermiso(permiso: keyof ConfigAprobacion, activo: boolean) {
+    this.conta.config.update((c) => ({ ...c, [permiso]: activo }));
+    const textos: Record<keyof ConfigAprobacion, [string, string]> = {
+      contadorRegistraDirecto: ['El contador registra directo', 'El contador necesita tu aprobación'],
+      contadorVeLibros: ['El contador puede ver los libros', 'El contador ya no ve los libros'],
+    };
+    this.avisos.add({ severity: 'success', summary: textos[permiso][activo ? 0 : 1], life: 3000 });
   }
 
   protected aprobar(a: Asiento) {

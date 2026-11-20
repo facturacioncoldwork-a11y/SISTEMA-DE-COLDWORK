@@ -1,6 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { TagModule } from 'primeng/tag';
-import { nombrePersona } from '../../data/equipo-ejemplo';
 import { nombreComprobante, nombreOrigen } from '../../data/sunat';
 import { ESTADOS } from '../../data/textos';
 import type { Asiento } from '../../models/contabilidad.model';
@@ -26,7 +25,6 @@ export class AsientoTarjeta {
   protected readonly estado = computed(() => ESTADOS[this.asiento().estado]);
   protected readonly total = computed(() => totales(this.asiento().lineas).debe);
 
-  protected readonly nombrePersona = nombrePersona;
   protected readonly nombreOrigen = nombreOrigen;
   protected readonly nombreComprobante = nombreComprobante;
 }

@@ -20,20 +20,26 @@ function asiento(estado: Asiento['estado'], creadoPor: string): Asiento {
 
 describe('permisos contables', () => {
   it('el dueño puede todo', () => {
-    expect(permisosDe(DUENO, { contadorRegistraDirecto: false })).toEqual({
+    expect(permisosDe(DUENO, { contadorRegistraDirecto: false, contadorVeLibros: false })).toEqual({
       registrar: true,
       aprobar: true,
       anular: true,
       configurar: true,
       verActividad: true,
+      verLibros: true,
     });
   });
 
   it('el contador solo registra directo si el dueño lo permite', () => {
-    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: false }).registrar).toBe(false);
-    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: true }).registrar).toBe(true);
-    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: true }).aprobar).toBe(false);
-    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: true }).anular).toBe(false);
+    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: false, contadorVeLibros: false }).registrar).toBe(false);
+    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: true, contadorVeLibros: false }).registrar).toBe(true);
+    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: true, contadorVeLibros: false }).aprobar).toBe(false);
+    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: true, contadorVeLibros: false }).anular).toBe(false);
+  });
+
+  it('el contador ve los libros solo si el dueño lo permite', () => {
+    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: false, contadorVeLibros: false }).verLibros).toBe(false);
+    expect(permisosDe(CONTADORA, { contadorRegistraDirecto: false, contadorVeLibros: true }).verLibros).toBe(true);
   });
 
   it('solo se editan borradores y observados, por su autor o el dueño', () => {

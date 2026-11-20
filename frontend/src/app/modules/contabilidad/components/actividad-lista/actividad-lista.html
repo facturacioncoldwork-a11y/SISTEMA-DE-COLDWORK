@@ -4,8 +4,7 @@
       <i [class]="acciones[a.accion].icono"></i>
       <div>
         <p>
-          <strong>{{ nombrePersona(a.personaId) }}</strong>
-          {{ acciones[a.accion].texto }}
+          <strong>{{ conta.describir(a.personaId, a.accion) }}</strong>
           <span class="asiento">{{ a.numero | correlativo }} · {{ a.glosa }}</span>
         </p>
         @if (a.detalle) {
