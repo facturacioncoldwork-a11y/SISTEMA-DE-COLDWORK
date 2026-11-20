@@ -9,7 +9,7 @@ function nuevo(lineas: NuevoAsiento['lineas'], extra: Partial<NuevoAsiento> = {}
 }
 
 function asiento(numero: number, lineas: Asiento['lineas'], estado: Asiento['estado'] = 'registrado'): Asiento {
-  return { ...nuevo(lineas), id: `a${numero}`, numero, periodo: '2026-11', estado, creadoEn: '' };
+  return { ...nuevo(lineas), id: `a${numero}`, numero, periodo: '2026-11', estado, creadoEn: '', creadoPor: 'p' };
 }
 
 describe('partida doble', () => {

@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, model, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -8,18 +8,23 @@ import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ORIGENES, TASA_IGV, TIPOS_COMPROBANTE } from '../../data/sunat';
-import type { LineaAsiento, Moneda, NuevoAsiento, OrigenAsiento } from '../../models/contabilidad.model';
+import type { Asiento, LineaAsiento, Moneda, NuevoAsiento, OrigenAsiento } from '../../models/contabilidad.model';
 import { ImportePipe } from '../../pipes/formato.pipes';
 import { ContabilidadService } from '../../services/contabilidad.service';
 import { redondear, totales, validarAsiento } from '../../utils/partida-doble';
 
-/** Lo que devuelve el diálogo: el asiento y si se registra o queda como borrador. */
+/**
+ * Lo que devuelve el diálogo.
+ * `confirmar` = botón principal (registrar o enviar a aprobación, según permisos); si no, borrador.
+ * `id` viene solo al corregir un asiento existente.
+ */
 export interface AsientoGuardado {
   asiento: NuevoAsiento;
-  registrar: boolean;
+  confirmar: boolean;
+  id?: string;
 }
 
-/** Ventana para crear un asiento: cabecera, comprobante y líneas con control de cuadre. */
+/** Ventana para crear o corregir un asiento: cabecera, comprobante y líneas con control de cuadre. */
 @Component({
   selector: 'app-asiento-dialogo',
   imports: [
@@ -37,9 +42,11 @@ export interface AsientoGuardado {
   styleUrl: './asiento-dialogo.scss',
 })
 export class AsientoDialogo {
-  private readonly conta = inject(ContabilidadService);
+  protected readonly conta = inject(ContabilidadService);
 
   readonly visible = model(false);
+  /** Asiento a corregir (borrador u observado). Sin él, el diálogo crea uno nuevo. */
+  readonly inicial = input<Asiento | null>(null);
   readonly guardar = output<AsientoGuardado>();
 
   // ─── Opciones ─────────────────────────────────────────────────
@@ -68,17 +75,24 @@ export class AsientoDialogo {
   protected readonly suma = computed(() => totales(this.lineas()));
 
   constructor() {
-    // Al abrir: formulario limpio con dos líneas vacías
+    // Al abrir: carga el asiento a corregir o deja el formulario limpio
     effect(() => {
       if (!this.visible()) return;
-      this.fecha = hoyLocal();
-      this.glosa = '';
-      this.origen = 'diario';
-      this.moneda.set('PEN');
-      this.tipoCambio = null;
-      this.conDocumento = false;
-      this.documento = { tipo: '01', serie: '', numero: '', documentoTercero: '', nombreTercero: '' };
-      this.lineas.set([lineaVacia(), lineaVacia()]);
+      const a = untracked(() => this.inicial());
+      this.fecha = a?.fecha ?? hoyLocal();
+      this.glosa = a?.glosa ?? '';
+      this.origen = a?.origen ?? 'diario';
+      this.moneda.set(a?.moneda ?? 'PEN');
+      this.tipoCambio = a?.tipoCambio ?? null;
+      this.conDocumento = !!a?.documento;
+      this.documento = {
+        tipo: a?.documento?.tipo ?? '01',
+        serie: a?.documento?.serie ?? '',
+        numero: a?.documento?.numero ?? '',
+        documentoTercero: a?.documento?.documentoTercero ?? '',
+        nombreTercero: a?.documento?.nombreTercero ?? '',
+      };
+      this.lineas.set(a ? structuredClone(a.lineas) : [lineaVacia(), lineaVacia()]);
       this.errores.set([]);
     });
   }
@@ -137,11 +151,11 @@ export class AsientoDialogo {
 
   // ─── Guardar ──────────────────────────────────────────────────
 
-  protected enviar(registrar: boolean) {
+  protected enviar(confirmar: boolean) {
     const asiento = this.armar();
-    const errores = registrar ? validarAsiento(asiento, this.conta.porCodigo) : this.minimos(asiento);
+    const errores = confirmar ? validarAsiento(asiento, this.conta.porCodigo) : this.minimos(asiento);
     this.errores.set(errores);
-    if (errores.length === 0) this.guardar.emit({ asiento, registrar });
+    if (errores.length === 0) this.guardar.emit({ asiento, confirmar, id: this.inicial()?.id });
   }
 
   private armar(): NuevoAsiento {

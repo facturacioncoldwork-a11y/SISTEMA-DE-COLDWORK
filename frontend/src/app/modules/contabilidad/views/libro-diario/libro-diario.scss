@@ -89,7 +89,15 @@ tbody:first-of-type .asiento td {
 // ─── Estados ────────────────────────────────────────────────────
 
 tbody.borrador {
-  background: color-mix(in srgb, var(--p-orange-500) 5%, transparent);
+  background: var(--p-surface-50);
+}
+
+tbody.por_aprobar {
+  background: color-mix(in srgb, var(--p-blue-500) 5%, transparent);
+}
+
+tbody.observado {
+  background: color-mix(in srgb, var(--p-orange-500) 6%, transparent);
 }
 
 tbody.anulado .linea td,

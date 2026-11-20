@@ -1,5 +1,11 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 import { conArea } from '../../core/permisos/permisos.guards';
+import { ContabilidadService } from './services/contabilidad.service';
+
+/** Solo quien aprueba (el dueño); los demás vuelven al inicio del módulo. */
+const soloQuienAprueba = () =>
+  inject(ContabilidadService).permisos().aprobar || inject(Router).parseUrl('/contabilidad');
 
 /** Rutas del módulo Contabilidad (dentro del shell). Área: contabilidad. */
 export const CONTABILIDAD_ROUTES: Routes = [
@@ -11,7 +17,12 @@ export const CONTABILIDAD_ROUTES: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        loadComponent: () => import('./views/resumen/resumen').then((m) => m.Resumen),
+        loadComponent: () => import('./views/inicio-contable/inicio-contable').then((m) => m.InicioContable),
+      },
+      {
+        path: 'aprobaciones',
+        canActivate: [soloQuienAprueba],
+        loadComponent: () => import('./views/aprobaciones/aprobaciones').then((m) => m.Aprobaciones),
       },
       {
         path: 'diario',

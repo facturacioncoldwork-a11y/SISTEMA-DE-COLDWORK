@@ -1,7 +1,41 @@
+<!-- Barra de simulación (solo en el prototipo) -->
+<aside class="simulacion" aria-label="Simulación del prototipo">
+  <span class="etiqueta"><i class="pi pi-eye"></i> Simulación · ver como</span>
+  <p-selectbutton
+    [options]="vistas"
+    optionLabel="etiqueta"
+    optionValue="valor"
+    [allowEmpty]="false"
+    [ngModel]="conta.vista()"
+    (ngModelChange)="cambiarVista($event)"
+    ariaLabelledBy="Ver como"
+  >
+    <ng-template #item let-v>
+      <i [class]="v.icono"></i>
+      <span>{{ v.etiqueta }}</span>
+    </ng-template>
+  </p-selectbutton>
+
+  @if (conta.permisos().aprobar) {
+    <span class="en-linea"><span class="punto"></span> {{ contadora.nombre }} (contadora) en línea</span>
+    <button type="button" class="simular" (click)="simular()">
+      <i class="pi pi-play"></i> Simular que María registra algo
+    </button>
+  } @else {
+    <span class="en-linea"><span class="punto"></span> Entraste como {{ contadora.nombre }} (contadora)</span>
+  }
+</aside>
+
 <header class="cabecera">
   <div>
     <h1>Contabilidad</h1>
-    <p class="sub">Asientos, libros y reportes según el PCGE 2019 y los libros electrónicos de SUNAT.</p>
+    <p class="sub">
+      @if (conta.permisos().aprobar) {
+        Supervisa el trabajo contable, aprueba asientos y revisa los libros.
+      } @else {
+        Registra las operaciones del mes; el dueño revisa y aprueba.
+      }
+    </p>
   </div>
 
   <div class="periodo">
@@ -18,12 +52,12 @@
   </div>
 </header>
 
-<p-message severity="warn" styleClass="aviso-prototipo" icon="pi pi-eye">
-  Prototipo para revisar el diseño: los datos son de ejemplo y lo que registres se borra al recargar la página.
+<p-message severity="warn" styleClass="aviso-prototipo" icon="pi pi-info-circle">
+  Prototipo: datos de ejemplo; lo que registres se borra al recargar la página.
 </p-message>
 
 <nav class="pestanas" aria-label="Secciones de contabilidad">
-  @for (p of pestanas; track p.ruta) {
+  @for (p of pestanas(); track p.ruta) {
     <a
       [routerLink]="p.ruta"
       routerLinkActive="activa"
@@ -32,6 +66,9 @@
     >
       <i [class]="p.icono"></i>
       <span>{{ p.etiqueta }}</span>
+      @if (p.soloDueno && conta.porAprobar().length) {
+        <p-badge [value]="conta.porAprobar().length" severity="info" />
+      }
     </a>
   }
 </nav>

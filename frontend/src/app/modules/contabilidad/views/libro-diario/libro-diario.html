@@ -21,7 +21,7 @@
       ariaLabelledBy="Filtrar por estado"
     />
   </div>
-  <p-button label="Nuevo asiento" icon="pi pi-plus" (onClick)="dialogoVisible.set(true)" />
+  <p-button label="Nuevo asiento" icon="pi pi-plus" (onClick)="nuevo()" />
 </div>
 
 <!-- Libro -->
@@ -60,23 +60,44 @@
                 @if (a.moneda === 'USD') {
                   · US$ (T.C. {{ a.tipoCambio }})
                 }
+                · {{ nombrePersona(a.creadoPor) }}
               </span>
 
-              @switch (a.estado) {
-                @case ('borrador') {
-                  <p-tag value="Borrador" severity="warn" />
-                }
-                @case ('anulado') {
-                  <p-tag value="Anulado" severity="danger" />
-                }
+              @if (a.estado !== 'registrado') {
+                <p-tag [value]="estados[a.estado].nombre" [severity]="estados[a.estado].severidad" />
               }
 
+              <!-- Acciones según estado y permisos -->
               <span class="acciones">
-                @if (a.estado === 'borrador') {
-                  <p-button label="Registrar" icon="pi pi-check" size="small" [text]="true" (onClick)="registrar(a)" />
-                  <p-button icon="pi pi-trash" size="small" [text]="true" severity="danger" pTooltip="Eliminar borrador" ariaLabel="Eliminar borrador" (onClick)="eliminar(a)" />
-                } @else if (a.estado === 'registrado') {
-                  <p-button icon="pi pi-ban" size="small" [text]="true" severity="secondary" pTooltip="Anular" ariaLabel="Anular asiento" (onClick)="anular(a)" />
+                @switch (a.estado) {
+                  @case ('borrador') {
+                    @if (editable(a)) {
+                      <p-button
+                        [label]="conta.permisos().registrar ? 'Registrar' : 'Enviar'"
+                        [icon]="conta.permisos().registrar ? 'pi pi-check' : 'pi pi-send'"
+                        size="small"
+                        [text]="true"
+                        (onClick)="confirmar(a)"
+                      />
+                      <p-button icon="pi pi-pencil" size="small" [text]="true" severity="secondary" pTooltip="Editar" ariaLabel="Editar borrador" (onClick)="editar(a)" />
+                      <p-button icon="pi pi-trash" size="small" [text]="true" severity="danger" pTooltip="Eliminar borrador" ariaLabel="Eliminar borrador" (onClick)="eliminar(a)" />
+                    }
+                  }
+                  @case ('observado') {
+                    @if (editable(a)) {
+                      <p-button label="Corregir" icon="pi pi-pencil" size="small" [text]="true" severity="warn" (onClick)="editar(a)" />
+                    }
+                  }
+                  @case ('por_aprobar') {
+                    @if (conta.permisos().aprobar) {
+                      <p-button label="Revisar" icon="pi pi-inbox" size="small" [text]="true" routerLink="/contabilidad/aprobaciones" />
+                    }
+                  }
+                  @case ('registrado') {
+                    @if (conta.permisos().anular) {
+                      <p-button icon="pi pi-ban" size="small" [text]="true" severity="secondary" pTooltip="Anular" ariaLabel="Anular asiento" (onClick)="anular(a)" />
+                    }
+                  }
                 }
               </span>
             </div>
@@ -125,5 +146,5 @@
   </table>
 </div>
 
-<app-asiento-dialogo [(visible)]="dialogoVisible" (guardar)="guardar($event)" />
+<app-asiento-dialogo [(visible)]="dialogoVisible" [inicial]="editando()" (guardar)="guardar($event)" />
 <p-confirmdialog [style]="{ width: 'min(30rem, 95vw)' }" />

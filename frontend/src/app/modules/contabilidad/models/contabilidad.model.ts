@@ -28,7 +28,13 @@ export interface Elemento {
 
 // ─── Asientos ──────────────────────────────────────────────────────
 
-export type EstadoAsiento = 'borrador' | 'registrado' | 'anulado';
+/**
+ * Ciclo del asiento:
+ * borrador → por_aprobar → registrado   (o el contador registra directo si el dueño lo permite)
+ *               ↓
+ *           observado → (se corrige) → por_aprobar
+ */
+export type EstadoAsiento = 'borrador' | 'por_aprobar' | 'observado' | 'registrado' | 'anulado';
 export type Moneda = 'PEN' | 'USD';
 
 /** De dónde nace el asiento (luego, ventas y compras se generan solas desde sus módulos). */
@@ -68,10 +74,59 @@ export interface Asiento {
   lineas: LineaAsiento[];
   estado: EstadoAsiento;
   creadoEn: string;
+
+  // Trazabilidad: quién hizo cada paso
+  creadoPor: string;
+  registradoPor?: string;
+  /** Comentario del dueño cuando devuelve el asiento para corregir. */
+  observacion?: string;
 }
 
-/** Lo que se envía para crear un asiento. */
-export type NuevoAsiento = Omit<Asiento, 'id' | 'numero' | 'periodo' | 'estado' | 'creadoEn'>;
+/** Lo que se envía para crear o corregir un asiento. */
+export type NuevoAsiento = Omit<
+  Asiento,
+  'id' | 'numero' | 'periodo' | 'estado' | 'creadoEn' | 'creadoPor' | 'registradoPor' | 'observacion'
+>;
+
+// ─── Equipo y aprobaciones ─────────────────────────────────────────
+
+/** Cómo entra cada persona al módulo. */
+export type RolContable = 'dueno' | 'contador';
+
+export interface Persona {
+  id: string;
+  nombre: string;
+  rol: RolContable;
+}
+
+/** Lo que el dueño decide sobre el contador. */
+export interface ConfigAprobacion {
+  /** Si es true, el contador registra directo; si no, envía a aprobación. */
+  contadorRegistraDirecto: boolean;
+}
+
+/** Lo que cada persona puede hacer en Contabilidad. */
+export interface Permisos {
+  registrar: boolean;
+  aprobar: boolean;
+  anular: boolean;
+  configurar: boolean;
+  verActividad: boolean;
+}
+
+export type AccionActividad = 'creo' | 'edito' | 'envio' | 'aprobo' | 'observo' | 'registro' | 'anulo' | 'elimino';
+
+/** Una línea del historial: quién hizo qué y cuándo. */
+export interface Actividad {
+  id: string;
+  fecha: string;
+  personaId: string;
+  accion: AccionActividad;
+  asientoId: string;
+  numero: number;
+  glosa: string;
+  detalle?: string;
+}
 
 // ─── Reportes ──────────────────────────────────────────────────────
 

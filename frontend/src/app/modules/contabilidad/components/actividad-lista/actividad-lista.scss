@@ -1,0 +1,69 @@
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--p-content-border-color);
+
+  &:first-child {
+    border-top: none;
+  }
+
+  > i {
+    flex: none;
+    width: 1.9rem;
+    height: 1.9rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    color: var(--p-primary-color);
+    background: var(--p-highlight-background);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  small {
+    color: var(--p-text-muted-color);
+  }
+}
+
+// Colores por tipo de acción
+.aprobo > i,
+.registro > i {
+  color: var(--p-green-600);
+  background: color-mix(in srgb, var(--p-green-500) 12%, transparent);
+}
+
+.observo > i {
+  color: var(--p-orange-600);
+  background: color-mix(in srgb, var(--p-orange-500) 12%, transparent);
+}
+
+.anulo > i,
+.elimino > i {
+  color: var(--p-red-600);
+  background: color-mix(in srgb, var(--p-red-500) 12%, transparent);
+}
+
+.asiento {
+  color: var(--p-text-muted-color);
+}
+
+.detalle {
+  font-style: italic;
+  color: var(--p-orange-700);
+}
+
+.vacio {
+  color: var(--p-text-muted-color);
+  font-style: italic;
+}

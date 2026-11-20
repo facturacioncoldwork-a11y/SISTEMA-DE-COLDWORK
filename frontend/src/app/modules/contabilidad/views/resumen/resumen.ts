@@ -2,7 +2,10 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
+import { ActividadLista } from '../../components/actividad-lista/actividad-lista';
+import { nombrePersona } from '../../data/equipo-ejemplo';
 import { nombreOrigen } from '../../data/sunat';
+import { ESTADOS } from '../../data/textos';
 import { CorrelativoPipe, ImportePipe, PeriodoPipe } from '../../pipes/formato.pipes';
 import { ContabilidadService } from '../../services/contabilidad.service';
 import { saldo, totales } from '../../utils/partida-doble';
@@ -18,13 +21,15 @@ interface Indicador {
 /** Resumen del periodo: indicadores, pendientes del cierre y últimos asientos. */
 @Component({
   selector: 'app-resumen',
-  imports: [RouterLink, ButtonModule, TagModule, ImportePipe, PeriodoPipe, CorrelativoPipe],
+  imports: [RouterLink, ButtonModule, TagModule, ActividadLista, ImportePipe, PeriodoPipe, CorrelativoPipe],
   templateUrl: './resumen.html',
   styleUrl: './resumen.scss',
 })
 export class Resumen {
   protected readonly conta = inject(ContabilidadService);
   protected readonly nombreOrigen = nombreOrigen;
+  protected readonly nombrePersona = nombrePersona;
+  protected readonly estados = ESTADOS;
   protected readonly totales = totales;
 
   protected readonly borradores = computed(() => this.conta.asientos().filter((a) => a.estado === 'borrador'));
@@ -68,6 +73,7 @@ export class Resumen {
   protected readonly cierre = computed(() => [
     { texto: 'Registrar compras y ventas del mes', hecho: this.registrados().length > 0 },
     { texto: 'Registrar o eliminar los borradores', hecho: this.borradores().length === 0 },
+    { texto: 'Aprobar lo que envió el contador', hecho: this.conta.porAprobar().length === 0 },
     { texto: 'Revisar que el Balance de comprobación cuadre', hecho: false },
     { texto: 'Asientos de destino (clase 6 → 9 y 79)', hecho: false },
     { texto: 'Generar los libros electrónicos (PLE / SIRE)', hecho: false },

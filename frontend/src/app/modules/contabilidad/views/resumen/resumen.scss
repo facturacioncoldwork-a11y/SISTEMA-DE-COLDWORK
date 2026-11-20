@@ -3,6 +3,36 @@
   font-size: 1.1rem;
 }
 
+// ─── Aviso de aprobaciones ──────────────────────────────────────
+
+.pendientes {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--p-blue-300);
+  background: color-mix(in srgb, var(--p-blue-500) 10%, transparent);
+  color: var(--p-text-color);
+  text-decoration: none;
+
+  > i {
+    font-size: 1.2rem;
+    color: var(--p-blue-600);
+  }
+
+  .ir {
+    margin-left: auto;
+    font-weight: 600;
+    color: var(--p-blue-600);
+  }
+
+  &:hover {
+    background: color-mix(in srgb, var(--p-blue-500) 16%, transparent);
+  }
+}
+
 // ─── Indicadores ────────────────────────────────────────────────
 
 // 6 indicadores: 3 por fila en pantalla grande, 2 en tablet, 1 en celular
@@ -73,10 +103,39 @@
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: 1rem;
+  align-items: start;
   margin-top: 1.5rem;
 
   @media (max-width: 960px) {
     grid-template-columns: 1fr;
+  }
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vivo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--p-green-600);
+
+  .punto {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--p-green-500);
+    animation: latido 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes latido {
+  50% {
+    opacity: 0.3;
   }
 }
 

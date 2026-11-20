@@ -1,10 +1,15 @@
 <p-dialog
   [(visible)]="visible"
-  header="Nuevo asiento"
+  [header]="inicial() ? 'Corregir asiento ' + inicial()!.numero : 'Nuevo asiento'"
   [modal]="true"
   [draggable]="false"
   [style]="{ width: 'min(64rem, 96vw)' }"
 >
+  <!-- Observación del dueño (al corregir) -->
+  @if (inicial()?.observacion; as obs) {
+    <p class="observacion"><i class="pi pi-comment"></i> <strong>El dueño observó:</strong> {{ obs }}</p>
+  }
+
   <!-- Cabecera del asiento -->
   <div class="cabecera">
     <div class="campo">
@@ -210,7 +215,11 @@
       <div class="botones">
         <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="visible.set(false)" />
         <p-button label="Guardar borrador" icon="pi pi-save" severity="secondary" [outlined]="true" (onClick)="enviar(false)" />
-        <p-button label="Registrar asiento" icon="pi pi-check" (onClick)="enviar(true)" />
+        @if (conta.permisos().registrar) {
+          <p-button label="Registrar asiento" icon="pi pi-check" (onClick)="enviar(true)" />
+        } @else {
+          <p-button label="Enviar a aprobación" icon="pi pi-send" (onClick)="enviar(true)" />
+        }
       </div>
     </div>
   </ng-template>

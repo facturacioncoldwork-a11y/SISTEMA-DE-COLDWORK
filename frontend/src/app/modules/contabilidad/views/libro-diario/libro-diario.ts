@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -10,11 +11,14 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { AsientoDialogo, type AsientoGuardado } from '../../components/asiento-dialogo/asiento-dialogo';
+import { nombrePersona } from '../../data/equipo-ejemplo';
 import { nombreComprobante, nombreOrigen } from '../../data/sunat';
+import { ESTADOS, mensajeGuardado } from '../../data/textos';
 import type { Asiento, EstadoAsiento } from '../../models/contabilidad.model';
 import { CorrelativoPipe, ImportePipe, PeriodoPipe } from '../../pipes/formato.pipes';
 import { ContabilidadService } from '../../services/contabilidad.service';
 import { totales } from '../../utils/partida-doble';
+import { puedeEditar } from '../../utils/permisos';
 
 type Filtro = EstadoAsiento | 'todos';
 
@@ -23,6 +27,7 @@ type Filtro = EstadoAsiento | 'todos';
   selector: 'app-libro-diario',
   imports: [
     FormsModule,
+    RouterLink,
     ButtonModule,
     ConfirmDialogModule,
     IconFieldModule,
@@ -43,19 +48,24 @@ type Filtro = EstadoAsiento | 'todos';
 export class LibroDiario {
   protected readonly conta = inject(ContabilidadService);
   private readonly avisos = inject(MessageService);
-  private readonly confirmar = inject(ConfirmationService);
+  private readonly confirmacion = inject(ConfirmationService);
 
   protected readonly nombreOrigen = nombreOrigen;
   protected readonly nombreComprobante = nombreComprobante;
   protected readonly totales = totales;
+  protected readonly nombrePersona = nombrePersona;
+  protected readonly estados = ESTADOS;
 
   protected readonly dialogoVisible = signal(false);
+  protected readonly editando = signal<Asiento | null>(null);
   protected readonly busqueda = signal('');
   protected readonly filtro = signal<Filtro>('todos');
 
   protected readonly filtros = [
     { etiqueta: 'Todos', valor: 'todos' },
     { etiqueta: 'Registrados', valor: 'registrado' },
+    { etiqueta: 'Por aprobar', valor: 'por_aprobar' },
+    { etiqueta: 'Observados', valor: 'observado' },
     { etiqueta: 'Borradores', valor: 'borrador' },
     { etiqueta: 'Anulados', valor: 'anulado' },
   ];
@@ -77,28 +87,40 @@ export class LibroDiario {
 
   // ─── Acciones ─────────────────────────────────────────────────
 
-  protected guardar({ asiento, registrar }: AsientoGuardado) {
+  protected editable(a: Asiento): boolean {
+    return puedeEditar(a, this.conta.persona());
+  }
+
+  protected nuevo() {
+    this.editando.set(null);
+    this.dialogoVisible.set(true);
+  }
+
+  protected editar(a: Asiento) {
+    this.editando.set(a);
+    this.dialogoVisible.set(true);
+  }
+
+  protected guardar({ asiento, confirmar, id }: AsientoGuardado) {
     this.intentar(() => {
-      const nuevo = this.conta.crear(asiento, registrar);
-      this.conta.periodo.set(nuevo.periodo);
+      const guardado = id ? this.conta.actualizar(id, asiento, confirmar) : this.conta.crear(asiento, confirmar);
+      this.conta.periodo.set(guardado.periodo);
       this.dialogoVisible.set(false);
-      this.avisos.add({
-        severity: 'success',
-        summary: registrar ? `Asiento ${nuevo.numero} registrado` : 'Borrador guardado',
-        life: 3000,
-      });
+      this.avisos.add({ severity: 'success', summary: mensajeGuardado(guardado), life: 3500 });
     });
   }
 
-  protected registrar(a: Asiento) {
+  /** Borrador → registrado (si tiene permiso) o enviado al dueño. */
+  protected confirmar(a: Asiento) {
     this.intentar(() => {
-      this.conta.registrar(a.id);
-      this.avisos.add({ severity: 'success', summary: `Asiento ${a.numero} registrado`, life: 3000 });
+      if (this.conta.permisos().registrar) this.conta.registrar(a.id);
+      else this.conta.enviar(a.id);
+      this.avisos.add({ severity: 'success', summary: mensajeGuardado(this.conta.buscar(a.id)), life: 3500 });
     });
   }
 
   protected eliminar(a: Asiento) {
-    this.confirmar.confirm({
+    this.confirmacion.confirm({
       header: 'Eliminar borrador',
       message: `Se eliminará el borrador "${a.glosa}".`,
       acceptLabel: 'Eliminar',
@@ -110,7 +132,7 @@ export class LibroDiario {
   }
 
   protected anular(a: Asiento) {
-    this.confirmar.confirm({
+    this.confirmacion.confirm({
       header: `Anular asiento ${a.numero}`,
       message:
         'El asiento queda en el libro como anulado (no se borra, para no romper el correlativo). ' +
