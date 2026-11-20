@@ -7,6 +7,7 @@
       [options]="regimenes"
       optionLabel="nombre"
       optionValue="valor"
+      [disabled]="!conta.permisos().configurar"
       [ngModel]="conta.regimen()"
       (ngModelChange)="conta.regimen.set($event)"
     />
@@ -20,6 +21,7 @@
         [options]="tramos"
         optionLabel="nombre"
         optionValue="valor"
+        [disabled]="!conta.permisos().configurar"
         [ngModel]="conta.tramo()"
         (ngModelChange)="conta.tramo.set($event)"
       />
@@ -29,6 +31,9 @@
   <p class="ayuda">
     <i class="pi pi-info-circle"></i>
     Según el art. 65 de la Ley del Impuesto a la Renta. Más adelante esto se guardará en la configuración de la empresa.
+    @if (!conta.permisos().configurar) {
+      <strong>Solo el dueño puede cambiar el régimen.</strong>
+    }
   </p>
 </section>
 

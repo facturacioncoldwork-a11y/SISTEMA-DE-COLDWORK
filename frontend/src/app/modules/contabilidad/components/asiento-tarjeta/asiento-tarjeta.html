@@ -22,6 +22,18 @@
     </p>
   </header>
 
+  <!-- Sustento -->
+  @if (a.adjuntos?.length) {
+    <p class="sustento">
+      <i class="pi pi-paperclip"></i>
+      @for (adj of a.adjuntos; track adj.url) {
+        <a [href]="adj.url" target="_blank" rel="noopener">{{ adj.nombre }}</a>
+      }
+    </p>
+  } @else if (a.documento) {
+    <p class="sustento falta"><i class="pi pi-exclamation-triangle"></i> Sin foto o PDF del comprobante</p>
+  }
+
   <!-- Observación del dueño -->
   @if (a.observacion) {
     <p class="observacion"><i class="pi pi-comment"></i> {{ a.observacion }}</p>

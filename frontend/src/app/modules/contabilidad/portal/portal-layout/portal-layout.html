@@ -3,7 +3,7 @@
   <span><i class="pi pi-eye"></i> <strong>Simulación:</strong> así ve la app {{ conta.persona().nombre }} (contadora) desde su computadora.</span>
   <span class="acciones-sim">
     <button type="button" (click)="simularDueno()"><i class="pi pi-play"></i> Simular que el dueño revisa</button>
-    <button type="button" (click)="salir()"><i class="pi pi-arrow-left"></i> Volver a la vista del dueño</button>
+    <button type="button" (click)="volverAlDueno()"><i class="pi pi-arrow-left"></i> Volver a la vista del dueño</button>
   </span>
 </aside>
 
@@ -50,6 +50,7 @@
         <strong>{{ conta.persona().nombre }}</strong>
         <small>Contadora</small>
       </span>
+      <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" pTooltip="Cerrar sesión" tooltipPosition="bottom" ariaLabel="Cerrar sesión" (onClick)="cerrarSesion()" />
     </div>
   </div>
 </header>

@@ -1,6 +1,6 @@
 import { Route, Routes } from '@angular/router';
 import { conSesion } from './core/auth/guards/auth.guards';
-import { conArea, soloAdmin } from './core/permisos/permisos.guards';
+import { alPortalCorrecto, conArea, soloAdmin } from './core/permisos/permisos.guards';
 import type { Area } from './core/permisos/areas';
 import { AUTH_ROUTES } from './modules/auth/auth.routes';
 import { CONTABILIDAD_ROUTES } from './modules/contabilidad/contabilidad.routes';
@@ -31,7 +31,8 @@ export const routes: Routes = [
 
   {
     path: '',
-    canActivate: [conSesion],
+    // Quien tiene portal propio (ej. el contador) es llevado a él y no ve el ERP
+    canActivate: [conSesion, alPortalCorrecto],
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
     children: [
       { path: '', pathMatch: 'full', loadComponent: () => import('./modules/inicio/views/inicio/inicio').then((m) => m.Inicio) },

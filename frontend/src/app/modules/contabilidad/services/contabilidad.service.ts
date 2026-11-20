@@ -41,7 +41,7 @@ export class ContabilidadService {
   readonly personas = PERSONAS;
   readonly vista = signal<RolContable>('dueno');
   readonly persona = computed<Persona>(() => (this.vista() === 'dueno' ? DUENO : CONTADORA));
-  readonly config = signal<ConfigAprobacion>({ contadorRegistraDirecto: false, contadorVeLibros: false });
+  readonly config = signal<ConfigAprobacion>({ contadorRegistraDirecto: false, contadorVeLibros: true });
   readonly permisos = computed(() => permisosDe(this.persona(), this.config()));
 
   // ─── Periodo, asientos y actividad ────────────────────────────

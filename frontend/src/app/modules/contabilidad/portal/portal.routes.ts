@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
 import { conSesion } from '../../../core/auth/guards/auth.guards';
+import { conPortal } from '../../../core/permisos/permisos.guards';
 import { ContabilidadService } from '../services/contabilidad.service';
 
 /** SIMULACIÓN: al entrar al portal se actúa como la contadora (luego vendrá de la cuenta real). */
@@ -19,7 +20,7 @@ const conPermisoLibros = () => inject(ContabilidadService).permisos().verLibros 
 export const PORTAL_TRABAJO_ROUTES: Routes = [
   {
     path: 'trabajo',
-    canActivate: [conSesion, entrarComoContador],
+    canActivate: [conSesion, conPortal('contable'), entrarComoContador],
     loadComponent: () => import('./portal-layout/portal-layout').then((m) => m.PortalLayout),
     children: [
       {
@@ -30,6 +31,14 @@ export const PORTAL_TRABAJO_ROUTES: Routes = [
       {
         path: 'mis-asientos',
         loadComponent: () => import('./mis-asientos/mis-asientos').then((m) => m.MisAsientos),
+      },
+      {
+        path: 'cierre',
+        loadComponent: () => import('./cierre-mes/cierre-mes').then((m) => m.CierreMes),
+      },
+      {
+        path: 'libros-sunat',
+        loadComponent: () => import('../views/libros-sunat/libros-sunat').then((m) => m.LibrosSunat),
       },
       {
         path: 'plan-cuentas',

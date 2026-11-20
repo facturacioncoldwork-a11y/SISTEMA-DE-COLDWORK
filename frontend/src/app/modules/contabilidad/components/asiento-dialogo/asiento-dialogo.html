@@ -114,6 +114,24 @@
           <input pInputText id="as-tercero" [(ngModel)]="documento.nombreTercero" [ngModelOptions]="{ standalone: true }" />
         </div>
       </div>
+
+      <!-- Foto o PDF del comprobante -->
+      <div class="adjuntos">
+        <label class="subir" for="as-archivos">
+          <i class="pi pi-paperclip"></i> Adjuntar foto o PDF del comprobante
+          <input id="as-archivos" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple (change)="elegirArchivos($event)" />
+        </label>
+        <small class="ayuda">Máximo 3 archivos de 5 MB. SUNAT puede pedir el sustento mientras el tributo no prescriba.</small>
+
+        @for (adj of adjuntos(); track adj.url; let i = $index) {
+          <div class="adjunto">
+            <i [class]="adj.tipo === 'application/pdf' ? 'pi pi-file-pdf' : 'pi pi-image'"></i>
+            <a [href]="adj.url" target="_blank" rel="noopener">{{ adj.nombre }}</a>
+            <small>{{ pesoLegible(adj.tamano) }}</small>
+            <p-button icon="pi pi-times" [text]="true" size="small" severity="danger" ariaLabel="Quitar archivo" (onClick)="quitarAdjunto(i)" />
+          </div>
+        }
+      </div>
     }
   </div>
 

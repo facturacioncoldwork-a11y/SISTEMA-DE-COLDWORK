@@ -2,7 +2,11 @@ import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
+import { TooltipModule } from 'primeng/tooltip';
+import { AuthService } from '../../../../core/auth/services/auth.service';
+import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { Emoji } from '../../../../shared/components/emoji/emoji';
 import { PeriodoPipe } from '../../pipes/formato.pipes';
 import { usarAvisosEnVivo } from '../../services/avisos-en-vivo';
@@ -22,7 +26,17 @@ interface Enlace {
  */
 @Component({
   selector: 'app-portal-layout',
-  imports: [FormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectModule, Emoji, PeriodoPipe],
+  imports: [
+    FormsModule,
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    ButtonModule,
+    SelectModule,
+    TooltipModule,
+    Emoji,
+    PeriodoPipe,
+  ],
   templateUrl: './portal-layout.html',
   styleUrl: './portal-layout.scss',
 })
@@ -30,24 +44,31 @@ export class PortalLayout {
   protected readonly conta = inject(ContabilidadService);
   private readonly router = inject(Router);
   private readonly avisos = inject(MessageService);
+  private readonly auth = inject(AuthService);
+  private readonly empresa = inject(EmpresaActualService);
 
   protected readonly porCorregir = computed(
     () => pendientesDe(this.conta.asientos(), this.conta.persona()).observados.length,
   );
 
   protected readonly enlaces = computed<Enlace[]>(() => {
-    const base: Enlace[] = [
+    const trabajo: Enlace[] = [
       { etiqueta: 'Mi trabajo', icono: 'pi pi-briefcase', ruta: '/trabajo', exacto: true },
       { etiqueta: 'Mis asientos', icono: 'pi pi-list-check', ruta: '/trabajo/mis-asientos' },
+      { etiqueta: 'Cierre del mes', icono: 'pi pi-check-square', ruta: '/trabajo/cierre' },
+    ];
+    const libros: Enlace[] = this.conta.permisos().verLibros
+      ? [
+          { etiqueta: 'Diario', icono: 'pi pi-book', ruta: '/trabajo/diario' },
+          { etiqueta: 'Mayor', icono: 'pi pi-list', ruta: '/trabajo/mayor' },
+          { etiqueta: 'Balance', icono: 'pi pi-calculator', ruta: '/trabajo/balance' },
+        ]
+      : [];
+    const consulta: Enlace[] = [
       { etiqueta: 'Plan de cuentas', icono: 'pi pi-sitemap', ruta: '/trabajo/plan-cuentas' },
+      { etiqueta: 'SUNAT', icono: 'pi pi-file-export', ruta: '/trabajo/libros-sunat' },
     ];
-    if (!this.conta.permisos().verLibros) return base;
-    return [
-      ...base,
-      { etiqueta: 'Diario', icono: 'pi pi-book', ruta: '/trabajo/diario' },
-      { etiqueta: 'Mayor', icono: 'pi pi-list', ruta: '/trabajo/mayor' },
-      { etiqueta: 'Balance', icono: 'pi pi-calculator', ruta: '/trabajo/balance' },
-    ];
+    return [...trabajo, ...libros, ...consulta];
   });
 
   constructor() {
@@ -65,7 +86,14 @@ export class PortalLayout {
   }
 
   /** SIMULACIÓN: volver a la vista del dueño. */
-  protected salir() {
+  protected volverAlDueno() {
     void this.router.navigateByUrl('/contabilidad');
+  }
+
+  /** Cerrar sesión (lo usará el contador real). */
+  protected async cerrarSesion() {
+    await this.auth.salir();
+    this.empresa.limpiar();
+    await this.router.navigateByUrl('/login');
   }
 }

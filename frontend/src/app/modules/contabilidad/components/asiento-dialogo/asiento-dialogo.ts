@@ -8,7 +8,8 @@ import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ORIGENES, TASA_IGV, TIPOS_COMPROBANTE } from '../../data/sunat';
-import type { Asiento, LineaAsiento, Moneda, NuevoAsiento, OrigenAsiento } from '../../models/contabilidad.model';
+import type { Adjunto, Asiento, LineaAsiento, Moneda, NuevoAsiento, OrigenAsiento } from '../../models/contabilidad.model';
+import { pesoLegible, problemaArchivo } from '../../utils/adjuntos';
 import { ImportePipe } from '../../pipes/formato.pipes';
 import { ContabilidadService } from '../../services/contabilidad.service';
 import { redondear, totales, validarAsiento } from '../../utils/partida-doble';
@@ -70,7 +71,9 @@ export class AsientoDialogo {
   protected conDocumento = false;
   protected documento = { tipo: '01', serie: '', numero: '', documentoTercero: '', nombreTercero: '' };
   protected readonly lineas = signal<LineaAsiento[]>([]);
+  protected readonly adjuntos = signal<Adjunto[]>([]);
   protected readonly errores = signal<string[]>([]);
+  protected readonly pesoLegible = pesoLegible;
 
   protected readonly suma = computed(() => totales(this.lineas()));
 
@@ -93,6 +96,7 @@ export class AsientoDialogo {
         nombreTercero: a?.documento?.nombreTercero ?? '',
       };
       this.lineas.set(a ? structuredClone(a.lineas) : [lineaVacia(), lineaVacia()]);
+      this.adjuntos.set([...(a?.adjuntos ?? [])]);
       this.errores.set([]);
     });
   }
@@ -149,6 +153,36 @@ export class AsientoDialogo {
     );
   }
 
+  // ─── Adjuntos ─────────────────────────────────────────────────
+
+  /** Agrega las fotos o PDF elegidos, validando tipo, tamaño y cantidad. */
+  protected elegirArchivos(evento: Event) {
+    const input = evento.target as HTMLInputElement;
+    const problemas: string[] = [];
+
+    for (const archivo of Array.from(input.files ?? [])) {
+      const problema = problemaArchivo(archivo, this.adjuntos().length);
+      if (problema) {
+        problemas.push(problema);
+        continue;
+      }
+      const adjunto: Adjunto = {
+        nombre: archivo.name,
+        tipo: archivo.type,
+        tamano: archivo.size,
+        url: URL.createObjectURL(archivo),
+      };
+      this.adjuntos.update((lista) => [...lista, adjunto]);
+    }
+
+    this.errores.set(problemas);
+    input.value = '';
+  }
+
+  protected quitarAdjunto(i: number) {
+    this.adjuntos.update((lista) => lista.filter((_, j) => j !== i));
+  }
+
   // ─── Guardar ──────────────────────────────────────────────────
 
   protected enviar(confirmar: boolean) {
@@ -166,6 +200,7 @@ export class AsientoDialogo {
       moneda: this.moneda(),
       tipoCambio: this.moneda() === 'USD' ? (this.tipoCambio ?? undefined) : undefined,
       documento: this.conDocumento ? { ...this.documento } : undefined,
+      adjuntos: this.adjuntos(),
       lineas: this.lineas().filter((l) => l.cuenta || l.debe || l.haber),
     };
   }

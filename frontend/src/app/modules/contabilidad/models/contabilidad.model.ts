@@ -50,6 +50,16 @@ export interface DocumentoSustento {
   nombreTercero?: string;
 }
 
+/** Foto o PDF del comprobante. Luego se guardará en un almacenamiento privado por empresa. */
+export interface Adjunto {
+  nombre: string;
+  tipo: string;
+  /** Bytes. */
+  tamano: number;
+  /** Dirección temporal para verlo (en el prototipo vive solo en esta pantalla). */
+  url: string;
+}
+
 export interface LineaAsiento {
   cuenta: string;
   debe: number;
@@ -71,6 +81,8 @@ export interface Asiento {
   /** Tipo de cambio SBS del día (solo si la moneda es USD). */
   tipoCambio?: number;
   documento?: DocumentoSustento;
+  /** Sustento: fotos o PDF del comprobante. */
+  adjuntos?: Adjunto[];
   lineas: LineaAsiento[];
   estado: EstadoAsiento;
   creadoEn: string;

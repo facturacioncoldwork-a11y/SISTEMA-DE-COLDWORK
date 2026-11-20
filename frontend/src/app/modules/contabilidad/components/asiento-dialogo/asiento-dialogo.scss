@@ -60,6 +60,57 @@
   margin-top: 0.85rem;
 }
 
+// ─── Adjuntos ───────────────────────────────────────────────────
+
+.adjuntos {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--p-content-border-color);
+
+  .ayuda {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--p-text-muted-color);
+  }
+}
+
+.subir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px dashed var(--p-primary-color);
+  border-radius: 0.6rem;
+  color: var(--p-primary-color);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  input {
+    display: none;
+  }
+
+  &:hover {
+    background: var(--p-highlight-background);
+  }
+}
+
+.adjunto {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.88rem;
+
+  a {
+    color: var(--p-primary-color);
+  }
+
+  small {
+    color: var(--p-text-muted-color);
+  }
+}
+
 // ─── Líneas ─────────────────────────────────────────────────────
 
 .titulo-lineas {
