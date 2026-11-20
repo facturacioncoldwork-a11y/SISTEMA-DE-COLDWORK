@@ -71,7 +71,7 @@ export class AsientoDialogo {
     // Al abrir: formulario limpio con dos líneas vacías
     effect(() => {
       if (!this.visible()) return;
-      this.fecha = new Date().toISOString().slice(0, 10);
+      this.fecha = hoyLocal();
       this.glosa = '';
       this.origen = 'diario';
       this.moneda.set('PEN');
@@ -167,4 +167,11 @@ export class AsientoDialogo {
 
 function lineaVacia(): LineaAsiento {
   return { cuenta: '', debe: 0, haber: 0 };
+}
+
+/** Fecha de hoy en la hora de Perú (toISOString usa UTC y de noche da el día siguiente). */
+function hoyLocal(): string {
+  const d = new Date();
+  const dos = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
 }

@@ -1,4 +1,12 @@
-import type { Asiento, Cuenta, FilaBalance, LineaAsiento, MovimientoMayor, NuevoAsiento } from '../models/contabilidad.model';
+import type {
+  Asiento,
+  Cuenta,
+  DocumentoSustento,
+  FilaBalance,
+  LineaAsiento,
+  MovimientoMayor,
+  NuevoAsiento,
+} from '../models/contabilidad.model';
 
 /**
  * Reglas de la partida doble y cálculos de los libros.
@@ -34,6 +42,8 @@ export function validarAsiento(asiento: NuevoAsiento, cuentas: ReadonlyMap<strin
     errores.push('Indica el tipo de cambio para operaciones en dólares.');
   }
 
+  errores.push(...validarDocumento(asiento.documento));
+
   const lineas = asiento.lineas.filter((l) => l.cuenta || l.debe || l.haber);
   if (lineas.length < 2) errores.push('Un asiento necesita al menos dos líneas (un cargo y un abono).');
 
@@ -53,6 +63,22 @@ export function validarAsiento(asiento: NuevoAsiento, cuentas: ReadonlyMap<strin
   if (t.debe === 0) errores.push('El asiento no tiene importes.');
   else if (t.diferencia !== 0) errores.push(`No cuadra: el Debe y el Haber difieren en ${t.diferencia.toFixed(2)}.`);
 
+  return errores;
+}
+
+/** Comprobante: serie y número obligatorios; RUC de 11 dígitos o DNI de 8; factura exige RUC. */
+export function validarDocumento(doc: DocumentoSustento | undefined): string[] {
+  if (!doc) return [];
+  const errores: string[] = [];
+  const identificacion = (doc.documentoTercero ?? '').trim();
+
+  if (!doc.serie.trim() || !doc.numero.trim()) errores.push('Comprobante: indica la serie y el número.');
+  if (identificacion && !/^(\d{8}|\d{11})$/.test(identificacion)) {
+    errores.push('Comprobante: el RUC tiene 11 dígitos y el DNI 8.');
+  }
+  if (doc.tipo === '01' && !/^\d{11}$/.test(identificacion)) {
+    errores.push('Comprobante: una factura necesita el RUC (11 dígitos) del cliente o proveedor.');
+  }
   return errores;
 }
 

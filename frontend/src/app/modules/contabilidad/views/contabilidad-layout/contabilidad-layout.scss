@@ -40,6 +40,8 @@
   margin-top: 1.25rem;
   border-bottom: 1px solid var(--p-content-border-color);
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
 
   a {
     display: flex;

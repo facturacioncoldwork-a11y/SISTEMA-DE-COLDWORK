@@ -194,19 +194,24 @@
     }
   </p>
 
-  @if (errores().length) {
-    <p-message severity="error">
-      <ul class="errores">
-        @for (e of errores(); track e) {
-          <li>{{ e }}</li>
-        }
-      </ul>
-    </p-message>
-  }
-
+  <!-- Pie fijo: errores siempre visibles junto a los botones -->
   <ng-template #footer>
-    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="visible.set(false)" />
-    <p-button label="Guardar borrador" icon="pi pi-save" severity="secondary" [outlined]="true" (onClick)="enviar(false)" />
-    <p-button label="Registrar asiento" icon="pi pi-check" (onClick)="enviar(true)" />
+    <div class="pie">
+      @if (errores().length) {
+        <p-message severity="error" styleClass="errores">
+          <ul>
+            @for (e of errores(); track e) {
+              <li>{{ e }}</li>
+            }
+          </ul>
+        </p-message>
+      }
+
+      <div class="botones">
+        <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="visible.set(false)" />
+        <p-button label="Guardar borrador" icon="pi pi-save" severity="secondary" [outlined]="true" (onClick)="enviar(false)" />
+        <p-button label="Registrar asiento" icon="pi pi-check" (onClick)="enviar(true)" />
+      </div>
+    </div>
   </ng-template>
 </p-dialog>

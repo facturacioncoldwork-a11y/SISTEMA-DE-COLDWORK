@@ -49,7 +49,10 @@
               <span class="meta">
                 {{ nombreOrigen(a.origen) }}
                 @if (a.documento; as d) {
-                  · {{ nombreComprobante(d.tipo) }} {{ d.serie }}-{{ d.numero }}
+                  · {{ nombreComprobante(d.tipo) }}
+                  @if (d.serie) {
+                    {{ d.serie }}-{{ d.numero }}
+                  }
                   @if (d.nombreTercero) {
                     · {{ d.nombreTercero }}
                   }

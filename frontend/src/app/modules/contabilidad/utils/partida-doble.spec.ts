@@ -57,6 +57,21 @@ describe('partida doble', () => {
     expect(validarAsiento(a, CUENTAS)).toHaveLength(2);
   });
 
+  it('valida el comprobante: serie, número y RUC de la factura', () => {
+    const lineas = [
+      { cuenta: '1212', debe: 118, haber: 0 },
+      { cuenta: '7041', debe: 0, haber: 118 },
+    ];
+    const sinDatos = nuevo(lineas, { documento: { tipo: '01', serie: '', numero: '' } });
+    expect(validarAsiento(sinDatos, CUENTAS)).toHaveLength(2);
+
+    const completo = nuevo(lineas, { documento: { tipo: '01', serie: 'F001', numero: '9', documentoTercero: '20123456789' } });
+    expect(validarAsiento(completo, CUENTAS)).toEqual([]);
+
+    const boletaDni = nuevo(lineas, { documento: { tipo: '03', serie: 'B001', numero: '9', documentoTercero: '12345678' } });
+    expect(validarAsiento(boletaDni, CUENTAS)).toEqual([]);
+  });
+
   it('calcula el mayor y el balance solo con asientos registrados', () => {
     const asientos = [
       asiento(1, [
