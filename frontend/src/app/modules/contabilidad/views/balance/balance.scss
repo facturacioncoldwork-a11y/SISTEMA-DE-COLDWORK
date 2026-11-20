@@ -1,0 +1,32 @@
+@use '../../styles/libro';
+
+.barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+}
+
+.col-cuenta {
+  width: 6rem;
+}
+
+.grupo {
+  text-align: center;
+  border-left: 1px solid var(--p-content-border-color);
+}
+
+.nota {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+}

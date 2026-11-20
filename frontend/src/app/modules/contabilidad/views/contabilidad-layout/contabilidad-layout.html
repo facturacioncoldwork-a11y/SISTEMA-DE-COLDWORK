@@ -1,0 +1,41 @@
+<header class="cabecera">
+  <div>
+    <h1>Contabilidad</h1>
+    <p class="sub">Asientos, libros y reportes según el PCGE 2019 y los libros electrónicos de SUNAT.</p>
+  </div>
+
+  <div class="periodo">
+    <label for="conta-periodo">Periodo</label>
+    <p-select
+      inputId="conta-periodo"
+      [options]="conta.periodos()"
+      [ngModel]="conta.periodo()"
+      (ngModelChange)="conta.periodo.set($event)"
+    >
+      <ng-template #selectedItem let-p>{{ p | periodo }}</ng-template>
+      <ng-template #item let-p>{{ p | periodo }}</ng-template>
+    </p-select>
+  </div>
+</header>
+
+<p-message severity="warn" styleClass="aviso-prototipo" icon="pi pi-eye">
+  Prototipo para revisar el diseño: los datos son de ejemplo y lo que registres se borra al recargar la página.
+</p-message>
+
+<nav class="pestanas" aria-label="Secciones de contabilidad">
+  @for (p of pestanas; track p.ruta) {
+    <a
+      [routerLink]="p.ruta"
+      routerLinkActive="activa"
+      [routerLinkActiveOptions]="{ exact: true }"
+      ariaCurrentWhenActive="page"
+    >
+      <i [class]="p.icono"></i>
+      <span>{{ p.etiqueta }}</span>
+    </a>
+  }
+</nav>
+
+<section class="contenido">
+  <router-outlet />
+</section>

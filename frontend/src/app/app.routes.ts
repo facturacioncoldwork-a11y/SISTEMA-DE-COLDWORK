@@ -3,6 +3,7 @@ import { conSesion } from './core/auth/guards/auth.guards';
 import { conArea, soloAdmin } from './core/permisos/permisos.guards';
 import type { Area } from './core/permisos/areas';
 import { AUTH_ROUTES } from './modules/auth/auth.routes';
+import { CONTABILIDAD_ROUTES } from './modules/contabilidad/contabilidad.routes';
 import { EMPRESAS_ROUTES } from './modules/empresas/empresas.routes';
 import { EQUIPO_ROUTES } from './modules/equipo/equipo.routes';
 
@@ -31,6 +32,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', loadComponent: () => import('./modules/inicio/views/inicio/inicio').then((m) => m.Inicio) },
       ...EMPRESAS_ROUTES,
       ...EQUIPO_ROUTES,
+      ...CONTABILIDAD_ROUTES,
 
       // Etapa 1 — Contabilidad y finanzas
       enConstruccion('terceros', 'Clientes y proveedores', 'administracion'),
@@ -39,7 +41,6 @@ export const routes: Routes = [
       enConstruccion('compras', 'Compras', 'logistica'),
       enConstruccion('cuentas-cobrar', 'Cuentas por cobrar', 'finanzas'),
       enConstruccion('cuentas-pagar', 'Cuentas por pagar', 'finanzas'),
-      enConstruccion('contabilidad', 'Contabilidad', 'contabilidad'),
       enConstruccion('reportes', 'Reportes', 'contabilidad'),
 
       // Etapas siguientes

@@ -1,0 +1,78 @@
+<!-- Configuración tributaria -->
+<section class="config">
+  <div class="campo">
+    <label for="ls-regimen">Régimen tributario</label>
+    <p-select
+      inputId="ls-regimen"
+      [options]="regimenes"
+      optionLabel="nombre"
+      optionValue="valor"
+      [ngModel]="conta.regimen()"
+      (ngModelChange)="conta.regimen.set($event)"
+    />
+  </div>
+
+  @if (conta.regimen() !== 'rer') {
+    <div class="campo">
+      <label for="ls-tramo">Ingresos brutos del año anterior</label>
+      <p-select
+        inputId="ls-tramo"
+        [options]="tramos"
+        optionLabel="nombre"
+        optionValue="valor"
+        [ngModel]="conta.tramo()"
+        (ngModelChange)="conta.tramo.set($event)"
+      />
+    </div>
+  }
+
+  <p class="ayuda">
+    <i class="pi pi-info-circle"></i>
+    Según el art. 65 de la Ley del Impuesto a la Renta. Más adelante esto se guardará en la configuración de la empresa.
+  </p>
+</section>
+
+<!-- Libros obligatorios -->
+<h2>Libros que debe llevar la empresa</h2>
+
+@if (contabilidadCompleta()) {
+  <p class="sub">Con más de 1 700 UIT corresponde <strong>contabilidad completa</strong> (todos los libros del art. 65).</p>
+}
+
+<div class="libros">
+  @for (l of libros(); track l.codigoPle) {
+    <article class="libro-sunat">
+      <header>
+        <p-tag [value]="l.sistema" [severity]="l.sistema === 'SIRE' ? 'info' : 'secondary'" />
+        <span class="codigo">Formato {{ l.formato }} · {{ l.codigoPle }}</span>
+      </header>
+      <h3>{{ l.nombre }}</h3>
+      <p class="atraso"><i class="pi pi-clock"></i> Atraso máximo: {{ l.atrasoMaximo }}</p>
+      <p-button
+        label="Generar archivo"
+        icon="pi pi-download"
+        size="small"
+        [outlined]="true"
+        [disabled]="true"
+        pTooltip="Se activará cuando los asientos se guarden en la base de datos"
+        tooltipPosition="top"
+      />
+    </article>
+  }
+</div>
+
+<!-- Puntos legales que el sistema controla -->
+<h2>Lo que el sistema cuida por ti</h2>
+<ul class="reglas">
+  <li><i class="pi pi-check"></i> Partida doble: no se registra un asiento que no cuadre.</li>
+  <li><i class="pi pi-check"></i> Correlativo por periodo (CUO) y asientos registrados que no se editan: se anulan o se ajustan.</li>
+  <li><i class="pi pi-check"></i> Cuentas del PCGE 2019; solo las de último nivel reciben movimientos.</li>
+  <li><i class="pi pi-check"></i> IGV 18 % (16 % + 2 % IPM) y comprobantes según la Tabla 10 de SUNAT.</li>
+  <li><i class="pi pi-check"></i> Detracciones en la cuenta del Banco de la Nación (1042), separadas del resto del efectivo.</li>
+  <li><i class="pi pi-check"></i> Operaciones en dólares con tipo de cambio SBS del día.</li>
+</ul>
+
+<p class="aviso">
+  <i class="pi pi-exclamation-triangle"></i>
+  Esta guía es referencial. Las normas de SUNAT cambian: el contador de la empresa debe confirmar los libros y plazos.
+</p>

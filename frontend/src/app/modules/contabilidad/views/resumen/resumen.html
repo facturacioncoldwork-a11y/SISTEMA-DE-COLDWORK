@@ -1,0 +1,64 @@
+<h2 class="titulo-seccion">Resumen de {{ conta.periodo() | periodo }}</h2>
+
+<!-- Indicadores -->
+<div class="indicadores">
+  @for (i of indicadores(); track i.titulo) {
+    <article class="indicador" [class]="i.tono">
+      <i [class]="i.icono"></i>
+      <div>
+        <small>{{ i.titulo }}</small>
+        <strong>S/ {{ i.valor | importe: true }}</strong>
+        <span class="ayuda">{{ i.ayuda }}</span>
+      </div>
+    </article>
+  }
+</div>
+
+<div class="columnas">
+  <!-- Últimos asientos -->
+  <section class="panel">
+    <header>
+      <h3>Últimos asientos</h3>
+      <p-button label="Ver Libro Diario" icon="pi pi-arrow-right" iconPos="right" [text]="true" routerLink="/contabilidad/diario" />
+    </header>
+
+    <ul class="asientos">
+      @for (a of ultimos(); track a.id) {
+        <li>
+          <span class="numero">{{ a.numero | correlativo }}</span>
+          <div class="detalle">
+            <strong>{{ a.glosa }}</strong>
+            <small>{{ a.fecha.slice(8) }}/{{ a.fecha.slice(5, 7) }} · {{ nombreOrigen(a.origen) }}</small>
+          </div>
+          <span class="monto">S/ {{ totales(a.lineas).debe | importe: true }}</span>
+          @if (a.estado !== 'registrado') {
+            <p-tag [value]="a.estado === 'borrador' ? 'Borrador' : 'Anulado'" [severity]="a.estado === 'borrador' ? 'warn' : 'danger'" />
+          }
+        </li>
+      } @empty {
+        <li class="vacio">Aún no hay asientos en este periodo.</li>
+      }
+    </ul>
+  </section>
+
+  <!-- Cierre del mes -->
+  <section class="panel">
+    <header>
+      <h3>Cierre del mes</h3>
+    </header>
+
+    <ul class="cierre">
+      @for (c of cierre(); track c.texto) {
+        <li [class.hecho]="c.hecho">
+          <i [class]="c.hecho ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+          {{ c.texto }}
+        </li>
+      }
+    </ul>
+
+    <p class="nota">
+      <i class="pi pi-info-circle"></i>
+      El Libro Diario puede tener como máximo <strong>3 meses de atraso</strong>; ventas y compras se envían cada mes por SIRE.
+    </p>
+  </section>
+</div>
