@@ -9,12 +9,46 @@
 
 <!-- Barra superior propia del portal -->
 <header class="barra">
-  <div class="marca">
-    <app-emoji nombre="copo" />
-    <strong>COLDWORK</strong>
-    <span class="area">Área contable</span>
+  <!-- Fila 1: marca, periodo y usuario -->
+  <div class="fila-superior">
+    <div class="marca">
+      <app-emoji nombre="copo" />
+      <strong>COLDWORK</strong>
+      <span class="area">Área contable</span>
+    </div>
+
+    <div class="derecha">
+      <p-select
+        [options]="conta.periodos()"
+        [ngModel]="conta.periodo()"
+        (ngModelChange)="conta.periodo.set($event)"
+        size="small"
+        ariaLabel="Periodo"
+      >
+        <ng-template #selectedItem let-p>{{ p | periodo }}</ng-template>
+        <ng-template #item let-p>{{ p | periodo }}</ng-template>
+      </p-select>
+
+      <div class="usuario">
+        <span class="avatar">MQ</span>
+        <span class="datos">
+          <strong>{{ conta.persona().nombre }}</strong>
+          <small>Contadora</small>
+        </span>
+        <p-button
+          icon="pi pi-sign-out"
+          [text]="true"
+          severity="secondary"
+          pTooltip="Cerrar sesión"
+          tooltipPosition="bottom"
+          ariaLabel="Cerrar sesión"
+          (onClick)="cerrarSesion()"
+        />
+      </div>
+    </div>
   </div>
 
+  <!-- Fila 2: secciones -->
   <nav aria-label="Secciones del portal">
     @for (e of enlaces(); track e.ruta) {
       <a
@@ -31,28 +65,6 @@
       </a>
     }
   </nav>
-
-  <div class="derecha">
-    <p-select
-      [options]="conta.periodos()"
-      [ngModel]="conta.periodo()"
-      (ngModelChange)="conta.periodo.set($event)"
-      size="small"
-      ariaLabel="Periodo"
-    >
-      <ng-template #selectedItem let-p>{{ p | periodo }}</ng-template>
-      <ng-template #item let-p>{{ p | periodo }}</ng-template>
-    </p-select>
-
-    <div class="usuario">
-      <span class="avatar">MQ</span>
-      <span class="datos">
-        <strong>{{ conta.persona().nombre }}</strong>
-        <small>Contadora</small>
-      </span>
-      <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" pTooltip="Cerrar sesión" tooltipPosition="bottom" ariaLabel="Cerrar sesión" (onClick)="cerrarSesion()" />
-    </div>
-  </div>
 </header>
 
 <main class="contenido">
