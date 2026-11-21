@@ -1,0 +1,21 @@
+<header class="hero" [class]="momento().clase">
+  <div class="burbujas" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <div class="texto">
+    <p class="fecha">
+      {{ ahora() | date: "EEEE d 'de' MMMM" }} · <b>{{ ahora() | date: 'HH:mm' }}</b>
+    </p>
+    <h1>{{ momento().saludo }}{{ nombre() ? ', ' + nombre() : '' }}</h1>
+    @if (chips().length) {
+      <p class="chips">
+        @for (c of chips(); track c; let ultimo = $last) {
+          <span class="chip" [class.suave]="ultimo && chips().length > 1">{{ c }}</span>
+        }
+      </p>
+    }
+  </div>
+
+  <div class="sticker" aria-hidden="true">
+    <app-emoji [nombre]="momento().sticker" style="--tam: 100%" />
+  </div>
+</header>

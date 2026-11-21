@@ -1,10 +1,28 @@
 @let p = pendientes();
 
-<!-- Saludo -->
-<header class="saludo">
-  <h1>Hola, {{ conta.persona().nombre.split(' ')[0] }} <app-emoji nombre="saludo" etiqueta="saludo" /></h1>
-  <p>Esto es lo que tienes pendiente en {{ conta.periodo() | periodo }}.</p>
-</header>
+<!-- Saludo (mismo estilo que el Inicio del sistema) -->
+<app-saludo [nombre]="conta.persona().nombre.split(' ')[0]" [chips]="chips()" />
+
+<!-- Tus áreas: una tarjeta por cada área que el dueño te dio -->
+<section class="areas">
+  <h2>Tus áreas</h2>
+  <div class="tarjetas-area">
+    @for (a of areas(); track a.clave) {
+      <a class="area" [routerLink]="a.ruta" [style.--c1]="a.colores[0]" [style.--c2]="a.colores[1]">
+        <span class="sticker"><app-emoji [nombre]="a.sticker" style="--tam: 2.2rem" /></span>
+        <strong>{{ a.nombre }}</strong>
+        <small>{{ a.resumen }}</small>
+      </a>
+    }
+    <div class="area proxima">
+      <i class="pi pi-plus-circle"></i>
+      <strong>¿Más áreas?</strong>
+      <small>Cuando el dueño te dé otra área (ej. Técnica), aparecerá aquí y como pestaña arriba.</small>
+    </div>
+  </div>
+</section>
+
+<h2 class="titulo-mes">Pendiente en {{ conta.periodo() | periodo }}</h2>
 
 <!-- Resumen rápido -->
 <div class="barra">

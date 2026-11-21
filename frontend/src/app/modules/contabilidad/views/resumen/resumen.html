@@ -3,7 +3,7 @@
 <!-- Aviso de aprobaciones pendientes -->
 @if (conta.porAprobar().length; as n) {
   <a class="pendientes" routerLink="/contabilidad/aprobaciones">
-    <i class="pi pi-inbox"></i>
+    <span class="ico"><app-emoji nombre="reloj" style="--tam: 1.8rem" /></span>
     <span><strong>{{ n }} {{ n === 1 ? 'asiento espera' : 'asientos esperan' }}</strong> tu aprobación</span>
     <span class="ir">Revisar <i class="pi pi-arrow-right"></i></span>
   </a>
@@ -12,14 +12,12 @@
 <!-- Indicadores -->
 <div class="indicadores">
   @for (i of indicadores(); track i.titulo) {
-    <article class="indicador" [class]="i.tono">
-      <i [class]="i.icono"></i>
-      <div>
-        <small>{{ i.titulo }}</small>
-        <strong>S/ {{ i.valor | importe: true }}</strong>
-        <span class="ayuda">{{ i.ayuda }}</span>
-      </div>
-    </article>
+    <a class="kpi" [routerLink]="i.ruta" [style.--a]="i.colores[0]" [style.--b]="i.colores[1]">
+      <span class="ico"><app-emoji [nombre]="i.sticker" style="--tam: 1.9rem" /></span>
+      <small>{{ i.titulo }}</small>
+      <strong><app-contador [valor]="i.valor" formato="1.2-2" prefijo="S/ " /></strong>
+      <em>{{ i.ayuda }}</em>
+    </a>
   }
 </div>
 
@@ -28,7 +26,7 @@
     <!-- Últimos asientos -->
     <section class="panel">
       <header>
-        <h3>Últimos asientos</h3>
+        <h3><app-emoji nombre="libro" /> Últimos asientos</h3>
         <p-button label="Ver Libro Diario" icon="pi pi-arrow-right" iconPos="right" [text]="true" routerLink="/contabilidad/diario" />
       </header>
 
@@ -54,8 +52,10 @@
     <!-- Cierre del mes -->
     <section class="panel">
       <header>
-        <h3>Cierre del mes</h3>
+        <h3><app-emoji nombre="estrella" /> Cierre del mes</h3>
+        <span class="avance">{{ avanceCierre() }}%</span>
       </header>
+      <div class="barra-avance"><span [style.width.%]="avanceCierre()"></span></div>
 
       <ul class="cierre">
         @for (c of cierre(); track c.texto) {
@@ -76,7 +76,7 @@
   <!-- Actividad del equipo -->
   <section class="panel">
     <header>
-      <h3>Actividad del equipo</h3>
+      <h3><app-emoji nombre="persona" /> Actividad del equipo</h3>
       <span class="vivo"><span class="punto"></span> En vivo</span>
     </header>
     <app-actividad-lista [actividad]="conta.actividad()" />

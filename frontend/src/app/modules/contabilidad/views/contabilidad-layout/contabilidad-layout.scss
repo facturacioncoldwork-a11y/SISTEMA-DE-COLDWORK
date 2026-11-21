@@ -1,20 +1,120 @@
-// ─── Barra de simulación ────────────────────────────────────────
+// Colores del módulo (los mismos de su tarjeta en el Inicio)
+:host {
+  --conta-1: #8b5cf6;
+  --conta-2: #d946ef;
+}
+
+.modulo {
+  display: grid;
+  gap: 1rem;
+  max-width: 90rem;
+  margin: 0 auto;
+}
+
+// ─── Encabezado ─────────────────────────────────────────────────
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1.6rem 2rem;
+  border-radius: 1.4rem;
+  color: #fff;
+  background: linear-gradient(120deg, #6d28d9, var(--conta-1) 45%, var(--conta-2));
+  box-shadow: 0 24px 48px -30px var(--conta-1);
+
+  h1 {
+    margin: 0;
+    font-size: 1.9rem;
+    font-weight: 800;
+  }
+
+  .etiqueta {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  .sub {
+    margin: 0.3rem 0 0;
+    opacity: 0.92;
+  }
+}
+
+.burbujas span {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.13);
+
+  &:nth-child(1) {
+    width: 14rem;
+    height: 14rem;
+    right: 12%;
+    top: -7rem;
+  }
+
+  &:nth-child(2) {
+    width: 7rem;
+    height: 7rem;
+    left: 40%;
+    bottom: -4rem;
+  }
+}
+
+.lado {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.periodo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 12rem;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.9;
+  }
+}
+
+.sticker {
+  width: 4.5rem;
+  height: 4.5rem;
+  filter: drop-shadow(0 8px 14px rgb(0 0 0 / 0.25));
+
+  @media (max-width: 700px) {
+    display: none;
+  }
+}
+
+// ─── Simulación ─────────────────────────────────────────────────
 
 .simulacion {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  margin-bottom: 1.25rem;
-  padding: 0.6rem 0.9rem;
-  border: 1px dashed var(--p-primary-color);
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px dashed #e0a43c;
   border-radius: 0.8rem;
-  background: var(--p-highlight-background);
-  font-size: 0.88rem;
+  background: #fff9ec;
+  color: #7a4b00;
+  font-size: 0.82rem;
 
-  .etiqueta {
-    font-weight: 600;
-    color: var(--p-primary-color);
+  .etiqueta-sim {
+    font-weight: 700;
   }
 }
 
@@ -22,11 +122,10 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--p-text-muted-color);
 
   .punto {
-    width: 0.55rem;
-    height: 0.55rem;
+    width: 0.5rem;
+    height: 0.5rem;
     border-radius: 50%;
     background: var(--p-green-500);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-green-500) 25%, transparent);
@@ -37,101 +136,80 @@
   margin-left: auto;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.simular {
-  display: flex;
-  text-decoration: none;
-  align-items: center;
   gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  border: 1px solid var(--p-primary-color);
-  border-radius: 2rem;
-  background: var(--p-content-background);
-  color: var(--p-primary-color);
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
 
-  &:hover {
-    background: var(--p-primary-color);
-    color: var(--p-primary-contrast-color);
+  a,
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid #e0a43c;
+    border-radius: 2rem;
+    background: #fff;
+    color: #7a4b00;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      background: #ffe7b3;
+    }
   }
 }
 
-// ─── Cabecera ───────────────────────────────────────────────────
-
-.cabecera {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 1rem;
-  flex-wrap: wrap;
-
-  h1 {
-    margin: 0;
-    font-size: 1.6rem;
-  }
-}
-
-.sub {
-  margin: 0.35rem 0 0;
-  color: var(--p-text-muted-color);
-}
-
-.periodo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  min-width: 13rem;
-
-  label {
-    font-size: 0.8rem;
-    color: var(--p-text-muted-color);
-  }
-}
-
-:host ::ng-deep .aviso-prototipo {
-  margin-top: 1rem;
-}
-
-// ─── Pestañas ───────────────────────────────────────────────────
+// ─── Pestañas (pastillas) ───────────────────────────────────────
 
 .pestanas {
   display: flex;
-  gap: 0.25rem;
-  margin-top: 1.25rem;
-  border-bottom: 1px solid var(--p-content-border-color);
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 1rem;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
   overflow-x: auto;
-  overflow-y: hidden;
   scrollbar-width: none;
 
   a {
     display: flex;
     align-items: center;
     gap: 0.45rem;
-    padding: 0.7rem 1rem;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
+    padding: 0.55rem 0.95rem;
+    border-radius: 0.75rem;
     color: var(--p-text-muted-color);
     text-decoration: none;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
+    font-weight: 500;
     white-space: nowrap;
-    transition: color 0.15s, border-color 0.15s;
+    transition:
+      background 0.15s,
+      color 0.15s;
 
     &:hover {
       color: var(--p-text-color);
+      background: var(--p-surface-100);
     }
 
     &.activa {
-      color: var(--p-primary-color);
-      border-bottom-color: var(--p-primary-color);
+      color: #fff;
       font-weight: 600;
+      background: linear-gradient(120deg, var(--conta-1), var(--conta-2));
+      box-shadow: 0 8px 18px -10px var(--conta-1);
     }
+  }
+
+  .globo {
+    min-width: 1.3rem;
+    padding: 0 0.4rem;
+    border-radius: 1rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: center;
+    background: #f97316;
+    color: #fff;
   }
 }
 
 .contenido {
-  padding-top: 1.5rem;
+  padding-top: 0.25rem;
 }

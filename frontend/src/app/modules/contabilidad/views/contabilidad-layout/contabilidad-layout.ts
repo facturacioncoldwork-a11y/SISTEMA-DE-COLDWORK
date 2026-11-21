@@ -2,9 +2,8 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { BadgeModule } from 'primeng/badge';
-import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
+import { Emoji } from '../../../../shared/components/emoji/emoji';
 import { CONTADORA } from '../../data/equipo-ejemplo';
 import { PeriodoPipe } from '../../pipes/formato.pipes';
 import { usarAvisosEnVivo } from '../../services/avisos-en-vivo';
@@ -24,7 +23,7 @@ interface Pestana {
  */
 @Component({
   selector: 'app-contabilidad-layout',
-  imports: [FormsModule, RouterOutlet, RouterLink, RouterLinkActive, BadgeModule, MessageModule, SelectModule, PeriodoPipe],
+  imports: [FormsModule, RouterOutlet, RouterLink, RouterLinkActive, SelectModule, Emoji, PeriodoPipe],
   templateUrl: './contabilidad-layout.html',
   styleUrl: './contabilidad-layout.scss',
 })

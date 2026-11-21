@@ -1,61 +1,61 @@
-<!-- Barra de simulación (solo en el prototipo) -->
-<aside class="simulacion" aria-label="Simulación del prototipo">
-  <span class="etiqueta"><i class="pi pi-eye"></i> Simulación</span>
-  <span class="en-linea"><span class="punto"></span> {{ contadora.nombre }} (contadora) en línea</span>
-  <span class="botones">
-    <button type="button" class="simular" (click)="simular()">
-      <i class="pi pi-play"></i> Simular que María registra algo
-    </button>
-    <a class="simular" routerLink="/invitacion/demo">
-      <i class="pi pi-envelope"></i> Ver la invitación que le llega
-    </a>
-    <a class="simular" routerLink="/trabajo">
-      <i class="pi pi-external-link"></i> Abrir la interfaz de la contadora
-    </a>
-  </span>
-</aside>
+<div class="modulo">
+  <!-- ===== Encabezado del módulo ===== -->
+  <header class="hero">
+    <div class="burbujas" aria-hidden="true"><span></span><span></span></div>
 
-<header class="cabecera">
-  <div>
-    <h1>Contabilidad</h1>
-    <p class="sub">Supervisa el trabajo contable, aprueba asientos y revisa los libros.</p>
-  </div>
+    <div class="texto">
+      <p class="etiqueta">Módulo</p>
+      <h1>Contabilidad</h1>
+      <p class="sub">Supervisa el trabajo contable, aprueba asientos y revisa los libros.</p>
+    </div>
 
-  <div class="periodo">
-    <label for="conta-periodo">Periodo</label>
-    <p-select
-      inputId="conta-periodo"
-      [options]="conta.periodos()"
-      [ngModel]="conta.periodo()"
-      (ngModelChange)="conta.periodo.set($event)"
-    >
-      <ng-template #selectedItem let-p>{{ p | periodo }}</ng-template>
-      <ng-template #item let-p>{{ p | periodo }}</ng-template>
-    </p-select>
-  </div>
-</header>
+    <div class="lado">
+      <div class="periodo">
+        <label for="conta-periodo">Periodo</label>
+        <p-select
+          inputId="conta-periodo"
+          [options]="conta.periodos()"
+          [ngModel]="conta.periodo()"
+          (ngModelChange)="conta.periodo.set($event)"
+        >
+          <ng-template #selectedItem let-p>{{ p | periodo }}</ng-template>
+          <ng-template #item let-p>{{ p | periodo }}</ng-template>
+        </p-select>
+      </div>
+      <span class="sticker" aria-hidden="true"><app-emoji nombre="libro" style="--tam: 100%" /></span>
+    </div>
+  </header>
 
-<p-message severity="warn" styleClass="aviso-prototipo" icon="pi pi-info-circle">
-  Prototipo: datos de ejemplo; lo que registres se borra al recargar la página.
-</p-message>
+  <!-- ===== Simulación (solo prototipo) ===== -->
+  <aside class="simulacion" aria-label="Simulación del prototipo">
+    <span class="etiqueta-sim"><i class="pi pi-eye"></i> Prototipo con datos de ejemplo</span>
+    <span class="en-linea"><span class="punto"></span> {{ contadora.nombre }} en línea</span>
+    <span class="botones">
+      <button type="button" (click)="simular()"><i class="pi pi-play"></i> Simular que María registra algo</button>
+      <a routerLink="/invitacion/demo"><i class="pi pi-envelope"></i> Ver su invitación</a>
+      <a routerLink="/trabajo"><i class="pi pi-external-link"></i> Abrir su interfaz</a>
+    </span>
+  </aside>
 
-<nav class="pestanas" aria-label="Secciones de contabilidad">
-  @for (p of pestanas; track p.ruta) {
-    <a
-      [routerLink]="p.ruta"
-      routerLinkActive="activa"
-      [routerLinkActiveOptions]="{ exact: true }"
-      ariaCurrentWhenActive="page"
-    >
-      <i [class]="p.icono"></i>
-      <span>{{ p.etiqueta }}</span>
-      @if (p.conContador && conta.porAprobar().length) {
-        <p-badge [value]="conta.porAprobar().length" severity="info" />
-      }
-    </a>
-  }
-</nav>
+  <!-- ===== Secciones ===== -->
+  <nav class="pestanas" aria-label="Secciones de contabilidad">
+    @for (p of pestanas; track p.ruta) {
+      <a
+        [routerLink]="p.ruta"
+        routerLinkActive="activa"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      >
+        <i [class]="p.icono"></i>
+        <span>{{ p.etiqueta }}</span>
+        @if (p.conContador && conta.porAprobar().length) {
+          <span class="globo">{{ conta.porAprobar().length }}</span>
+        }
+      </a>
+    }
+  </nav>
 
-<section class="contenido">
-  <router-outlet />
-</section>
+  <section class="contenido">
+    <router-outlet />
+  </section>
+</div>

@@ -1,14 +1,64 @@
-.saludo {
-  margin-bottom: 1.25rem;
+// ─── Tus áreas ──────────────────────────────────────────────────
 
-  h1 {
-    margin: 0;
-    font-size: 1.6rem;
+.areas h2,
+.titulo-mes {
+  margin: 1.75rem 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.tarjetas-area {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 1.1rem;
+  color: #fff;
+  text-decoration: none;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: 0 16px 32px -22px var(--c1);
+  transition: transform 0.15s;
+
+  &:hover {
+    transform: translateY(-3px);
   }
 
-  p {
-    margin: 0.3rem 0 0;
+  .sticker {
+    margin-bottom: 0.3rem;
+  }
+
+  strong {
+    font-size: 1.1rem;
+  }
+
+  small {
+    opacity: 0.9;
+  }
+
+  // Lugar para áreas futuras
+  &.proxima {
     color: var(--p-text-muted-color);
+    background: none;
+    border: 1.5px dashed var(--p-content-border-color);
+    box-shadow: none;
+
+    &:hover {
+      transform: none;
+    }
+
+    i {
+      font-size: 1.6rem;
+      color: var(--p-primary-color);
+    }
+
+    strong {
+      color: var(--p-text-color);
+    }
   }
 }
 
