@@ -3,7 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { AuthService } from '../../../../core/auth/services/auth.service';
-import { destinoDe, nombreDestino } from '../../../../core/empresa/eleccion';
+import { destinoDe, iniciales, nombreDestino } from '../../../../core/empresa/eleccion';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { NOMBRE_ROL } from '../../../../core/permisos/areas';
 import { Emoji } from '../../../../shared/components/emoji/emoji';
@@ -32,6 +32,7 @@ export class ElegirEmpresa implements OnInit {
   protected readonly sinConexion = signal(false);
   protected readonly nombreRol = NOMBRE_ROL;
   protected readonly nombreDestino = nombreDestino;
+  protected readonly iniciales = iniciales;
 
   /** SIMULACIÓN: ver la pantalla como la vería María Quispe (contadora con negocio propio). */
   protected readonly comoMaria = signal(false);
@@ -53,15 +54,6 @@ export class ElegirEmpresa implements OnInit {
     } finally {
       this.cargando.set(false);
     }
-  }
-
-  protected iniciales(nombre: string): string {
-    return nombre
-      .split(/\s+/)
-      .filter((p) => /^[A-Za-zÁÉÍÓÚÑ]/.test(p))
-      .slice(0, 2)
-      .map((p) => p[0].toUpperCase())
-      .join('');
   }
 
   protected async entrar(e: MiEmpresa) {

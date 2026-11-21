@@ -124,41 +124,6 @@ nav {
   gap: 1rem;
 }
 
-.usuario {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-
-  .avatar {
-    width: 2.2rem;
-    height: 2.2rem;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    font-size: 0.8rem;
-    font-weight: 700;
-    background: var(--p-primary-color);
-    color: var(--p-primary-contrast-color);
-  }
-
-  .datos {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-    white-space: nowrap;
-
-    small {
-      color: var(--p-text-muted-color);
-    }
-  }
-
-  @media (max-width: 700px) {
-    .datos {
-      display: none;
-    }
-  }
-}
-
 // ─── Contenido ──────────────────────────────────────────────────
 
 .contenido {

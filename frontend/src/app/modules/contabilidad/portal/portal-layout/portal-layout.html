@@ -29,31 +29,14 @@
         <ng-template #item let-p>{{ p | periodo }}</ng-template>
       </p-select>
 
-      <div class="usuario">
-        <span class="avatar">MQ</span>
-        <span class="datos">
-          <strong>{{ conta.persona().nombre }}</strong>
-          <small>Contadora</small>
-        </span>
-        <p-button
-          icon="pi pi-arrow-right-arrow-left"
-          [text]="true"
-          severity="secondary"
-          pTooltip="Cambiar de empresa"
-          tooltipPosition="bottom"
-          ariaLabel="Cambiar de empresa"
-          routerLink="/elegir-empresa"
-        />
-        <p-button
-          icon="pi pi-sign-out"
-          [text]="true"
-          severity="secondary"
-          pTooltip="Cerrar sesión"
-          tooltipPosition="bottom"
-          ariaLabel="Cerrar sesión"
-          (onClick)="cerrarSesion()"
-        />
-      </div>
+      <!-- Cuenta: cambiar de empresa y cerrar sesión (simulando a María) -->
+      <app-menu-cuenta
+        [nombre]="conta.persona().nombre"
+        simCorreo="maria.quispe@ejemplo.com"
+        [simEmpresas]="empresasMaria"
+        simActualId="sim-coldwork"
+        (elegirSimulada)="elegirSimulada($event)"
+      />
     </div>
   </div>
 

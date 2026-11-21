@@ -1,0 +1,51 @@
+<!-- Botón: iniciales + empresa actual -->
+<button type="button" class="disparador" aria-haspopup="menu" aria-label="Menú de la cuenta" (click)="abrir($event)">
+  <span class="avatar">{{ iniciales(mostrado()) }}</span>
+  <span class="resumen">
+    <strong>{{ mostrado() }}</strong>
+    @if (actual(); as a) {
+      <small>{{ nombreRol[a.rol] }} · {{ a.razonSocial }}</small>
+    }
+  </span>
+  <i class="pi pi-chevron-down"></i>
+</button>
+
+<p-popover styleClass="menu-cuenta">
+  <div class="menu">
+    <!-- Quién soy -->
+    <header class="yo">
+      <span class="avatar grande">{{ iniciales(mostrado()) }}</span>
+      <div>
+        <strong>{{ mostrado() }}</strong>
+        @if (mostrado() !== correo()) {
+          <small>{{ correo() }}</small>
+        }
+      </div>
+    </header>
+
+    <!-- Mis empresas -->
+    <p class="titulo">Tus empresas</p>
+    <ul class="empresas" role="menu">
+      @for (e of empresas(); track e.id) {
+        <li role="none">
+          <button type="button" role="menuitem" class="empresa" [class.actual]="e.id === actualId()" (click)="cambiar(e)">
+            <span class="avatar chico">{{ iniciales(e.razonSocial) }}</span>
+            <span class="datos">
+              <strong>{{ e.razonSocial }}</strong>
+              <small>{{ nombreRol[e.rol] }} · {{ nombreDestino(e) }}</small>
+            </span>
+            @if (e.id === actualId()) {
+              <i class="pi pi-check"></i>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+
+    <!-- Acciones -->
+    <div class="acciones">
+      <a routerLink="/empresa/nueva" (click)="popover().hide()"><i class="pi pi-plus"></i> Crear una empresa</a>
+      <button type="button" (click)="salir()"><i class="pi pi-sign-out"></i> Cerrar sesión</button>
+    </div>
+  </div>
+</p-popover>

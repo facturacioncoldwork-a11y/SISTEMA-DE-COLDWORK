@@ -34,14 +34,17 @@ export const alPortalCorrecto: CanActivateFn = async (_ruta, estado) => {
   return portal === 'erp' ? true : router.createUrlTree([RUTA_PORTAL[portal]]);
 };
 
-/** Con varias empresas, primero se elige a cuál entrar (una vez por sesión). */
+/**
+ * Con varias empresas se entra directo a la última usada.
+ * Solo si no hay una última válida se pregunta a cuál entrar.
+ */
 export const conEmpresaElegida: CanActivateFn = async (_ruta, estado) => {
   if (estado.url.startsWith('/empresa/nueva')) return true;
 
   const empresa = inject(EmpresaActualService);
   const router = inject(Router);
   const lista = await empresa.asegurar().catch(() => []);
-  return necesitaElegir(lista.length, empresa.eligioEnSesion()) ? router.createUrlTree(['/elegir-empresa']) : true;
+  return necesitaElegir(lista, empresa.ultimaElegida()) ? router.createUrlTree(['/elegir-empresa']) : true;
 };
 
 /** Entrada a un portal: su dueño natural, o dueño/admin para supervisar. */

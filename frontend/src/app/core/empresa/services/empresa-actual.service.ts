@@ -3,9 +3,8 @@ import { ApiService } from '../../api/services/api.service';
 import { veTodo, type Area } from '../../permisos/areas';
 import type { MiEmpresa } from '../../../modules/empresas/models/empresa.model';
 
+/** Última empresa usada en este dispositivo: se entra directo a ella la próxima vez. */
 const CLAVE = 'coldwork-empresa';
-/** Marca de "ya eligió empresa en esta sesión" (se borra al cerrar el navegador). */
-const CLAVE_SESION = 'coldwork-empresa-elegida';
 
 /**
  * Empresa con la que se está trabajando (se recuerda entre visitas) y lo que
@@ -17,6 +16,8 @@ export class EmpresaActualService {
 
   readonly empresas = signal<MiEmpresa[]>([]);
   private readonly elegidaId = signal<string | null>(localStorage.getItem(CLAVE));
+  /** Id de la última empresa elegida (puede ya no existir si le quitaron el acceso). */
+  readonly ultimaElegida = this.elegidaId.asReadonly();
   private carga: Promise<MiEmpresa[]> | null = null;
 
   readonly actual = computed(() => {
@@ -64,22 +65,15 @@ export class EmpresaActualService {
     this.carga = Promise.resolve(lista);
   }
 
-  /** ¿Ya eligió con qué empresa trabajar en esta sesión? */
-  readonly eligioEnSesion = signal(sessionStorage.getItem(CLAVE_SESION) === '1');
-
   elegir(id: string) {
     this.elegidaId.set(id);
     localStorage.setItem(CLAVE, id);
-    this.eligioEnSesion.set(true);
-    sessionStorage.setItem(CLAVE_SESION, '1');
   }
 
   limpiar() {
     this.empresas.set([]);
-    this.elegidaId.set(null);
     this.carga = null;
-    this.eligioEnSesion.set(false);
-    localStorage.removeItem(CLAVE);
-    sessionStorage.removeItem(CLAVE_SESION);
+    // La última empresa elegida se recuerda en el dispositivo: no es un dato sensible
+    // y si otra cuenta entra aquí, no le sirve (se le pregunta).
   }
 }
