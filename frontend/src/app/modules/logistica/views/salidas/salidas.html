@@ -1,0 +1,210 @@
+<div class="franja">
+  <div class="dato">
+    <small>Despachos este mes</small><strong>{{ delMes().n }}</strong>
+  </div>
+  <div class="dato">
+    <small>Valor despachado</small
+    ><strong>{{ delMes().valor | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong>
+  </div>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta" (click)="abrir()">
+    <i class="pi pi-upload"></i> Registrar salida
+  </button>
+</div>
+
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input
+      type="text"
+      placeholder="Buscar por destino, técnico, referencia o producto"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      aria-label="Buscar salidas"
+    />
+  </label>
+  <div class="lg-seg">
+    <button type="button" [class.on]="!motivo()" (click)="motivo.set(null)">Todas</button>
+    @for (m of listaMotivos; track m.clave) {
+      <button type="button" [class.on]="motivo() === m.clave" (click)="motivo.set(m.clave)">
+        <i [class]="m.icono"></i> {{ m.nombre }}
+        <span class="n">{{ porMotivo().get(m.clave) ?? 0 }}</span>
+      </button>
+    }
+  </div>
+</div>
+
+<div class="lg-card" style="padding: 0.4rem 0.6rem">
+  @if (cargando()) {
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="lg-skel" style="height: 3rem; margin: 0.5rem 0"></div>
+    }
+  } @else {
+    <div class="docs">
+      @for (s of lista(); track s.id) {
+        <article class="doc" [class.abierto]="abierta() === s.id">
+          <button
+            type="button"
+            class="cab"
+            (click)="alternar(s.id)"
+            [attr.aria-expanded]="abierta() === s.id"
+          >
+            <span
+              class="punto"
+              [class.salida]="s.motivo !== 'transferencia'"
+              [class.transferencia]="s.motivo === 'transferencia'"
+              ><i [class]="motivos[s.motivo].icono"></i
+            ></span>
+            <span class="cod"
+              ><b>{{ s.codigo }}</b
+              ><small>{{ s.fecha | date: 'd MMM y, HH:mm' }}</small></span
+            >
+            <span class="quien">
+              <b>{{
+                s.motivo === 'transferencia'
+                  ? s.almacen.nombre + ' → ' + s.almacenDestino?.nombre
+                  : s.destino || motivos[s.motivo].nombre
+              }}</b>
+              <small
+                >{{ s.responsable ? s.responsable + ' · ' : '' }}desde {{ s.almacen.nombre }}</small
+              >
+            </span>
+            <span class="tags">
+              <span
+                class="lg-chip sin-punto"
+                [style.--c]="
+                  s.motivo === 'transferencia'
+                    ? '#6366f1'
+                    : s.motivo === 'merma'
+                      ? '#dc2626'
+                      : '#0ea5e9'
+                "
+                >{{ motivos[s.motivo].nombre }}</span
+              >
+              @if (s.referencia) {
+                <span class="lg-chip sin-punto">{{ s.referencia }}</span>
+              }
+            </span>
+            <span class="num"
+              ><b>{{ s.total | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b
+              ><small>{{ s.lineas.length }} productos</small></span
+            >
+            <i class="pi pi-chevron-down flecha"></i>
+          </button>
+          @if (abierta() === s.id) {
+            <div class="detalle">
+              <table class="lg-tabla">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="num">Cantidad</th>
+                    <th class="num">Costo prom.</th>
+                    <th class="num">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (x of s.lineas; track x.productoId) {
+                    <tr>
+                      <td>
+                        <b>{{ x.nombre }}</b> <span class="lg-mono">{{ x.sku }}</span>
+                      </td>
+                      <td class="num">{{ x.cantidad | number: '1.0-3' }} {{ x.unidad }}</td>
+                      <td class="num">
+                        {{ x.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-4' }}
+                      </td>
+                      <td class="num">
+                        {{
+                          x.cantidad * x.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-2'
+                        }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              <div class="acciones-doc">
+                <button type="button" class="lg-cta lg-cta--suave mini" (click)="editar(s)">
+                  <i class="pi pi-pencil"></i> Editar datos
+                </button>
+                <button
+                  type="button"
+                  class="lg-cta lg-cta--suave mini lg-peligro"
+                  (click)="eliminar(s)"
+                >
+                  <i class="pi pi-trash"></i> Eliminar
+                </button>
+              </div>
+              @if (s.notas) {
+                <p class="notas">
+                  <span><i class="pi pi-comment"></i> {{ s.notas }}</span>
+                </p>
+              }
+            </div>
+          }
+        </article>
+      } @empty {
+        <div class="lg-vacio">
+          <i class="pi pi-upload"></i>
+          <h4>{{ salidas().length ? 'Sin resultados' : 'Aún no registras salidas' }}</h4>
+          <p>Cada salida resta stock al costo promedio y queda en el kardex.</p>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<app-salida-asistente [(visible)]="asistente" (registrada)="alRegistrar($event)" />
+
+<p-dialog
+  [visible]="!!editando()"
+  (visibleChange)="!$event && editando.set(null)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(32rem, 95vw)' }"
+  [header]="'Editar ' + (editando()?.codigo ?? '')"
+>
+  <div class="lg-form">
+    <div class="full">
+      <label for="es-dest">Destino / cliente</label>
+      <input
+        pInputText
+        id="es-dest"
+        [ngModel]="edDestino()"
+        (ngModelChange)="edDestino.set($event)"
+      />
+    </div>
+    <div>
+      <label for="es-resp">Responsable</label>
+      <input
+        pInputText
+        id="es-resp"
+        [ngModel]="edResponsable()"
+        (ngModelChange)="edResponsable.set($event)"
+      />
+    </div>
+    <div>
+      <label for="es-ref">Referencia</label>
+      <input
+        pInputText
+        id="es-ref"
+        [ngModel]="edReferencia()"
+        (ngModelChange)="edReferencia.set($event)"
+      />
+    </div>
+    <div class="full">
+      <label for="es-notas">Observaciones</label>
+      <input pInputText id="es-notas" [ngModel]="edNotas()" (ngModelChange)="edNotas.set($event)" />
+    </div>
+    <p class="full ayuda" style="margin: 0">
+      <i class="pi pi-info-circle"></i> Las cantidades no se editan: elimina la salida (el stock
+      vuelve) y regístrala de nuevo.
+    </p>
+    <div class="full lg-pie-dialogo">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="editando.set(null)">
+        Cancelar
+      </button>
+      <button type="button" class="lg-cta" [disabled]="guardando()" (click)="guardarEdicion()">
+        <i class="pi pi-check"></i> Guardar
+      </button>
+    </div>
+  </div>
+</p-dialog>

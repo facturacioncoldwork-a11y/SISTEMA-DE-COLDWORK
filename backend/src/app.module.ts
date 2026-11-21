@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { EmpresasModule } from './modules/empresas/empresas.module.js';
 import { EquipoModule } from './modules/equipo/equipo.module.js';
+import { LogisticaModule } from './modules/logistica/logistica.module.js';
 
 /**
  * Módulo raíz. Cada módulo de negocio del ERP (terceros, caja, ventas,
@@ -62,6 +63,7 @@ import { EquipoModule } from './modules/equipo/equipo.module.js';
     HealthModule,
     EmpresasModule,
     EquipoModule,
+    LogisticaModule,
   ],
 })
 export class AppModule {}

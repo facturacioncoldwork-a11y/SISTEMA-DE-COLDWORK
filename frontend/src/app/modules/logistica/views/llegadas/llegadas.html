@@ -1,0 +1,210 @@
+<div class="franja">
+  <div class="dato">
+    <small>Llegadas este mes</small><strong>{{ delMes().n }}</strong>
+  </div>
+  <div class="dato">
+    <small>Valor ingresado</small
+    ><strong>{{ delMes().valor | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong>
+  </div>
+  <div class="dato">
+    <small>Órdenes esperando</small><strong>{{ pendientes().length }}</strong>
+  </div>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta" (click)="abrir()">
+    <i class="pi pi-download"></i> Registrar llegada
+  </button>
+</div>
+
+@if (pendientes().length) {
+  <section class="esperando">
+    <h4><i class="pi pi-clock"></i> Por llegar</h4>
+    <div class="fila-oc">
+      @for (o of pendientes(); track o.id) {
+        <button type="button" class="mini-oc" (click)="abrir(o.id)">
+          <span class="lg-mono">{{ o.codigo }}</span>
+          <strong>{{ o.proveedor.razonSocial }}</strong>
+          <small
+            >{{ o.entregaHasta ? 'Llega ' + (o.entregaHasta | date: 'd MMM') : 'Sin fecha' }} ·
+            {{ o.avance }}% recibido</small
+          >
+          <span class="ir">Recibir <i class="pi pi-arrow-right"></i></span>
+        </button>
+      }
+    </div>
+  </section>
+}
+
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input
+      type="text"
+      placeholder="Buscar por proveedor, guía, factura, OC o producto"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      aria-label="Buscar llegadas"
+    />
+  </label>
+</div>
+
+<div class="lg-card" style="padding: 0.4rem 0.6rem">
+  @if (cargando()) {
+    @for (i of [1, 2, 3, 4]; track i) {
+      <div class="lg-skel" style="height: 3rem; margin: 0.5rem 0"></div>
+    }
+  } @else {
+    <div class="docs">
+      @for (l of lista(); track l.id) {
+        <article class="doc" [class.abierto]="abierta() === l.id">
+          <button
+            type="button"
+            class="cab"
+            (click)="alternar(l.id)"
+            [attr.aria-expanded]="abierta() === l.id"
+          >
+            <span class="punto entrada"><i class="pi pi-arrow-down"></i></span>
+            <span class="cod"
+              ><b>{{ l.codigo }}</b
+              ><small>{{ l.fecha | date: 'd MMM y, HH:mm' }}</small></span
+            >
+            <span class="quien"
+              ><b>{{ l.proveedor?.razonSocial ?? 'Ingreso directo' }}</b
+              ><small>→ {{ l.almacen.nombre }}</small></span
+            >
+            <span class="tags">
+              @if (l.orden) {
+                <span class="lg-chip sin-punto" style="--c: #6366f1">{{ l.orden.codigo }}</span>
+              }
+              @if (l.guiaRemision) {
+                <span class="lg-chip sin-punto">GR {{ l.guiaRemision }}</span>
+              }
+            </span>
+            <span class="num"
+              ><b>{{ l.total | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b
+              ><small>{{ l.lineas.length }} productos</small></span
+            >
+            <i class="pi pi-chevron-down flecha"></i>
+          </button>
+          @if (abierta() === l.id) {
+            <div class="detalle">
+              <table class="lg-tabla">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="num">Cantidad</th>
+                    <th class="num">Costo unit.</th>
+                    <th class="num">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (x of l.lineas; track x.productoId) {
+                    <tr>
+                      <td>
+                        <b>{{ x.nombre }}</b> <span class="lg-mono">{{ x.sku }}</span>
+                      </td>
+                      <td class="num">{{ x.cantidad | number: '1.0-3' }} {{ x.unidad }}</td>
+                      <td class="num">
+                        {{ x.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-4' }}
+                      </td>
+                      <td class="num">
+                        {{
+                          x.cantidad * x.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-2'
+                        }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              <div class="acciones-doc">
+                <button type="button" class="lg-cta lg-cta--suave mini" (click)="editar(l)">
+                  <i class="pi pi-pencil"></i> Editar datos
+                </button>
+                <button
+                  type="button"
+                  class="lg-cta lg-cta--suave mini lg-peligro"
+                  (click)="eliminar(l)"
+                >
+                  <i class="pi pi-trash"></i> Eliminar
+                </button>
+              </div>
+              @if (l.comprobante || l.notas) {
+                <p class="notas">
+                  @if (l.comprobante) {
+                    <span><i class="pi pi-file"></i> {{ l.comprobante }}</span>
+                  }
+                  @if (l.notas) {
+                    <span><i class="pi pi-comment"></i> {{ l.notas }}</span>
+                  }
+                </p>
+              }
+            </div>
+          }
+        </article>
+      } @empty {
+        <div class="lg-vacio">
+          <i class="pi pi-download"></i>
+          <h4>{{ llegadas().length ? 'Sin resultados' : 'Aún no registras llegadas' }}</h4>
+          <p>Cada llegada suma stock y actualiza el costo promedio del producto.</p>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<app-llegada-asistente
+  [(visible)]="asistente"
+  [ordenes]="pendientes()"
+  [ordenInicial]="ordenInicial()"
+  (registrada)="alRegistrar($event)"
+/>
+
+<p-dialog
+  [visible]="!!editando()"
+  (visibleChange)="!$event && editando.set(null)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(32rem, 95vw)' }"
+  [header]="'Editar ' + (editando()?.codigo ?? '')"
+>
+  <div class="lg-form">
+    <div>
+      <label for="ed-fecha">Fecha de llegada</label>
+      <input
+        id="ed-fecha"
+        type="date"
+        class="p-inputtext"
+        [ngModel]="edFecha()"
+        (ngModelChange)="edFecha.set($event)"
+      />
+    </div>
+    <div>
+      <label for="ed-guia">Guía de remisión</label>
+      <input pInputText id="ed-guia" [ngModel]="edGuia()" (ngModelChange)="edGuia.set($event)" />
+    </div>
+    <div class="full">
+      <label for="ed-comp">Factura / boleta</label>
+      <input
+        pInputText
+        id="ed-comp"
+        [ngModel]="edComprobante()"
+        (ngModelChange)="edComprobante.set($event)"
+      />
+    </div>
+    <div class="full">
+      <label for="ed-notas">Observaciones</label>
+      <input pInputText id="ed-notas" [ngModel]="edNotas()" (ngModelChange)="edNotas.set($event)" />
+    </div>
+    <p class="full ayuda" style="margin: 0">
+      <i class="pi pi-info-circle"></i> Las cantidades no se editan: si te equivocaste, elimina la
+      llegada (se revierte el stock) y regístrala de nuevo.
+    </p>
+    <div class="full lg-pie-dialogo">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="editando.set(null)">
+        Cancelar
+      </button>
+      <button type="button" class="lg-cta" [disabled]="guardando()" (click)="guardarEdicion()">
+        <i class="pi pi-check"></i> Guardar
+      </button>
+    </div>
+  </div>
+</p-dialog>

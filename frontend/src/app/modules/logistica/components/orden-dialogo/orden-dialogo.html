@@ -1,0 +1,216 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(58rem, 97vw)' }"
+  [header]="editando() ? 'Editar ' + orden()?.codigo : 'Nueva orden de compra'"
+>
+  <div class="lg-form">
+    <div>
+      <label for="oc-prov">Proveedor</label>
+      <p-select
+        inputId="oc-prov"
+        [options]="store.proveedoresActivos()"
+        optionLabel="razonSocial"
+        optionValue="id"
+        [filter]="true"
+        filterBy="razonSocial,numeroDocumento"
+        placeholder="Elige un proveedor"
+        appendTo="body"
+        [disabled]="!editaTodo()"
+        [ngModel]="proveedorId()"
+        (ngModelChange)="proveedorId.set($event)"
+      />
+      @if (proveedor(); as p) {
+        <small class="lg-mono"
+          >{{ p.tipoDocumento }} {{ p.numeroDocumento }} · crédito {{ p.diasCredito }} días</small
+        >
+      }
+    </div>
+    <div>
+      <label for="oc-alm">Llega al almacén</label>
+      <p-select
+        inputId="oc-alm"
+        [options]="store.almacenesActivos()"
+        optionLabel="nombre"
+        optionValue="id"
+        appendTo="body"
+        [disabled]="!editaTodo()"
+        [ngModel]="almacenId()"
+        (ngModelChange)="almacenId.set($event)"
+      />
+    </div>
+
+    <div class="full">
+      <span class="lbl">Moneda</span>
+      <p-selectbutton
+        [options]="monedas"
+        optionLabel="t"
+        optionValue="v"
+        [allowEmpty]="false"
+        [disabled]="!editaTodo()"
+        [ngModel]="moneda()"
+        (ngModelChange)="moneda.set($event)"
+        ariaLabel="Moneda"
+      />
+    </div>
+    <fieldset class="full bloque">
+      <legend>
+        <i class="pi pi-truck"></i> ¿Cuándo llega?
+        <small>según la guía, el correo o la llamada del proveedor</small>
+      </legend>
+      <app-plazo-entrega [base]="base()" [inicial]="plazoInicial()" (cambio)="plazo.set($event)" />
+    </fieldset>
+
+    <fieldset class="full bloque">
+      <legend>
+        <i class="pi pi-user"></i> ¿Es para un cliente?
+        <small>opcional: para saber si llegamos a tiempo</small>
+      </legend>
+      <div class="lg-form" style="margin: 0">
+        <div>
+          <label for="oc-cli">Cliente / obra</label>
+          <input
+            id="oc-cli"
+            type="text"
+            class="p-inputtext"
+            placeholder="Plaza Vea Surco – cámara 3"
+            [ngModel]="cliente()"
+            (ngModelChange)="cliente.set($event)"
+          />
+        </div>
+        <div>
+          <label for="oc-comp">Fecha prometida al cliente</label>
+          <input
+            id="oc-comp"
+            type="date"
+            class="p-inputtext"
+            [ngModel]="compromiso()"
+            (ngModelChange)="compromiso.set($event)"
+          />
+        </div>
+        @if (aviso(); as a) {
+          <p class="full aviso" [style.--c]="a.color"><i class="pi pi-flag"></i> {{ a.texto }}</p>
+        }
+      </div>
+    </fieldset>
+
+    <div class="full">
+      <label for="oc-notas">Notas para el proveedor</label>
+      <input
+        id="oc-notas"
+        type="text"
+        class="p-inputtext"
+        placeholder="Condiciones, lugar de entrega…"
+        [ngModel]="notas()"
+        (ngModelChange)="notas.set($event)"
+      />
+    </div>
+
+    <div class="full">
+      <span class="lbl"
+        >Productos
+        @if (!editaTodo()) {
+          <small>(la orden ya fue enviada: los productos no se cambian)</small>
+        }
+      </span>
+      @if (editaTodo()) {
+        <app-selector-producto [excluir]="ids()" (elegido)="agregar($event)" />
+      }
+    </div>
+
+    <div class="full lg-lineas">
+      @for (l of lineas(); track l.producto.id; let i = $index) {
+        <div class="lg-linea">
+          <div class="prod">
+            <strong>{{ l.producto.nombre }}</strong><small
+              >{{ l.producto.sku }} · stock {{ l.producto.stockTotal }}
+              {{ l.producto.unidad }}</small
+            >
+          </div>
+          <p-inputnumber
+            [disabled]="!editaTodo()"
+            [ngModel]="l.cantidad"
+            (ngModelChange)="cambiar(i, 'cantidad', $event)"
+            [min]="0"
+            [maxFractionDigits]="3"
+            [suffix]="' ' + l.producto.unidad"
+            inputStyleClass="w-full"
+            [ariaLabel]="'Cantidad de ' + l.producto.nombre"
+          />
+          <p-inputnumber
+            [disabled]="!editaTodo()"
+            [ngModel]="l.costo"
+            (ngModelChange)="cambiar(i, 'costo', $event)"
+            [min]="0"
+            mode="currency"
+            [currency]="moneda()"
+            locale="es-PE"
+            [maxFractionDigits]="4"
+            inputStyleClass="w-full"
+            [ariaLabel]="'Costo de ' + l.producto.nombre"
+          />
+          @if (editaTodo()) {
+            <button type="button" class="quitar" (click)="quitar(i)" aria-label="Quitar">
+              <i class="pi pi-times"></i>
+            </button>
+          } @else {
+            <span></span>
+          }
+        </div>
+      } @empty {
+        <div class="lg-vacio" style="padding: 1.5rem">
+          <i class="pi pi-shopping-bag"></i>
+          <p>Busca y agrega los productos que vas a pedir.</p>
+        </div>
+      }
+    </div>
+
+    <div class="full lg-ticket">
+      <div class="fila">
+        <span>Valor de compra</span
+        ><strong>{{ totales().base | currency: moneda() : 'symbol-narrow' : '1.2-2' }}</strong>
+      </div>
+      <div class="fila">
+        <span>IGV 18 %</span
+        ><strong>{{ totales().igv | currency: moneda() : 'symbol-narrow' : '1.2-2' }}</strong>
+      </div>
+      @if (plazo().entregaHasta) {
+        <div class="fila">
+          <span>Llegada estimada</span><strong>{{ plazo().entregaHasta | date: 'd MMM y' }}</strong>
+        </div>
+      }
+      <div class="fila total">
+        <span>Total</span
+        ><strong>{{ totales().total | currency: moneda() : 'symbol-narrow' : '1.2-2' }}</strong>
+      </div>
+    </div>
+
+    @if (error(); as e) {
+      <p class="error"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
+    }
+    <div class="full lg-pie-dialogo">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="visible.set(false)">
+        Cancelar
+      </button>
+      @if (!editando() || orden()?.estado === 'borrador') {
+        <button
+          type="button"
+          class="lg-cta lg-cta--suave"
+          [disabled]="guardando()"
+          (click)="guardar(false)"
+        >
+          <i class="pi pi-save"></i> {{ editando() ? 'Guardar cambios' : 'Guardar borrador' }}
+        </button>
+        <button type="button" class="lg-cta" [disabled]="guardando()" (click)="guardar(true)">
+          <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-send'"></i>
+          {{ editando() ? 'Guardar y enviar' : 'Crear y enviar' }}
+        </button>
+      } @else {
+        <button type="button" class="lg-cta" [disabled]="guardando()" (click)="guardar(false)">
+          <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"></i> Guardar cambios
+        </button>
+      }
+    </div>
+  </div>
+</p-dialog>

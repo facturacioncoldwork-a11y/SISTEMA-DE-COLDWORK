@@ -1,0 +1,233 @@
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input
+      id="inv-buscar"
+      type="text"
+      placeholder="Buscar por nombre, SKU o marca"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      aria-label="Buscar productos"
+    />
+    <kbd>/</kbd>
+  </label>
+  <div class="lg-seg" role="tablist" aria-label="Nivel de stock">
+    <button type="button" [class.on]="nivel() === 'todos'" (click)="nivel.set('todos')">
+      Todos <span class="n">{{ conteo().todos }}</span>
+    </button>
+    <button type="button" [class.on]="nivel() === 'ok'" (click)="nivel.set('ok')">
+      <span class="lg-chip ok sin-punto" style="padding: 0; background: none">●</span> OK
+      <span class="n">{{ conteo().ok }}</span>
+    </button>
+    <button type="button" [class.on]="nivel() === 'reponer'" (click)="nivel.set('reponer')">
+      <span class="lg-chip bajo sin-punto" style="padding: 0; background: none">●</span> Reponer
+      <span class="n">{{ conteo().reponer }}</span>
+    </button>
+    <button type="button" [class.on]="nivel() === 'agotado'" (click)="nivel.set('agotado')">
+      <span class="lg-chip agotado sin-punto" style="padding: 0; background: none">●</span> Agotados
+      <span class="n">{{ conteo().agotado }}</span>
+    </button>
+  </div>
+  <p-select
+    [options]="opcionesTipo"
+    optionLabel="nombre"
+    optionValue="clave"
+    placeholder="Tipo"
+    [showClear]="true"
+    [ngModel]="tipo()"
+    (ngModelChange)="tipo.set($event)"
+    ariaLabel="Tipo"
+  />
+  <p-select
+    [options]="store.almacenes()"
+    optionLabel="nombre"
+    optionValue="id"
+    placeholder="Todos los almacenes"
+    [showClear]="true"
+    [ngModel]="almacen()"
+    (ngModelChange)="almacen.set($event)"
+    ariaLabel="Almacén"
+  />
+  <span class="espacio"></span>
+  <div class="lg-seg" aria-label="Vista">
+    <button
+      type="button"
+      [class.on]="vista() === 'tabla'"
+      (click)="vista.set('tabla')"
+      pTooltip="Tabla"
+      aria-label="Tabla"
+    >
+      <i class="pi pi-list"></i>
+    </button>
+    <button
+      type="button"
+      [class.on]="vista() === 'tarjetas'"
+      (click)="vista.set('tarjetas')"
+      pTooltip="Tarjetas"
+      aria-label="Tarjetas"
+    >
+      <i class="pi pi-th-large"></i>
+    </button>
+  </div>
+  <button
+    type="button"
+    class="lg-cta lg-cta--suave"
+    (click)="exportar()"
+    pTooltip="Descargar en Excel (CSV)"
+  >
+    <i class="pi pi-file-excel"></i>
+  </button>
+  <button type="button" class="lg-cta" (click)="nuevo()">
+    <i class="pi pi-plus"></i> Nuevo producto
+  </button>
+</div>
+
+<div class="resumen">
+  <span
+    ><b>{{ lista().length }}</b> productos</span
+  >
+  <span
+    >Valorizado: <b>{{ totalValor() | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b></span
+  >
+  <span class="espacio"></span>
+  <label class="chk"
+    ><input type="checkbox" [ngModel]="verInactivos()" (ngModelChange)="verInactivos.set($event)" />
+    Ver inactivos</label
+  >
+  <span>Ordenar:</span>
+  <div class="lg-seg">
+    <button type="button" [class.on]="orden() === 'nombre'" (click)="orden.set('nombre')">
+      A-Z
+    </button>
+    <button type="button" [class.on]="orden() === 'stock'" (click)="orden.set('stock')">
+      Menor stock
+    </button>
+    <button type="button" [class.on]="orden() === 'valor'" (click)="orden.set('valor')">
+      Mayor valor
+    </button>
+  </div>
+</div>
+
+@if (store.cargando() && !store.productos().length) {
+  <div class="lg-card">
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+      <div class="lg-skel" style="height: 2.8rem; margin: 0.4rem 0"></div>
+    }
+  </div>
+} @else if (!lista().length) {
+  <div class="lg-card lg-vacio">
+    <i class="pi pi-box"></i>
+    <h4>{{ store.productos().length ? 'Ningún producto coincide' : 'Aún no hay productos' }}</h4>
+    <p>
+      {{
+        store.productos().length
+          ? 'Prueba con otro filtro o búsqueda.'
+          : 'Crea tu catálogo: repuestos, gases, herramientas e insumos.'
+      }}
+    </p>
+    @if (!store.productos().length) {
+      <button type="button" class="lg-cta" (click)="nuevo()">
+        <i class="pi pi-plus"></i> Crear el primero
+      </button>
+    }
+  </div>
+} @else if (vista() === 'tabla') {
+  <div class="lg-card lg-scroll" style="padding: 0.4rem 0.6rem">
+    <table class="lg-tabla">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Tipo</th>
+          <th>Stock</th>
+          <th>Por almacén</th>
+          <th class="num">Costo prom.</th>
+          <th class="num">Valorizado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of lista(); track p.id) {
+          <tr class="clic" [class.inactivo]="!p.activo" (click)="abrir(p)">
+            <td>
+              <div class="prod">
+                <span class="ico" [style.background]="tipos[p.tipo].color"
+                  ><i [class]="tipos[p.tipo].icono"></i
+                ></span>
+                <div>
+                  <strong>{{ p.nombre }}</strong><span class="sub lg-mono"
+                    >{{ p.sku }}{{ p.marca ? ' · ' + p.marca : '' }}</span
+                  >
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="lg-chip sin-punto" [style.--c]="tipos[p.tipo].color">{{
+                tipos[p.tipo].nombre
+              }}</span>
+            </td>
+            <td>
+              <app-medidor-stock
+                [cantidad]="cantidad(p)"
+                [minimo]="almacen() ? 0 : p.stockMinimo"
+                [unidad]="p.unidad"
+              />
+            </td>
+            <td>
+              <div class="mini-alm">
+                @for (s of p.stock; track s.almacenId) {
+                  @if (s.cantidad > 0) {
+                    <span [pTooltip]="store.almacenPorId().get(s.almacenId)?.nombre"
+                      >{{ nombreAlmacen(s.almacenId) }}
+                      <b>{{ s.cantidad | number: '1.0-2' }}</b></span
+                    >
+                  }
+                }
+              </div>
+            </td>
+            <td class="num">{{ p.costoPromedio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</td>
+            <td class="num">
+              <b>{{ p.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b>
+            </td>
+            <td class="num"><i class="pi pi-angle-right" style="color: var(--lg-muted)"></i></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <div class="tarjetas">
+    @for (p of lista(); track p.id) {
+      <button type="button" class="tarjeta lg-card" (click)="abrir(p)" [class.inactivo]="!p.activo">
+        <div class="arriba">
+          <span class="ico" [style.background]="tipos[p.tipo].color"
+            ><i [class]="tipos[p.tipo].icono"></i
+          ></span>
+          <span class="lg-mono">{{ p.sku }}</span>
+        </div>
+        <strong>{{ p.nombre }}</strong>
+        <small>{{ p.marca || tipos[p.tipo].nombre }}</small>
+        <app-medidor-stock
+          [cantidad]="cantidad(p)"
+          [minimo]="almacen() ? 0 : p.stockMinimo"
+          [unidad]="p.unidad"
+        />
+        <div class="pie">
+          <span>{{ p.costoPromedio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }} c/u</span
+          ><b>{{ p.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</b>
+        </div>
+      </button>
+    }
+  </div>
+}
+
+<app-kardex-panel
+  [(visible)]="kardexVisible"
+  [producto]="seleccionado()"
+  (editar)="editar($event)"
+  (pedir)="pedir($event)"
+/>
+<app-producto-dialogo
+  [(visible)]="dialogoVisible"
+  [producto]="editando()"
+  (guardado)="alGuardar($event)"
+/>

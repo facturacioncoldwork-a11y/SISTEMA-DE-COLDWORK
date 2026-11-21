@@ -1,0 +1,352 @@
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input
+      type="text"
+      placeholder="Buscar por código, proveedor, cliente o producto"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      aria-label="Buscar órdenes"
+    />
+  </label>
+  <div class="lg-seg" aria-label="Vista">
+    <button type="button" [class.on]="vista() === 'tablero'" (click)="vista.set('tablero')">
+      <i class="pi pi-objects-column"></i> Tablero
+    </button>
+    <button type="button" [class.on]="vista() === 'tiempo'" (click)="vista.set('tiempo')">
+      <i class="pi pi-calendar"></i> Línea de tiempo
+    </button>
+  </div>
+  @if (vista() === 'tablero') {
+    <label class="chk"
+      ><input type="checkbox" [ngModel]="verAnuladas()" (ngModelChange)="verAnuladas.set($event)" />
+      Ver anuladas</label
+    >
+  }
+  <span class="espacio"></span>
+  <span class="encamino"
+    >En camino:
+    @if (enCamino().PEN) {
+      <b>S/ {{ enCamino().PEN | number: '1.0-0' }}</b>
+    }
+    @if (enCamino().USD) {
+      <b>US$ {{ enCamino().USD | number: '1.0-0' }}</b>
+    }
+    @if (!enCamino().PEN && !enCamino().USD) {
+      <b>—</b>
+    }
+  </span>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="nueva()">
+    <i class="pi pi-plus"></i> Nueva orden
+  </button>
+  <button type="button" class="lg-cta" (click)="importar.set(true)">
+    <i class="pi pi-file-import"></i> Importar cotización
+  </button>
+</div>
+
+@if (alertas().atrasadas || alertas().riesgo || alertas().semana) {
+  <div class="alertas">
+    @if (alertas().atrasadas) {
+      <span class="alerta" style="--c: #dc2626"
+        ><i class="pi pi-exclamation-circle"></i> {{ alertas().atrasadas }} atrasada(s): llama al
+        proveedor</span
+      >
+    }
+    @if (alertas().riesgo) {
+      <span class="alerta" style="--c: #ea580c"
+        ><i class="pi pi-flag"></i> {{ alertas().riesgo }} en riesgo con el cliente</span
+      >
+    }
+    @if (alertas().semana) {
+      <span class="alerta" style="--c: #6366f1"
+        ><i class="pi pi-truck"></i> {{ alertas().semana }} llegan esta semana</span
+      >
+    }
+  </div>
+}
+
+@if (vista() === 'tiempo') {
+  <app-linea-tiempo [ordenes]="enTiempo()" (abrir)="ver($event)" />
+} @else {
+  <div
+    class="lg-kanban"
+    [style.grid-template-columns]="'repeat(' + visibles().length + ', minmax(15rem, 1fr))'"
+  >
+    @for (e of visibles(); track e) {
+      <section class="lg-col">
+        <header>
+          <span
+            ><span class="lg-chip" [style.--c]="estados[e].color">{{
+              estados[e].nombre
+            }}</span></span
+          >
+          <span class="n">{{ porEstado().get(e)?.length ?? 0 }}</span>
+        </header>
+        <div class="tarjetas">
+          @if (cargando()) {
+            <div class="lg-skel" style="height: 6rem"></div>
+          }
+          @for (o of porEstado().get(e) ?? []; track o.id) {
+            @let s = seg(o);
+            <article
+              class="lg-oc"
+              [style.--c]="estados[o.estado].color"
+              (click)="ver(o)"
+              (keydown.enter)="ver(o)"
+              tabindex="0"
+            >
+              <div class="arriba">
+                <span class="cod">{{ o.codigo }}</span>
+                @if (s.cliente === 'riesgo' || s.cliente === 'vencido') {
+                  <i
+                    class="pi pi-flag-fill"
+                    [style.color]="colorCliente(s.cliente)"
+                    [title]="s.textoCliente"
+                  ></i>
+                }
+              </div>
+              <strong>{{ o.proveedor.razonSocial }}</strong>
+              <span class="items"
+                >{{ o.items.length }} productos{{ o.cliente ? ' · para ' + o.cliente : '' }}</span
+              >
+              @if (o.estado !== 'anulada') {
+                <span class="lg-eta" [style.--c]="colorLlegada(s.llegada)"
+                  ><i class="pi pi-truck"></i> {{ s.textoLlegada }}</span
+                >
+              }
+              @if (o.estado === 'parcial' || o.estado === 'enviada') {
+                <div class="avance"><span [style.width.%]="o.avance"></span></div>
+              }
+              <div class="meta">
+                <span>{{ o.plazoTexto || 'Sin plazo' }}</span>
+                <span class="monto">{{ simbolo[o.moneda] }} {{ o.total | number: '1.0-0' }}</span>
+              </div>
+            </article>
+          } @empty {
+            @if (!cargando()) {
+              <p class="vacia">Sin órdenes</p>
+            }
+          }
+        </div>
+      </section>
+    }
+  </div>
+}
+
+<p-drawer [(visible)]="detalleVisible" position="right" [style]="{ width: 'min(40rem, 100vw)' }">
+  <ng-template #header>
+    @if (detalle(); as o) {
+      <div>
+        <span class="lg-mono">{{ o.codigo }}</span>
+        <h3 style="margin: 0.15rem 0 0">{{ o.proveedor.razonSocial }}</h3>
+      </div>
+    }
+  </ng-template>
+  @if (detalle(); as o) {
+    @let s = seg(o);
+    <div class="det">
+      <div class="estado">
+        <span class="lg-chip" [style.--c]="estados[o.estado].color">{{
+          estados[o.estado].nombre
+        }}</span>
+        <span>{{ o.avance }}% recibido</span>
+      </div>
+      <ol class="linea-estados">
+        @for (e of columnas; track e; let i = $index) {
+          <li [class.on]="columnas.indexOf(o.estado) >= i && o.estado !== 'anulada'">
+            <span></span>{{ estados[e].nombre }}
+          </li>
+        }
+      </ol>
+
+      <!-- Seguimiento: proveedor → almacén → cliente -->
+      <section class="seguimiento">
+        <div class="paso" [class.hecho]="true">
+          <i class="pi pi-file-edit"></i>
+          <div>
+            <small>Pedido</small><b>{{ o.fecha | date: 'd MMM y' }}</b>
+          </div>
+        </div>
+        <div
+          class="paso"
+          [class.hecho]="!!o.fechaLlegadaReal"
+          [style.--c]="colorLlegada(s.llegada)"
+        >
+          <i class="pi pi-truck"></i>
+          <div>
+            <small>Llegada {{ o.plazoTexto ? '(' + o.plazoTexto + ')' : '' }}</small>
+            @if (o.fechaLlegadaReal) {
+              <b>Llegó el {{ o.fechaLlegadaReal | date: 'd MMM y' }}</b>
+            } @else if (o.entregaHasta) {
+              <b
+                >{{
+                  o.entregaDesde !== o.entregaHasta ? (o.entregaDesde | date: 'd MMM') + ' – ' : ''
+                }}{{ o.entregaHasta | date: 'd MMM y' }}</b
+              >
+            } @else {
+              <b>Sin fecha</b>
+            }
+            <span class="lg-eta" [style.--c]="colorLlegada(s.llegada)">{{ s.textoLlegada }}</span>
+          </div>
+        </div>
+        <div
+          class="paso"
+          [class.hecho]="!!o.entregadoCliente"
+          [style.--c]="colorCliente(s.cliente)"
+        >
+          <i class="pi pi-user"></i>
+          <div>
+            <small>Cliente{{ o.cliente ? ': ' + o.cliente : '' }}</small>
+            @if (o.entregadoCliente) {
+              <b>Entregado el {{ o.entregadoCliente | date: 'd MMM y' }}</b>
+            } @else if (o.compromisoCliente) {
+              <b>Prometido para el {{ o.compromisoCliente | date: 'd MMM y' }}</b>
+            } @else {
+              <b>—</b>
+            }
+            <span class="lg-eta" [style.--c]="colorCliente(s.cliente)">{{ s.textoCliente }}</span>
+          </div>
+        </div>
+        @if (
+          o.cliente && !o.entregadoCliente && (o.estado === 'recibida' || o.estado === 'parcial')
+        ) {
+          <div class="entregar">
+            <input
+              type="date"
+              class="p-inputtext"
+              [ngModel]="fechaEntrega()"
+              (ngModelChange)="fechaEntrega.set($event)"
+              aria-label="Fecha de entrega al cliente"
+            />
+            <button
+              type="button"
+              class="lg-cta"
+              [disabled]="trabajando()"
+              (click)="entregarCliente(o, fechaEntrega())"
+            >
+              <i class="pi pi-check"></i> Marcar entregado al cliente
+            </button>
+          </div>
+        } @else if (o.entregadoCliente) {
+          <button type="button" class="deshacer" (click)="entregarCliente(o, null)">
+            Deshacer entrega
+          </button>
+        }
+      </section>
+
+      <div class="datos">
+        <div>
+          <small>RUC</small><b>{{ o.proveedor.numeroDocumento }}</b>
+        </div>
+        <div>
+          <small>Llega a</small><b>{{ o.almacen.nombre }}</b>
+        </div>
+        <div>
+          <small>Moneda</small><b>{{ o.moneda === 'USD' ? 'Dólares (US$)' : 'Soles (S/)' }}</b>
+        </div>
+        <div>
+          <small>Condiciones</small><b>{{ o.condicionesPago || '—' }}</b>
+        </div>
+        @if (o.cotizacionRef) {
+          <div>
+            <small>Cotización</small><b>{{ o.cotizacionRef }}</b>
+          </div>
+        }
+        @if (o.solicitadoPor) {
+          <div>
+            <small>Solicitado por</small><b>{{ o.solicitadoPor }}</b>
+          </div>
+        }
+      </div>
+
+      <h4>Productos</h4>
+      @for (i of o.items; track i.productoId) {
+        <div class="item">
+          <div class="nom">
+            <b>{{ i.nombre }}</b><span class="lg-mono"
+              >{{ i.sku }} · {{ simbolo[o.moneda] }} {{ i.costoUnitario | number: '1.2-2' }}</span
+            >
+          </div>
+          <div class="prog">
+            <span
+              >{{ i.cantidadRecibida | number: '1.0-3' }} / {{ i.cantidad | number: '1.0-3' }}
+              {{ i.unidad }}</span
+            >
+            <div class="avance">
+              <span [style.width.%]="(i.cantidadRecibida / i.cantidad) * 100"></span>
+            </div>
+          </div>
+          <b class="sub">{{ simbolo[o.moneda] }} {{ i.subtotal | number: '1.2-2' }}</b>
+        </div>
+      }
+
+      <div class="lg-ticket" style="margin-top: 1rem">
+        <div class="fila">
+          <span>Valor de compra</span
+          ><strong>{{ simbolo[o.moneda] }} {{ o.subtotal | number: '1.2-2' }}</strong>
+        </div>
+        <div class="fila">
+          <span>IGV 18 %</span
+          ><strong>{{ simbolo[o.moneda] }} {{ o.igv | number: '1.2-2' }}</strong>
+        </div>
+        <div class="fila total">
+          <span>Total</span><strong>{{ simbolo[o.moneda] }} {{ o.total | number: '1.2-2' }}</strong>
+        </div>
+      </div>
+      @if (o.notas) {
+        <p class="notas"><i class="pi pi-comment"></i> {{ o.notas }}</p>
+      }
+
+      <div class="acciones">
+        <button type="button" class="lg-cta" (click)="pdfVisible.set(true)">
+          <i class="pi pi-file-pdf"></i> Ver PDF
+        </button>
+        @if (o.estado === 'borrador') {
+          <button type="button" class="lg-cta" [disabled]="trabajando()" (click)="enviar(o)">
+            <i class="pi pi-send"></i> Enviar al proveedor
+          </button>
+        }
+        @if (o.estado === 'enviada' || o.estado === 'parcial') {
+          <button type="button" class="lg-cta" (click)="recibir(o)">
+            <i class="pi pi-download"></i> Registrar llegada
+          </button>
+        }
+        @if (o.estado !== 'anulada') {
+          <button type="button" class="lg-cta lg-cta--suave" (click)="editar(o)">
+            <i class="pi pi-pencil"></i> Editar
+          </button>
+        }
+        <button type="button" class="lg-cta lg-cta--suave" (click)="repetir(o)">
+          <i class="pi pi-copy"></i> Repetir
+        </button>
+        @if (o.estado === 'borrador' || o.estado === 'enviada') {
+          <button
+            type="button"
+            class="lg-cta lg-cta--suave"
+            [disabled]="trabajando()"
+            (click)="anular(o)"
+          >
+            <i class="pi pi-ban"></i> Anular
+          </button>
+        }
+        <button
+          type="button"
+          class="lg-cta lg-cta--suave lg-peligro"
+          [disabled]="trabajando()"
+          (click)="eliminar(o)"
+        >
+          <i class="pi pi-trash"></i> Eliminar
+        </button>
+      </div>
+    </div>
+  }
+</p-drawer>
+
+<app-importar-cotizacion [(visible)]="importar" (guardada)="alGuardar($event)" />
+<app-pdf-orden [(visible)]="pdfVisible" [orden]="detalle()" />
+<app-orden-dialogo
+  [(visible)]="dialogo"
+  [orden]="editando()"
+  [sugeridos]="sugeridos()"
+  (guardada)="alGuardar($event)"
+/>

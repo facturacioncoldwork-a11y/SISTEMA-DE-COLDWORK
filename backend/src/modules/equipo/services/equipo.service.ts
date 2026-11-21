@@ -8,8 +8,8 @@ import type { MiembroEntity } from '../entities/miembro.entity.js';
 /**
  * Equipo de la empresa: quién entra y a qué áreas.
  * Reglas (RLS las vuelve a exigir en la BD):
- *  · Solo dueño y admin gestionan el equipo.
- *  · Solo el dueño puede dar el rol admin.
+ *  · SOLO EL DUEÑO (CEO) gestiona el equipo: invita, da o quita áreas, bloquea.
+ *    Un admin o un trabajador no puede darse ni dar acceso a otras áreas.
  *  · Nadie se edita ni se quita a sí mismo (así la empresa nunca se queda sin dueño).
  *  · Al dueño no lo toca nadie.
  */

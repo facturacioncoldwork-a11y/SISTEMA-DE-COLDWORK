@@ -8,6 +8,10 @@ export interface ItemMenu {
   area?: Area;
   /** Solo dueño y admin. */
   soloAdmin?: boolean;
+  /** Solo el dueño (CEO). */
+  soloDueno?: boolean;
+  /** Activo solo con la ruta exacta (no con sus hijas). */
+  exacta?: boolean;
 }
 export interface GrupoMenu {
   titulo: string;
@@ -29,7 +33,7 @@ export const MENU: GrupoMenu[] = [
       { etiqueta: 'Clientes y proveedores', icono: 'pi pi-users', ruta: '/terceros', area: 'administracion' },
       { etiqueta: 'Caja y bancos', icono: 'pi pi-wallet', ruta: '/caja-bancos', area: 'finanzas' },
       { etiqueta: 'Ventas', icono: 'pi pi-arrow-up-right', ruta: '/ventas', area: 'ventas' },
-      { etiqueta: 'Compras', icono: 'pi pi-arrow-down-left', ruta: '/compras', area: 'logistica' },
+      { etiqueta: 'Compras', icono: 'pi pi-arrow-down-left', ruta: '/compras', area: 'contabilidad' },
       { etiqueta: 'Cuentas por cobrar', icono: 'pi pi-inbox', ruta: '/cuentas-cobrar', area: 'finanzas' },
       { etiqueta: 'Cuentas por pagar', icono: 'pi pi-send', ruta: '/cuentas-pagar', area: 'finanzas' },
     ],
@@ -42,17 +46,28 @@ export const MENU: GrupoMenu[] = [
     ],
   },
   {
+    titulo: 'Almacén y logística',
+    items: [
+      { etiqueta: 'Panel de almacén', icono: 'pi pi-th-large', ruta: '/logistica', area: 'logistica', exacta: true },
+      { etiqueta: 'Inventario', icono: 'pi pi-box', ruta: '/logistica/inventario', area: 'logistica' },
+      { etiqueta: 'Llegadas', icono: 'pi pi-download', ruta: '/logistica/llegadas', area: 'logistica' },
+      { etiqueta: 'Salidas', icono: 'pi pi-upload', ruta: '/logistica/salidas', area: 'logistica' },
+      { etiqueta: 'Órdenes de compra', icono: 'pi pi-file-edit', ruta: '/logistica/ordenes-compra', area: 'logistica' },
+      { etiqueta: 'Proveedores', icono: 'pi pi-truck', ruta: '/logistica/proveedores', area: 'logistica' },
+      { etiqueta: 'Almacenes', icono: 'pi pi-warehouse', ruta: '/logistica/almacenes', area: 'logistica' },
+    ],
+  },
+  {
     titulo: 'Operaciones',
     items: [
       { etiqueta: 'Servicios técnicos', icono: 'pi pi-wrench', ruta: '/servicios', area: 'tecnica' },
-      { etiqueta: 'Inventario', icono: 'pi pi-box', ruta: '/inventario', area: 'logistica' },
       { etiqueta: 'Asistencia y planilla', icono: 'pi pi-id-card', ruta: '/personal', area: 'personal' },
     ],
   },
   {
     titulo: 'Sistema',
     items: [
-      { etiqueta: 'Equipo y accesos', icono: 'pi pi-users', ruta: '/equipo', soloAdmin: true },
+      { etiqueta: 'Equipo y accesos', icono: 'pi pi-users', ruta: '/equipo', soloDueno: true },
       { etiqueta: 'Configuración', icono: 'pi pi-cog', ruta: '/configuracion', soloAdmin: true },
     ],
   },

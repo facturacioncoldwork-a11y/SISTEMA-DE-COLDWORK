@@ -1,0 +1,88 @@
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input
+      type="text"
+      placeholder="Buscar por razón social, RUC, rubro o contacto"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      aria-label="Buscar proveedores"
+    />
+  </label>
+  <label class="chk"
+    ><input type="checkbox" [ngModel]="verInactivos()" (ngModelChange)="verInactivos.set($event)" />
+    Ver inactivos</label
+  >
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta" (click)="abrir(null)">
+    <i class="pi pi-plus"></i> Nuevo proveedor
+  </button>
+</div>
+
+<div class="grid">
+  @for (p of lista(); track p.id) {
+    <article class="lg-card prov" [class.inactivo]="!p.activo">
+      <div class="cab">
+        <span class="lg-avatar" [style.--c]="color(p.razonSocial)">{{
+          iniciales(p.razonSocial)
+        }}</span>
+        <div class="nom">
+          <strong>{{ p.razonSocial }}</strong>
+          <span class="lg-mono">{{ p.tipoDocumento }} {{ p.numeroDocumento }}</span>
+        </div>
+        <button type="button" class="editar" (click)="abrir(p)" aria-label="Editar">
+          <i class="pi pi-pencil"></i>
+        </button>
+      </div>
+      @if (p.rubro) {
+        <span class="lg-chip sin-punto rubro">{{ p.rubro }}</span>
+      }
+      <div class="estrellas" [attr.aria-label]="(p.calificacion ?? 0) + ' de 5'">
+        @for (n of [1, 2, 3, 4, 5]; track n) {
+          <i [class]="(p.calificacion ?? 0) >= n ? 'pi pi-star-fill' : 'pi pi-star'"></i>
+        }
+        <span>{{ p.diasCredito ? p.diasCredito + ' días de crédito' : 'Al contado' }}</span>
+      </div>
+      <ul class="contacto">
+        @if (p.contacto) {
+          <li><i class="pi pi-user"></i> {{ p.contacto }}</li>
+        }
+        @if (p.telefono) {
+          <li><i class="pi pi-phone"></i> {{ p.telefono }}</li>
+        }
+        @if (p.correo) {
+          <li><i class="pi pi-envelope"></i> {{ p.correo }}</li>
+        }
+      </ul>
+      <div class="pie">
+        @if (p.telefono) {
+          <a
+            class="lg-cta lg-cta--suave mini"
+            [href]="whatsapp(p.telefono)"
+            target="_blank"
+            rel="noopener"
+            ><i class="pi pi-whatsapp"></i> WhatsApp</a
+          >
+        }
+        @if (p.correo) {
+          <a class="lg-cta lg-cta--suave mini" [href]="'mailto:' + p.correo"
+            ><i class="pi pi-envelope"></i> Correo</a
+          >
+        }
+      </div>
+    </article>
+  } @empty {
+    <div class="lg-card lg-vacio" style="grid-column: 1 / -1">
+      <i class="pi pi-truck"></i>
+      <h4>{{ store.proveedores().length ? 'Sin resultados' : 'Aún no hay proveedores' }}</h4>
+      <p>Registra a quienes te venden gases, compresores, cobre y repuestos.</p>
+      @if (!store.proveedores().length) {
+        <button type="button" class="lg-cta" (click)="abrir(null)">
+          <i class="pi pi-plus"></i> Registrar el primero
+        </button>
+      }
+    </div>
+  }
+</div>
+
+<app-proveedor-dialogo [(visible)]="dialogo" [proveedor]="editando()" />

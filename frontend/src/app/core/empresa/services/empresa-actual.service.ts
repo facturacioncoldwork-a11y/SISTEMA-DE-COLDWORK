@@ -28,6 +28,8 @@ export class EmpresaActualService {
   readonly rol = computed(() => this.actual()?.rol ?? null);
   /** Dueño o admin: ve todas las áreas y gestiona el equipo. */
   readonly esAdmin = computed(() => veTodo(this.rol()));
+  /** Dueño (CEO): el único que da accesos. */
+  readonly esDueno = computed(() => this.rol() === 'dueno');
 
   /** ¿Puede entrar a esta área en la empresa actual? */
   puede(area: Area): boolean {

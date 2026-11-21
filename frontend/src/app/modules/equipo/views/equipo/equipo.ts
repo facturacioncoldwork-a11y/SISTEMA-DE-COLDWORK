@@ -14,7 +14,7 @@ import { AccesoDialogo, type DatosAcceso } from '../../components/acceso-dialogo
 import type { Invitacion, Miembro, RolAsignable } from '../../models/equipo.model';
 import { EquipoService } from '../../services/equipo.service';
 
-/** Vista: equipo de la empresa y a qué áreas entra cada persona. Solo dueño y admin. */
+/** Vista: equipo de la empresa y a qué áreas entra cada persona. Solo el dueño (CEO). */
 @Component({
   selector: 'app-equipo',
   imports: [DatePipe, ButtonModule, ConfirmDialogModule, TableModule, TagModule, TooltipModule, AccesoDialogo],

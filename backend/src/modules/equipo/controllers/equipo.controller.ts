@@ -11,11 +11,11 @@ import {
 import { ActualizarMiembroDto, EquipoDto, InvitacionDto, InvitarDto } from '../dto/index.js';
 import { EquipoService } from '../services/equipo.service.js';
 
-/** Equipo de la empresa: invitar personas y darles acceso por áreas. Solo dueño y admin. */
+/** Equipo de la empresa: invitar personas y darles acceso por áreas. SOLO EL DUEÑO (CEO). */
 @ApiTags('Equipo')
 @ApiBearerAuth()
 @ApiHeader({ name: 'X-Empresa-Id', required: true, description: 'UUID de la empresa con la que se trabaja' })
-@RequiereEmpresa(Rol.Dueno, Rol.Admin)
+@RequiereEmpresa(Rol.Dueno)
 @Controller({ path: 'equipo', version: '1' })
 export class EquipoController {
   constructor(private readonly equipo: EquipoService) {}

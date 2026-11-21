@@ -1,6 +1,6 @@
 <div class="shell" [class.abierto]="abierto()">
   <aside class="lateral">
-    <div class="logo"><app-emoji nombre="copo" /> COLDWORK</div>
+    <div class="logo"><app-logo alto="3.1rem" /></div>
     <nav>
       @for (grupo of menu(); track grupo.titulo) {
         <div class="grupo">{{ grupo.titulo }}</div>
@@ -8,7 +8,7 @@
           <a
             [routerLink]="item.ruta"
             routerLinkActive="activo"
-            [routerLinkActiveOptions]="{ exact: item.ruta === '/' }"
+            [routerLinkActiveOptions]="{ exact: item.ruta === '/' || !!item.exacta }"
             (click)="abierto.set(false)"
           >
             <i [class]="item.icono"></i> {{ item.etiqueta }}

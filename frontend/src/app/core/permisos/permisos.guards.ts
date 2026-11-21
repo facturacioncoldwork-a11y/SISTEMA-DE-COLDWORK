@@ -58,10 +58,18 @@ export const conPortal =
     return empresa.esAdmin() || portalDe(e?.rol, e?.areas) === portal ? true : router.createUrlTree(['/']);
   };
 
-/** Solo dueño y admin (Equipo, Configuración). */
+/** Solo dueño y admin (Configuración). */
 export const soloAdmin: CanActivateFn = async () => {
   const empresa = inject(EmpresaActualService);
   const router = inject(Router);
   await empresa.asegurar().catch(() => []);
   return empresa.esAdmin() ? true : router.createUrlTree(['/']);
+};
+
+/** Solo el dueño / CEO (Equipo y accesos: nadie más da accesos). */
+export const soloDueno: CanActivateFn = async () => {
+  const empresa = inject(EmpresaActualService);
+  const router = inject(Router);
+  await empresa.asegurar().catch(() => []);
+  return empresa.esDueno() ? true : router.createUrlTree(['/']);
 };

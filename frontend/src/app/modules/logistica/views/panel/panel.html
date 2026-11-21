@@ -1,0 +1,211 @@
+<section class="lg-kpis">
+  <a class="lg-kpi" routerLink="/logistica/inventario" style="--c: #3b82f6">
+    <span class="icono"><i class="pi pi-wallet"></i></span>
+    <small>Valor del inventario</small>
+    @if (resumen(); as r) {
+      <strong>{{ r.valorInventario | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong>
+      <span class="pie">{{ r.productosActivos }} productos activos</span>
+    } @else {
+      <div class="lg-skel" style="height: 1.8rem; margin-top: 0.4rem; width: 70%"></div>
+    }
+  </a>
+  <a
+    class="lg-kpi"
+    routerLink="/logistica/inventario"
+    [queryParams]="{ nivel: 'reponer' }"
+    style="--c: #f97316"
+  >
+    <span class="icono"><i class="pi pi-exclamation-triangle"></i></span>
+    <small>Por reponer</small>
+    @if (resumen(); as r) {
+      <strong>{{ r.bajoMinimo }}</strong>
+      <span class="pie">{{ r.sinStock }} agotados</span>
+    } @else {
+      <div class="lg-skel" style="height: 1.8rem; margin-top: 0.4rem; width: 40%"></div>
+    }
+  </a>
+  <a class="lg-kpi" routerLink="/logistica/ordenes-compra" style="--c: #8b5cf6">
+    <span class="icono"><i class="pi pi-truck"></i></span>
+    <small>Órdenes por recibir</small>
+    @if (resumen(); as r) {
+      <strong>{{ r.ocPendientes }}</strong>
+      <span class="pie">
+        @if (enCamino().PEN) {
+          S/ {{ enCamino().PEN | number: '1.0-0' }}
+        }
+        @if (enCamino().PEN && enCamino().USD) {
+          ·
+        }
+        @if (enCamino().USD) {
+          US$ {{ enCamino().USD | number: '1.0-0' }}
+        }
+        en camino</span
+      >
+    } @else {
+      <div class="lg-skel" style="height: 1.8rem; margin-top: 0.4rem; width: 40%"></div>
+    }
+  </a>
+  <a class="lg-kpi" routerLink="/logistica/llegadas" style="--c: #10b981">
+    <span class="icono"><i class="pi pi-arrow-right-arrow-left"></i></span>
+    <small>Movimientos del mes</small>
+    @if (resumen(); as r) {
+      <strong>{{ r.llegadasMes + r.salidasMes }}</strong>
+      <span class="pie">{{ r.llegadasMes }} llegadas · {{ r.salidasMes }} salidas</span>
+    } @else {
+      <div class="lg-skel" style="height: 1.8rem; margin-top: 0.4rem; width: 40%"></div>
+    }
+  </a>
+</section>
+
+<div class="bento">
+  <section class="lg-card flujo">
+    <div class="lg-card__head">
+      <div>
+        <h3>Flujo de mercadería</h3>
+        <p>Valor que entró y salió, últimos 14 días</p>
+      </div>
+    </div>
+    <app-grafico-flujo [datos]="resumen()?.flujo ?? []" />
+  </section>
+
+  <section class="lg-card tipos">
+    <div class="lg-card__head">
+      <div>
+        <h3>¿Dónde está tu dinero?</h3>
+        <p>Inventario valorizado por tipo</p>
+      </div>
+    </div>
+    <app-grafico-dona [datos]="porciones()" />
+  </section>
+
+  <section class="lg-card proximas">
+    <div class="lg-card__head">
+      <div>
+        <h3>Próximas llegadas</h3>
+        <p>Según el plazo que dio cada proveedor</p>
+      </div>
+      <a routerLink="/logistica/ordenes-compra">Ver línea de tiempo</a>
+    </div>
+    <ul class="lg-tiempo">
+      @for (x of proximas(); track x.o.id) {
+        <li class="clic" tabindex="0" (click)="verOc(x.o.id)" (keydown.enter)="verOc(x.o.id)">
+          <span
+            class="punto"
+            [style.background]="colorLlegada(x.s.llegada) + '1f'"
+            [style.color]="colorLlegada(x.s.llegada)"
+            ><i class="pi pi-truck"></i
+          ></span>
+          <div class="txt">
+            <strong>{{ x.o.codigo }} · {{ x.o.proveedor.razonSocial }}</strong>
+            <small>
+              {{ x.o.plazoTexto || 'sin plazo' }}{{ x.o.cliente ? ' · para ' + x.o.cliente : '' }}
+              @if (x.s.cliente === 'riesgo' || x.s.cliente === 'vencido') {
+                · <b [style.color]="colorCliente(x.s.cliente)">riesgo con el cliente</b>
+              }
+            </small>
+          </div>
+          <div class="cant" [style.color]="colorLlegada(x.s.llegada)">
+            {{ x.s.textoLlegada }}
+            <small>{{ x.o.entregaHasta ? (x.o.entregaHasta | date: 'EEE d MMM') : '' }}</small>
+          </div>
+        </li>
+      } @empty {
+        <div class="lg-vacio" style="padding: 1.5rem">
+          <i class="pi pi-truck"></i>
+          <p>No hay compras en camino.</p>
+        </div>
+      }
+    </ul>
+  </section>
+
+  <section class="lg-card reponer">
+    <div class="lg-card__head">
+      <div>
+        <h3>Reponer pronto</h3>
+        <p>Bajo o en el stock mínimo</p>
+      </div>
+      <a routerLink="/logistica/inventario" [queryParams]="{ nivel: 'reponer' }">Ver todos</a>
+    </div>
+    <ul class="lista">
+      @for (p of reponer(); track p.id) {
+        <li>
+          <div class="nombre">
+            <strong>{{ p.nombre }}</strong><span class="lg-mono">{{ p.sku }}</span>
+          </div>
+          <app-medidor-stock
+            [cantidad]="p.stockTotal"
+            [minimo]="p.stockMinimo"
+            [unidad]="p.unidad"
+          />
+          <button type="button" class="lg-cta lg-cta--suave mini" (click)="pedir(p.id)">
+            <i class="pi pi-cart-plus"></i> Pedir
+          </button>
+        </li>
+      } @empty {
+        <div class="lg-vacio" style="padding: 1.5rem">
+          <i class="pi pi-check-circle"></i>
+          <h4>Todo en orden</h4>
+          <p>Ningún producto está bajo su mínimo.</p>
+        </div>
+      }
+    </ul>
+  </section>
+
+  <section class="lg-card actividad">
+    <div class="lg-card__head">
+      <div>
+        <h3>Actividad reciente</h3>
+        <p>Últimas llegadas y salidas</p>
+      </div>
+    </div>
+    <ul class="lg-tiempo">
+      @for (a of actividad(); track a.id) {
+        <li>
+          <span class="punto {{ a.tipo }}"
+            ><i [class]="a.tipo === 'entrada' ? 'pi pi-arrow-down' : 'pi pi-arrow-up'"></i
+          ></span>
+          <div class="txt">
+            <strong>{{ a.codigo }} · {{ a.titulo }}</strong
+            ><small>{{ a.detalle }} · {{ a.fecha | date: 'd MMM, HH:mm' }}</small>
+          </div>
+          <div class="cant">{{ a.total | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</div>
+        </li>
+      } @empty {
+        @if (!cargando()) {
+          <div class="lg-vacio" style="padding: 1.5rem">
+            <i class="pi pi-history"></i>
+            <p>Aún no hay movimientos.</p>
+          </div>
+        }
+      }
+    </ul>
+  </section>
+
+  <section class="lg-card almacenes">
+    <div class="lg-card__head">
+      <div>
+        <h3>Almacenes</h3>
+        <p>Cuánto valor guarda cada uno</p>
+      </div>
+      <a routerLink="/logistica/almacenes">Gestionar</a>
+    </div>
+    <div class="alms">
+      @for (a of store.almacenesActivos(); track a.id) {
+        <div class="alm">
+          <i [class]="tiposAlmacen[a.tipo].icono"></i>
+          <div class="info">
+            <strong>{{ a.nombre }}</strong>
+            <small
+              >{{ a.productos }} productos ·
+              {{ a.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</small
+            >
+            <div class="barra">
+              <span [style.width.%]="(a.valorizado / totalAlmacenes()) * 100"></span>
+            </div>
+          </div>
+          <b>{{ (a.valorizado / totalAlmacenes()) * 100 | number: '1.0-0' }}%</b>
+        </div>
+      }
+    </div>
+  </section>
+</div>

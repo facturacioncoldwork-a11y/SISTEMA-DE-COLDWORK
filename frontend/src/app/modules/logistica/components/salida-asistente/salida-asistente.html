@@ -1,0 +1,222 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(60rem, 97vw)' }"
+  header="Registrar salida de producto"
+>
+  <div class="lg-pasos">
+    @for (t of ['Motivo y destino', 'Productos', 'Confirmar']; track t; let i = $index) {
+      <div class="paso" [class.actual]="paso() === i + 1" [class.hecho]="paso() > i + 1">
+        <b>
+          @if (paso() > i + 1) {
+            <i class="pi pi-check"></i>
+          } @else {
+            {{ i + 1 }}
+          }</b
+        ><span>{{ t }}</span>
+      </div>
+    }
+  </div>
+
+  @switch (paso()) {
+    @case (1) {
+      <div class="lg-opciones" style="margin-bottom: 1rem">
+        @for (m of motivos; track m.clave) {
+          <button type="button" [class.on]="motivo() === m.clave" (click)="motivo.set(m.clave)">
+            <i [class]="m.icono"></i><strong>{{ m.nombre }}</strong
+            ><small>{{ m.ayuda }}</small>
+          </button>
+        }
+      </div>
+      <div class="lg-form">
+        <div>
+          <label for="sa-alm">Sale del almacén</label>
+          <p-select
+            inputId="sa-alm"
+            [options]="store.almacenesActivos()"
+            optionLabel="nombre"
+            optionValue="id"
+            appendTo="body"
+            [ngModel]="almacenId()"
+            (ngModelChange)="almacenId.set($event); lineas.set([])"
+          />
+        </div>
+        @if (motivo() === 'transferencia') {
+          <div>
+            <label for="sa-dest">Pasa al almacén</label>
+            <p-select
+              inputId="sa-dest"
+              [options]="destinos()"
+              optionLabel="nombre"
+              optionValue="id"
+              placeholder="Elige el destino"
+              appendTo="body"
+              [ngModel]="destinoId()"
+              (ngModelChange)="destinoId.set($event)"
+            />
+          </div>
+        } @else {
+          <div>
+            <label for="sa-destino">{{
+              motivo() === 'venta' ? 'Cliente' : 'Destino / equipo atendido'
+            }}</label>
+            <input
+              pInputText
+              id="sa-destino"
+              [placeholder]="
+                motivo() === 'servicio_tecnico' ? 'Plaza Vea Surco – cámara de congelados' : ''
+              "
+              [ngModel]="destino()"
+              (ngModelChange)="destino.set($event)"
+            />
+          </div>
+        }
+        <div>
+          <label for="sa-resp">{{
+            motivo() === 'servicio_tecnico' ? 'Técnico que retira' : 'Responsable'
+          }}</label>
+          <input
+            pInputText
+            id="sa-resp"
+            placeholder="Nombre de quien retira"
+            [ngModel]="responsable()"
+            (ngModelChange)="responsable.set($event)"
+          />
+        </div>
+        <div>
+          <label for="sa-ref">Referencia</label>
+          <input
+            pInputText
+            id="sa-ref"
+            placeholder="OS-000231, guía, pedido…"
+            [ngModel]="referencia()"
+            (ngModelChange)="referencia.set($event)"
+          />
+        </div>
+      </div>
+    }
+
+    @case (2) {
+      <app-selector-producto
+        [almacenId]="almacenId()"
+        [excluir]="ids()"
+        (elegido)="agregar($event)"
+      />
+      <div style="height: 0.75rem"></div>
+      <div class="lg-lineas">
+        <div class="cab-lineas sin-costo">
+          <span>Producto · disponible en {{ nombreAlmacen(almacenId()) }}</span
+          ><span>Sale</span><span></span>
+        </div>
+        @for (l of lineas(); track l.producto.id; let i = $index) {
+          <div class="lg-linea sin-costo" [class.alerta]="l.cantidad > disponible(l.producto.id)">
+            <div class="prod">
+              <strong>{{ l.producto.nombre }}</strong>
+              <small>
+                {{ l.producto.sku }} · disponible
+                <b [class.lg-neg]="l.cantidad > disponible(l.producto.id)"
+                  >{{ disponible(l.producto.id) | number: '1.0-3' }} {{ l.producto.unidad }}</b
+                >
+                · <a href="" (click)="$event.preventDefault(); todo(i)">sacar todo</a>
+              </small>
+            </div>
+            <p-inputnumber
+              [ngModel]="l.cantidad"
+              (ngModelChange)="cambiar(i, $event)"
+              [min]="0"
+              [maxFractionDigits]="3"
+              [suffix]="' ' + l.producto.unidad"
+              inputStyleClass="w-full"
+              [ariaLabel]="'Cantidad'"
+            />
+            <button type="button" class="quitar" (click)="quitar(i)" aria-label="Quitar">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        } @empty {
+          <div class="lg-vacio" style="padding: 1.5rem">
+            <i class="pi pi-send"></i>
+            <p>Busca y agrega lo que sale del almacén.</p>
+          </div>
+        }
+      </div>
+    }
+
+    @case (3) {
+      <div class="confirmar">
+        <div class="lg-form">
+          <div class="full">
+            <label for="sa-notas">Observaciones</label>
+            <input
+              pInputText
+              id="sa-notas"
+              placeholder="Opcional"
+              [ngModel]="notas()"
+              (ngModelChange)="notas.set($event)"
+            />
+          </div>
+          <div class="full lg-lineas">
+            @for (l of lineas(); track l.producto.id) {
+              <div class="resumen-linea">
+                <span>{{ l.producto.nombre }}</span><b
+                  >{{ l.cantidad | number: '1.0-3' }} {{ l.producto.unidad }}</b
+                >
+              </div>
+            }
+          </div>
+        </div>
+        <div class="lg-ticket">
+          <div class="fila">
+            <span>Motivo</span><strong>{{ textoMotivo() }}</strong>
+          </div>
+          <div class="fila">
+            <span>Sale de</span><strong>{{ nombreAlmacen(almacenId()) }}</strong>
+          </div>
+          @if (motivo() === 'transferencia') {
+            <div class="fila">
+              <span>Pasa a</span><strong>{{ nombreAlmacen(destinoId()) }}</strong>
+            </div>
+          } @else if (destino()) {
+            <div class="fila">
+              <span>Destino</span><strong>{{ destino() }}</strong>
+            </div>
+          }
+          @if (responsable()) {
+            <div class="fila">
+              <span>Retira</span><strong>{{ responsable() }}</strong>
+            </div>
+          }
+          <div class="fila total">
+            <span>Valor al costo</span
+            ><strong>{{ total() | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  @if (error(); as e) {
+    <p class="lg-form error" style="margin-top: 0.75rem">
+      <i class="pi pi-exclamation-circle"></i> {{ e }}
+    </p>
+  }
+  <div class="lg-pie-dialogo">
+    @if (paso() > 1) {
+      <button type="button" class="lg-cta lg-cta--suave" (click)="paso.set(paso() - 1)">
+        <i class="pi pi-arrow-left"></i> Atrás
+      </button>
+    }
+    <span style="flex: 1"></span>
+    @if (paso() < 3) {
+      <button type="button" class="lg-cta" (click)="siguiente()">
+        Continuar <i class="pi pi-arrow-right"></i>
+      </button>
+    } @else {
+      <button type="button" class="lg-cta" [disabled]="guardando()" (click)="registrar()">
+        <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check-circle'"></i> Registrar
+        salida
+      </button>
+    }
+  </div>
+</p-dialog>

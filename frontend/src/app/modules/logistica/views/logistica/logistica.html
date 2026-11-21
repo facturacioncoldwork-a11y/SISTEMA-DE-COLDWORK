@@ -1,0 +1,41 @@
+<div class="lg">
+  <header class="lg-hero">
+    <div class="lg-hero__fila">
+      <div>
+        <div class="lg-hero__miga"><i class="pi pi-warehouse"></i> Almacén y logística</div>
+        <h1 class="lg-hero__titulo">{{ titulo() }}</h1>
+        <p class="lg-hero__sub">{{ sub() }}</p>
+      </div>
+      <div class="acciones" style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+        <button type="button" class="lg-cta lg-cta--vidrio" (click)="ir('/logistica/salidas')">
+          <i class="pi pi-upload"></i> Registrar salida
+        </button>
+        <button type="button" class="lg-cta" (click)="ir('/logistica/llegadas')">
+          <i class="pi pi-download"></i> Registrar llegada
+        </button>
+      </div>
+    </div>
+
+    <nav class="lg-nav" aria-label="Secciones de logística">
+      @for (p of pestanas; track p.ruta) {
+        <a
+          [routerLink]="p.ruta"
+          routerLinkActive="activo"
+          [routerLinkActiveOptions]="{ exact: !!p.exacta }"
+        >
+          <i [class]="p.icono"></i> {{ p.etiqueta }}
+          @if (p.etiqueta === 'Inventario' && alertas() > 0) {
+            <span class="lg-nav__badge" [attr.aria-label]="alertas() + ' productos por reponer'">{{
+              alertas()
+            }}</span>
+          }
+        </a>
+      }
+    </nav>
+  </header>
+
+  <div class="lg-cuerpo">
+    <router-outlet />
+  </div>
+</div>
+<p-confirmdialog [style]="{ width: 'min(28rem, 94vw)' }" />
