@@ -26,8 +26,8 @@
   @if (a.adjuntos?.length) {
     <p class="sustento">
       <i class="pi pi-paperclip"></i>
-      @for (adj of a.adjuntos; track adj.url) {
-        <a [href]="adj.url" target="_blank" rel="noopener">{{ adj.nombre }}</a>
+      @for (adj of a.adjuntos; track adj.ruta) {
+        <button type="button" class="enlace" (click)="ver(adj.ruta)">{{ adj.nombre }}</button>
       }
     </p>
   } @else if (a.documento) {

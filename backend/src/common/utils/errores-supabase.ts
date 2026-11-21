@@ -27,7 +27,7 @@ export function aHttp(error: ErrorPostgrest): HttpException {
   }
   switch (error.code) {
     case '42501': // RLS / permiso denegado
-      return new ForbiddenException('No tienes permiso para esta acción');
+      return new ForbiddenException(mensajePermiso(error.message));
     case 'PGRST116': // .single() sin filas
       return new NotFoundException('No encontrado');
     case 'PGRST301':
@@ -47,6 +47,15 @@ export function aHttp(error: ErrorPostgrest): HttpException {
     default:
       return new InternalServerErrorException('Error al consultar la base de datos');
   }
+}
+
+/**
+ * Mensaje de un permiso denegado: si viene de nuestras funciones SQL (ya está en español y
+ * pensado para el usuario, ej. "envíalo al dueño") se usa; si es el texto técnico de Postgres, uno genérico.
+ */
+function mensajePermiso(mensaje: string | undefined): string {
+  const tecnico = !mensaje || /permission denied|row-level security|violates|policy/i.test(mensaje);
+  return tecnico ? 'No tienes permiso para esta acción' : mensaje;
 }
 
 /** Lanza si Supabase devolvió error; si no, devuelve los datos. */

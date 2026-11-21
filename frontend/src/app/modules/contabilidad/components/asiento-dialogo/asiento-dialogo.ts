@@ -48,6 +48,8 @@ export class AsientoDialogo {
   readonly visible = model(false);
   /** Asiento a corregir (borrador u observado). Sin él, el diálogo crea uno nuevo. */
   readonly inicial = input<Asiento | null>(null);
+  /** Mientras el servidor guarda: bloquea los botones. */
+  readonly guardando = input(false);
   readonly guardar = output<AsientoGuardado>();
 
   // ─── Opciones ─────────────────────────────────────────────────
@@ -72,6 +74,7 @@ export class AsientoDialogo {
   protected documento = { tipo: '01', serie: '', numero: '', documentoTercero: '', nombreTercero: '' };
   protected readonly lineas = signal<LineaAsiento[]>([]);
   protected readonly adjuntos = signal<Adjunto[]>([]);
+  protected readonly subiendo = signal(false);
   protected readonly errores = signal<string[]>([]);
   protected readonly pesoLegible = pesoLegible;
 
@@ -155,28 +158,33 @@ export class AsientoDialogo {
 
   // ─── Adjuntos ─────────────────────────────────────────────────
 
-  /** Agrega las fotos o PDF elegidos, validando tipo, tamaño y cantidad. */
-  protected elegirArchivos(evento: Event) {
+  /** Valida y sube las fotos o PDF elegidos a la carpeta privada de la empresa. */
+  protected async elegirArchivos(evento: Event) {
     const input = evento.target as HTMLInputElement;
+    const archivos = Array.from(input.files ?? []);
+    input.value = '';
     const problemas: string[] = [];
 
-    for (const archivo of Array.from(input.files ?? [])) {
+    this.subiendo.set(true);
+    for (const archivo of archivos) {
       const problema = problemaArchivo(archivo, this.adjuntos().length);
       if (problema) {
         problemas.push(problema);
         continue;
       }
-      const adjunto: Adjunto = {
-        nombre: archivo.name,
-        tipo: archivo.type,
-        tamano: archivo.size,
-        url: URL.createObjectURL(archivo),
-      };
-      this.adjuntos.update((lista) => [...lista, adjunto]);
+      try {
+        const adjunto = await this.conta.subirAdjunto(archivo);
+        this.adjuntos.update((lista) => [...lista, adjunto]);
+      } catch (e) {
+        problemas.push((e as Error).message);
+      }
     }
-
+    this.subiendo.set(false);
     this.errores.set(problemas);
-    input.value = '';
+  }
+
+  protected verAdjunto(ruta: string) {
+    this.conta.verAdjunto(ruta).catch((e: Error) => this.errores.set([e.message]));
   }
 
   protected quitarAdjunto(i: number) {

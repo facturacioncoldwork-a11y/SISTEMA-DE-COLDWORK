@@ -9,7 +9,7 @@
       optionValue="valor"
       [disabled]="!conta.permisos().configurar"
       [ngModel]="conta.regimen()"
-      (ngModelChange)="conta.regimen.set($event)"
+      (ngModelChange)="cambiar({ regimen: $event })"
     />
   </div>
 
@@ -23,7 +23,7 @@
         optionValue="valor"
         [disabled]="!conta.permisos().configurar"
         [ngModel]="conta.tramo()"
-        (ngModelChange)="conta.tramo.set($event)"
+        (ngModelChange)="cambiar({ tramo: $event })"
       />
     </div>
   }

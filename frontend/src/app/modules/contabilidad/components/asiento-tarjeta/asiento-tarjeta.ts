@@ -1,4 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { MessageService } from 'primeng/api';
 import { TagModule } from 'primeng/tag';
 import { nombreComprobante, nombreOrigen } from '../../data/sunat';
 import { ESTADOS } from '../../data/textos';
@@ -19,6 +20,7 @@ import { totales } from '../../utils/partida-doble';
 })
 export class AsientoTarjeta {
   protected readonly conta = inject(ContabilidadService);
+  private readonly avisos = inject(MessageService);
 
   readonly asiento = input.required<Asiento>();
 
@@ -27,4 +29,11 @@ export class AsientoTarjeta {
 
   protected readonly nombreOrigen = nombreOrigen;
   protected readonly nombreComprobante = nombreComprobante;
+
+  /** Abre el comprobante con un enlace temporal del almacenamiento privado. */
+  protected ver(ruta: string) {
+    this.conta.verAdjunto(ruta).catch((e: Error) =>
+      this.avisos.add({ severity: 'error', summary: e.message, life: 5000 }),
+    );
+  }
 }

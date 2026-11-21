@@ -56,6 +56,7 @@ export class LibroDiario {
 
   protected readonly dialogoVisible = signal(false);
   protected readonly editando = signal<Asiento | null>(null);
+  protected readonly guardando = signal(false);
   protected readonly busqueda = signal('');
   protected readonly filtro = signal<Filtro>('todos');
 
@@ -99,20 +100,24 @@ export class LibroDiario {
     this.dialogoVisible.set(true);
   }
 
-  protected guardar({ asiento, confirmar, id }: AsientoGuardado) {
-    this.intentar(() => {
-      const guardado = id ? this.conta.actualizar(id, asiento, confirmar) : this.conta.crear(asiento, confirmar);
+  protected async guardar({ asiento, confirmar, id }: AsientoGuardado) {
+    this.guardando.set(true);
+    await this.intentar(async () => {
+      const guardado = id
+        ? await this.conta.actualizar(id, asiento, confirmar)
+        : await this.conta.crear(asiento, confirmar);
       this.conta.periodo.set(guardado.periodo);
       this.dialogoVisible.set(false);
       this.avisos.add({ severity: 'success', summary: mensajeGuardado(guardado), life: 3500 });
     });
+    this.guardando.set(false);
   }
 
   /** Borrador → registrado (si tiene permiso) o enviado al dueño. */
   protected confirmar(a: Asiento) {
-    this.intentar(() => {
-      if (this.conta.permisos().registrar) this.conta.registrar(a.id);
-      else this.conta.enviar(a.id);
+    void this.intentar(async () => {
+      if (this.conta.permisos().registrar) await this.conta.registrar(a.id);
+      else await this.conta.enviar(a.id);
       this.avisos.add({ severity: 'success', summary: mensajeGuardado(this.conta.buscar(a.id)), life: 3500 });
     });
   }
@@ -125,7 +130,7 @@ export class LibroDiario {
       rejectLabel: 'Cancelar',
       acceptButtonProps: { severity: 'danger' },
       rejectButtonProps: { severity: 'secondary', text: true },
-      accept: () => this.intentar(() => this.conta.eliminarBorrador(a.id)),
+      accept: () => void this.intentar(() => this.conta.eliminarBorrador(a.id)),
     });
   }
 
@@ -139,13 +144,13 @@ export class LibroDiario {
       rejectLabel: 'Cancelar',
       acceptButtonProps: { severity: 'danger' },
       rejectButtonProps: { severity: 'secondary', text: true },
-      accept: () => this.intentar(() => this.conta.anular(a.id)),
+      accept: () => void this.intentar(() => this.conta.anular(a.id)),
     });
   }
 
-  private intentar(accion: () => void) {
+  private async intentar(accion: () => Promise<unknown>) {
     try {
-      accion();
+      await accion();
     } catch (e) {
       this.avisos.add({ severity: 'error', summary: 'No se pudo completar', detail: (e as Error).message, life: 6000 });
     }

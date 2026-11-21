@@ -146,5 +146,5 @@
   </table>
 </div>
 
-<app-asiento-dialogo [(visible)]="dialogoVisible" [inicial]="editando()" (guardar)="guardar($event)" />
+<app-asiento-dialogo [(visible)]="dialogoVisible" [inicial]="editando()" [guardando]="guardando()" (guardar)="guardar($event)" />
 <p-confirmdialog [style]="{ width: 'min(30rem, 95vw)' }" />

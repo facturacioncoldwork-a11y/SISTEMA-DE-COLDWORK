@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { EmpresasModule } from './modules/empresas/empresas.module.js';
 import { EquipoModule } from './modules/equipo/equipo.module.js';
+import { ContabilidadModule } from './modules/contabilidad/contabilidad.module.js';
 import { LogisticaModule } from './modules/logistica/logistica.module.js';
 
 /**
@@ -64,6 +65,7 @@ import { LogisticaModule } from './modules/logistica/logistica.module.js';
     EmpresasModule,
     EquipoModule,
     LogisticaModule,
+    ContabilidadModule,
   ],
 })
 export class AppModule {}

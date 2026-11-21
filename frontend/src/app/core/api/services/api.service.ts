@@ -18,6 +18,9 @@ export class ApiService {
   patch<T>(ruta: string, cuerpo: unknown): Promise<T> {
     return firstValueFrom(this.http.patch<T>(`${this.base}${ruta}`, cuerpo));
   }
+  put<T>(ruta: string, cuerpo: unknown): Promise<T> {
+    return firstValueFrom(this.http.put<T>(`${this.base}${ruta}`, cuerpo));
+  }
   delete<T>(ruta: string): Promise<T> {
     return firstValueFrom(this.http.delete<T>(`${this.base}${ruta}`));
   }

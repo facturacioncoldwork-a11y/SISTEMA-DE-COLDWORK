@@ -5,7 +5,10 @@ import type { Asiento, ConfigAprobacion, Permisos, Persona } from '../models/con
  * Funciones puras (probadas en permisos.spec.ts); el backend aplicará las mismas reglas.
  */
 
-export function permisosDe(persona: Persona, config: ConfigAprobacion): Permisos {
+export function permisosDe(
+  persona: Persona,
+  config: Pick<ConfigAprobacion, 'contadorRegistraDirecto' | 'contadorVeLibros'>,
+): Permisos {
   const esDueno = persona.rol === 'dueno';
   return {
     registrar: esDueno || config.contadorRegistraDirecto,

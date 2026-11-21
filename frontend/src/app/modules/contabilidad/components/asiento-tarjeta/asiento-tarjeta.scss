@@ -47,8 +47,14 @@
   margin: 0.5rem 0 0;
   font-size: 0.85rem;
 
-  a {
+  .enlace {
+    padding: 0;
+    border: none;
+    background: none;
     color: var(--p-primary-color);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
   }
 
   &.falta {

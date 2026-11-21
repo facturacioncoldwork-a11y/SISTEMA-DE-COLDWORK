@@ -94,13 +94,3 @@ nav {
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
 }
-
-// Aviso mientras Contabilidad no esté conectada a la base de datos
-.aviso-guardado {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0 0 1rem;
-  font-size: 0.82rem;
-  color: var(--p-text-muted-color);
-}

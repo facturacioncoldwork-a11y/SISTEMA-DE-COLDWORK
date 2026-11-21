@@ -50,14 +50,14 @@ export interface DocumentoSustento {
   nombreTercero?: string;
 }
 
-/** Foto o PDF del comprobante. Luego se guardará en un almacenamiento privado por empresa. */
+/** Foto o PDF del comprobante, guardado en el almacenamiento privado de la empresa. */
 export interface Adjunto {
   nombre: string;
   tipo: string;
   /** Bytes. */
   tamano: number;
-  /** Dirección temporal para verlo (en el prototipo vive solo en esta pantalla). */
-  url: string;
+  /** Ruta en el almacenamiento: {empresa}/{carpeta}/{archivo}. Se abre con un enlace temporal. */
+  ruta: string;
 }
 
 export interface LineaAsiento {
@@ -89,6 +89,7 @@ export interface Asiento {
 
   // Trazabilidad: quién hizo cada paso
   creadoPor: string;
+  creadoPorNombre?: string;
   registradoPor?: string;
   /** Comentario del dueño cuando devuelve el asiento para corregir. */
   observacion?: string;
@@ -97,7 +98,7 @@ export interface Asiento {
 /** Lo que se envía para crear o corregir un asiento. */
 export type NuevoAsiento = Omit<
   Asiento,
-  'id' | 'numero' | 'periodo' | 'estado' | 'creadoEn' | 'creadoPor' | 'registradoPor' | 'observacion'
+  'id' | 'numero' | 'periodo' | 'estado' | 'creadoEn' | 'creadoPor' | 'creadoPorNombre' | 'registradoPor' | 'observacion'
 >;
 
 // ─── Equipo y aprobaciones ─────────────────────────────────────────
@@ -111,8 +112,10 @@ export interface Persona {
   rol: RolContable;
 }
 
-/** Lo que el dueño decide sobre el contador. */
+/** Lo que decide el dueño: régimen tributario y permisos del contador. */
 export interface ConfigAprobacion {
+  regimen: Regimen;
+  tramo: TramoIngresos;
   /** Si es true, el contador registra directo; si no, envía a aprobación. */
   contadorRegistraDirecto: boolean;
   /** Si es true, el contador consulta el Diario, el Mayor y el Balance de la empresa. */
@@ -136,6 +139,7 @@ export interface Actividad {
   id: string;
   fecha: string;
   personaId: string;
+  personaNombre?: string;
   accion: AccionActividad;
   asientoId: string;
   numero: number;

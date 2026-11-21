@@ -117,16 +117,24 @@
 
       <!-- Foto o PDF del comprobante -->
       <div class="adjuntos">
-        <label class="subir" for="as-archivos">
-          <i class="pi pi-paperclip"></i> Adjuntar foto o PDF del comprobante
-          <input id="as-archivos" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple (change)="elegirArchivos($event)" />
+        <label class="subir" for="as-archivos" [class.ocupado]="subiendo()">
+          <i [class]="subiendo() ? 'pi pi-spin pi-spinner' : 'pi pi-paperclip'"></i>
+          {{ subiendo() ? 'Subiendo…' : 'Adjuntar foto o PDF del comprobante' }}
+          <input
+            id="as-archivos"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            multiple
+            [disabled]="subiendo()"
+            (change)="elegirArchivos($event)"
+          />
         </label>
-        <small class="ayuda">Máximo 3 archivos de 5 MB. SUNAT puede pedir el sustento mientras el tributo no prescriba.</small>
+        <small class="ayuda">Máximo 3 archivos de 5 MB, en una carpeta privada de la empresa. SUNAT puede pedir el sustento mientras el tributo no prescriba.</small>
 
-        @for (adj of adjuntos(); track adj.url; let i = $index) {
+        @for (adj of adjuntos(); track adj.ruta; let i = $index) {
           <div class="adjunto">
             <i [class]="adj.tipo === 'application/pdf' ? 'pi pi-file-pdf' : 'pi pi-image'"></i>
-            <a [href]="adj.url" target="_blank" rel="noopener">{{ adj.nombre }}</a>
+            <button type="button" class="enlace" (click)="verAdjunto(adj.ruta)">{{ adj.nombre }}</button>
             <small>{{ pesoLegible(adj.tamano) }}</small>
             <p-button icon="pi pi-times" [text]="true" size="small" severity="danger" ariaLabel="Quitar archivo" (onClick)="quitarAdjunto(i)" />
           </div>
@@ -232,11 +240,11 @@
 
       <div class="botones">
         <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="visible.set(false)" />
-        <p-button label="Guardar borrador" icon="pi pi-save" severity="secondary" [outlined]="true" (onClick)="enviar(false)" />
+        <p-button label="Guardar borrador" icon="pi pi-save" severity="secondary" [outlined]="true" [disabled]="guardando() || subiendo()" (onClick)="enviar(false)" />
         @if (conta.permisos().registrar) {
-          <p-button label="Registrar asiento" icon="pi pi-check" (onClick)="enviar(true)" />
+          <p-button label="Registrar asiento" icon="pi pi-check" [loading]="guardando()" [disabled]="subiendo()" (onClick)="enviar(true)" />
         } @else {
-          <p-button label="Enviar a aprobación" icon="pi pi-send" (onClick)="enviar(true)" />
+          <p-button label="Enviar a aprobación" icon="pi pi-send" [loading]="guardando()" [disabled]="subiendo()" (onClick)="enviar(true)" />
         }
       </div>
     </div>

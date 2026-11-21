@@ -80,6 +80,7 @@ export class MiTrabajo {
   // Diálogo
   protected readonly dialogoVisible = signal(false);
   protected readonly editando = signal<Asiento | null>(null);
+  protected readonly guardando = signal(false);
 
   protected nuevo() {
     this.editando.set(null);
@@ -91,29 +92,33 @@ export class MiTrabajo {
     this.dialogoVisible.set(true);
   }
 
-  protected guardar({ asiento, confirmar, id }: AsientoGuardado) {
-    this.intentar(() => {
-      const guardado = id ? this.conta.actualizar(id, asiento, confirmar) : this.conta.crear(asiento, confirmar);
+  protected async guardar({ asiento, confirmar, id }: AsientoGuardado) {
+    this.guardando.set(true);
+    await this.intentar(async () => {
+      const guardado = id
+        ? await this.conta.actualizar(id, asiento, confirmar)
+        : await this.conta.crear(asiento, confirmar);
       this.dialogoVisible.set(false);
       this.avisos.add({ severity: 'success', summary: mensajeGuardado(guardado), life: 3500 });
     });
+    this.guardando.set(false);
   }
 
   protected enviar(a: Asiento) {
-    this.intentar(() => {
-      if (this.conta.permisos().registrar) this.conta.registrar(a.id);
-      else this.conta.enviar(a.id);
+    void this.intentar(async () => {
+      if (this.conta.permisos().registrar) await this.conta.registrar(a.id);
+      else await this.conta.enviar(a.id);
       this.avisos.add({ severity: 'success', summary: mensajeGuardado(this.conta.buscar(a.id)), life: 3500 });
     });
   }
 
   protected eliminar(a: Asiento) {
-    this.intentar(() => this.conta.eliminarBorrador(a.id));
+    void this.intentar(() => this.conta.eliminarBorrador(a.id));
   }
 
-  private intentar(accion: () => void) {
+  private async intentar(accion: () => Promise<unknown>) {
     try {
-      accion();
+      await accion();
     } catch (e) {
       this.avisos.add({ severity: 'error', summary: 'No se pudo completar', detail: (e as Error).message, life: 6000 });
     }
