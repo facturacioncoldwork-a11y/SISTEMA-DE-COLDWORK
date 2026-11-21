@@ -1,0 +1,78 @@
+// Complementa los estilos del login (misma pantalla dividida en dos)
+
+.detalle {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  opacity: 0.9;
+
+  li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+}
+
+.aviso-sim {
+  display: inline-flex;
+  gap: 0.5rem;
+  margin-top: 1.5rem !important;
+  padding: 0.45rem 0.8rem;
+  border-radius: 0.6rem;
+  font-size: 0.85rem;
+  background: rgb(255 255 255 / 0.12);
+}
+
+.ayuda {
+  color: var(--p-text-muted-color);
+  font-size: 0.8rem;
+
+  &.centro {
+    display: block;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+}
+
+.consentimiento {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin-top: 0.75rem !important;
+  font-weight: 400 !important;
+  font-size: 0.82rem !important;
+  line-height: 1.4;
+  cursor: pointer;
+
+  input {
+    margin-top: 0.2rem;
+  }
+}
+
+.errores {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.pasos {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+
+  li {
+    display: flex;
+    gap: 0.55rem;
+    font-size: 0.92rem;
+  }
+
+  i {
+    margin-top: 0.15rem;
+    color: var(--p-green-600);
+  }
+}
