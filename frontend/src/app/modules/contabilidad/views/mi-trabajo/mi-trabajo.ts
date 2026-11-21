@@ -2,6 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
+import { nombreArea, NOMBRE_ROL, veTodo, type Area } from '../../../../core/permisos/areas';
 import { Emoji } from '../../../../shared/components/emoji/emoji';
 import type { NombreIcono } from '../../../../shared/components/emoji/iconos';
 import { Saludo } from '../../../../shared/components/saludo/saludo';
@@ -32,6 +34,7 @@ interface TarjetaArea {
 export class MiTrabajo {
   protected readonly conta = inject(ContabilidadService);
   private readonly avisos = inject(MessageService);
+  private readonly empresa = inject(EmpresaActualService);
 
   protected readonly pendientes = computed(() => pendientesDe(this.conta.asientos(), this.conta.persona()));
 
@@ -42,16 +45,20 @@ export class MiTrabajo {
         .filter((a) => a.creadoPor === this.conta.persona().id && a.estado === 'registrado').length,
   );
 
-  /** SIMULACIÓN: áreas que el dueño le dio a María (luego vendrán de su cuenta). */
-  private readonly misAreas = ['contabilidad'] as const;
+  /** Empresa, rol y áreas de la cuenta (para el saludo). */
+  protected readonly chips = computed(() => {
+    const e = this.empresa.actual();
+    if (!e) return [];
+    const areas = veTodo(e.rol) ? 'todas las áreas' : e.areas.map(nombreArea).join(', ');
+    return [e.razonSocial, NOMBRE_ROL[e.rol], `Ves: ${areas}`];
+  });
 
-  protected readonly chips = computed(() => ['COLDWORK', 'Contadora', 'Ves: Contabilidad']);
-
-  /** Una tarjeta por área, con lo pendiente de esa área. */
+  /** Una tarjeta por área contable de la persona, con lo pendiente de esa área. */
   protected readonly areas = computed<TarjetaArea[]>(() => {
     const p = this.pendientes();
-    const tarjetas: Record<(typeof this.misAreas)[number], TarjetaArea> = {
-      contabilidad: {
+    const e = this.empresa.actual();
+    const tarjetas: TarjetaArea[] = [
+      {
         clave: 'contabilidad',
         nombre: 'Contabilidad',
         sticker: 'libro',
@@ -59,10 +66,17 @@ export class MiTrabajo {
         colores: ['#8b5cf6', '#d946ef'],
         resumen: `${p.observados.length} por corregir · ${p.borradores.length} borradores`,
       },
-    };
-    return this.misAreas.map((a) => tarjetas[a]);
+      {
+        clave: 'finanzas',
+        nombre: 'Finanzas',
+        sticker: 'dinero',
+        ruta: '/trabajo/cierre',
+        colores: ['#34d399', '#059669'],
+        resumen: 'Caja, bancos e impuestos del mes',
+      },
+    ];
+    return tarjetas.filter((t) => !e || veTodo(e.rol) || e.areas.includes(t.clave as Area));
   });
-
   // Diálogo
   protected readonly dialogoVisible = signal(false);
   protected readonly editando = signal<Asiento | null>(null);

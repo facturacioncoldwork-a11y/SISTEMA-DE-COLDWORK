@@ -1,6 +1,8 @@
-import { CONTADORA, DUENO } from '../data/equipo-ejemplo';
-import type { Asiento } from '../models/contabilidad.model';
+import type { Asiento, Persona } from '../models/contabilidad.model';
 import { pendientesDe, permisosDe, puedeEditar } from './permisos';
+
+const DUENO: Persona = { id: 'p-dueno', nombre: 'Dueño', rol: 'dueno' };
+const CONTADORA: Persona = { id: 'p-contadora', nombre: 'Contadora', rol: 'contador' };
 
 function asiento(estado: Asiento['estado'], creadoPor: string): Asiento {
   return {

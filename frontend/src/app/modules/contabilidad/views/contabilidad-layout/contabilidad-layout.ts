@@ -1,10 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { MessageService } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
 import { Emoji } from '../../../../shared/components/emoji/emoji';
-import { CONTADORA } from '../../data/equipo-ejemplo';
 import { PeriodoPipe } from '../../pipes/formato.pipes';
 import { usarAvisosEnVivo } from '../../services/avisos-en-vivo';
 import { ContabilidadService } from '../../services/contabilidad.service';
@@ -29,11 +27,8 @@ interface Pestana {
 })
 export class ContabilidadLayout {
   protected readonly conta = inject(ContabilidadService);
-  private readonly avisos = inject(MessageService);
 
-  protected readonly contadora = CONTADORA;
-
-  protected readonly pestanas: Pestana[] = [
+  private readonly todas: Pestana[] = [
     { etiqueta: 'Resumen', icono: 'pi pi-th-large', ruta: '/contabilidad' },
     { etiqueta: 'Aprobaciones', icono: 'pi pi-inbox', ruta: '/contabilidad/aprobaciones', conContador: true },
     { etiqueta: 'Libro Diario', icono: 'pi pi-book', ruta: '/contabilidad/diario' },
@@ -43,15 +38,12 @@ export class ContabilidadLayout {
     { etiqueta: 'Libros SUNAT', icono: 'pi pi-file-export', ruta: '/contabilidad/libros-sunat' },
   ];
 
-  constructor() {
-    // SIMULACIÓN: dentro del ERP siempre se actúa como dueño
-    this.conta.vista.set('dueno');
-    usarAvisosEnVivo();
-  }
+  /** Aprobaciones solo para quien aprueba (dueño o admin). */
+  protected readonly pestanas = computed(() =>
+    this.todas.filter((p) => !p.conContador || this.conta.permisos().aprobar),
+  );
 
-  /** SIMULACIÓN: la contadora registra algo desde otra computadora. */
-  protected simular() {
-    this.avisos.add({ severity: 'secondary', summary: 'María está registrando una venta…', life: 2500 });
-    setTimeout(() => this.conta.simularContadora(), 2500);
+  constructor() {
+    usarAvisosEnVivo();
   }
 }

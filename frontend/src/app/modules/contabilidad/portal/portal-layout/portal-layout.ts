@@ -1,12 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { MessageService } from 'primeng/api';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SelectModule } from 'primeng/select';
 import { Emoji } from '../../../../shared/components/emoji/emoji';
 import { MenuCuenta } from '../../../../shared/components/menu-cuenta/menu-cuenta';
-import { EMPRESAS_MARIA } from '../../../empresas/data/empresas-ejemplo';
-import type { MiEmpresa } from '../../../empresas/models/empresa.model';
 import { PeriodoPipe } from '../../pipes/formato.pipes';
 import { usarAvisosEnVivo } from '../../services/avisos-en-vivo';
 import { ContabilidadService } from '../../services/contabilidad.service';
@@ -40,11 +37,6 @@ interface Enlace {
 })
 export class PortalLayout {
   protected readonly conta = inject(ContabilidadService);
-  private readonly router = inject(Router);
-  private readonly avisos = inject(MessageService);
-
-  /** SIMULACIÓN: empresas de María para el menú de la cuenta. */
-  protected readonly empresasMaria = EMPRESAS_MARIA;
 
   protected readonly porCorregir = computed(
     () => pendientesDe(this.conta.asientos(), this.conta.persona()).observados.length,
@@ -72,30 +64,5 @@ export class PortalLayout {
 
   constructor() {
     usarAvisosEnVivo();
-  }
-
-  /** SIMULACIÓN: el dueño revisa lo enviado desde su computadora. */
-  protected simularDueno() {
-    if (!this.conta.porAprobar().length) {
-      this.avisos.add({ severity: 'secondary', summary: 'No tienes asientos enviados al dueño.', life: 3000 });
-      return;
-    }
-    this.avisos.add({ severity: 'secondary', summary: 'El dueño está revisando…', life: 2500 });
-    setTimeout(() => this.conta.simularDueno(), 2500);
-  }
-
-  /** SIMULACIÓN: volver a la vista del dueño. */
-  protected volverAlDueno() {
-    void this.router.navigateByUrl('/contabilidad');
-  }
-
-  /** SIMULACIÓN: María elige su propia empresa desde el menú de la cuenta. */
-  protected elegirSimulada(e: MiEmpresa) {
-    this.avisos.add({
-      severity: 'info',
-      summary: 'Simulación',
-      detail: `En "${e.razonSocial}" María es dueña: entraría a SU sistema completo, sin nada de COLDWORK.`,
-      life: 6000,
-    });
   }
 }

@@ -26,20 +26,9 @@
     </div>
   </header>
 
-  <!-- ===== Simulación (solo prototipo) ===== -->
-  <aside class="simulacion" aria-label="Simulación del prototipo">
-    <span class="etiqueta-sim"><i class="pi pi-eye"></i> Prototipo con datos de ejemplo</span>
-    <span class="en-linea"><span class="punto"></span> {{ contadora.nombre }} en línea</span>
-    <span class="botones">
-      <button type="button" (click)="simular()"><i class="pi pi-play"></i> Simular que María registra algo</button>
-      <a routerLink="/invitacion/demo"><i class="pi pi-envelope"></i> Ver su invitación</a>
-      <a routerLink="/trabajo"><i class="pi pi-external-link"></i> Abrir su interfaz</a>
-    </span>
-  </aside>
-
   <!-- ===== Secciones ===== -->
   <nav class="pestanas" aria-label="Secciones de contabilidad">
-    @for (p of pestanas; track p.ruta) {
+    @for (p of pestanas(); track p.ruta) {
       <a
         [routerLink]="p.ruta"
         routerLinkActive="activa"
@@ -54,6 +43,11 @@
       </a>
     }
   </nav>
+
+  <p class="aviso-guardado">
+    <i class="pi pi-info-circle"></i>
+    Aún no se guarda en la base de datos: lo que registres se borra al recargar la página.
+  </p>
 
   <section class="contenido">
     <router-outlet />

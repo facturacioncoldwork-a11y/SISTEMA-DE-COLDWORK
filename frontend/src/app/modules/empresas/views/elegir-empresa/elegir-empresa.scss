@@ -36,26 +36,6 @@ h1 {
   color: var(--p-text-muted-color);
 }
 
-// ─── Simulación ─────────────────────────────────────────────────
-
-.simulacion {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-start;
-  margin-bottom: 1.25rem;
-  padding: 0.6rem 0.75rem;
-  border: 1px dashed #e0a43c;
-  border-radius: 0.6rem;
-  background: #fff7e6;
-  color: #7a4b00;
-  font-size: 0.82rem;
-  cursor: pointer;
-
-  input {
-    margin-top: 0.15rem;
-  }
-}
-
 // ─── Empresas ───────────────────────────────────────────────────
 
 .empresas {

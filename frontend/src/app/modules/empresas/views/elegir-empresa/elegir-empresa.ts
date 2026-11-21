@@ -1,13 +1,11 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { destinoDe, iniciales, nombreDestino } from '../../../../core/empresa/eleccion';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { NOMBRE_ROL } from '../../../../core/permisos/areas';
 import { Emoji } from '../../../../shared/components/emoji/emoji';
-import { EMPRESAS_MARIA } from '../../data/empresas-ejemplo';
 import type { MiEmpresa } from '../../models/empresa.model';
 
 /**
@@ -25,7 +23,6 @@ export class ElegirEmpresa implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly empresa = inject(EmpresaActualService);
   private readonly router = inject(Router);
-  private readonly avisos = inject(MessageService);
 
   protected readonly cargando = signal(true);
   /** El servidor no respondió: no es lo mismo que "no tienes empresas". */
@@ -34,11 +31,8 @@ export class ElegirEmpresa implements OnInit {
   protected readonly nombreDestino = nombreDestino;
   protected readonly iniciales = iniciales;
 
-  /** SIMULACIÓN: ver la pantalla como la vería María Quispe (contadora con negocio propio). */
-  protected readonly comoMaria = signal(false);
-
-  protected readonly lista = computed<MiEmpresa[]>(() => (this.comoMaria() ? EMPRESAS_MARIA : this.empresa.empresas()));
-  protected readonly correo = computed(() => (this.comoMaria() ? 'maria.quispe@ejemplo.com' : (this.auth.usuario()?.email ?? '')));
+  protected readonly lista = this.empresa.empresas;
+  protected readonly correo = computed(() => this.auth.usuario()?.email ?? '');
 
   ngOnInit() {
     void this.cargar();
@@ -57,25 +51,8 @@ export class ElegirEmpresa implements OnInit {
   }
 
   protected async entrar(e: MiEmpresa) {
-    if (this.comoMaria()) return this.entrarSimulado(e);
     this.empresa.elegir(e.id);
     await this.router.navigateByUrl(destinoDe(e));
-  }
-
-  /** SIMULACIÓN: la empresa de COLDWORK abre el portal; la propia de María no existe de verdad. */
-  private async entrarSimulado(e: MiEmpresa) {
-    if (e.id === 'sim-coldwork') {
-      const real = this.empresa.empresas()[0];
-      if (real) this.empresa.elegir(real.id);
-      await this.router.navigateByUrl('/trabajo');
-      return;
-    }
-    this.avisos.add({
-      severity: 'info',
-      summary: 'Simulación',
-      detail: `En "${e.razonSocial}" María es dueña: entraría a SU sistema completo, sin nada de COLDWORK.`,
-      life: 6000,
-    });
   }
 
   protected async salir() {

@@ -4,43 +4,6 @@
   background: var(--p-surface-50);
 }
 
-// ─── Franja de simulación ───────────────────────────────────────
-
-.simulacion {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  padding: 0.5rem 1.5rem;
-  font-size: 0.85rem;
-  background: repeating-linear-gradient(-45deg, #fff7e6, #fff7e6 12px, #ffefcc 12px, #ffefcc 24px);
-  border-bottom: 1px solid #f5c26b;
-  color: #7a4b00;
-}
-
-.acciones-sim {
-  display: flex;
-  gap: 0.5rem;
-
-  button {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.3rem 0.75rem;
-    border: 1px solid #e0a43c;
-    border-radius: 2rem;
-    background: #fff;
-    color: #7a4b00;
-    font: inherit;
-    cursor: pointer;
-
-    &:hover {
-      background: #ffe2a8;
-    }
-  }
-}
-
 // ─── Barra superior ─────────────────────────────────────────────
 
 .barra {
@@ -130,4 +93,14 @@ nav {
   max-width: 72rem;
   margin: 0 auto;
   padding: 2rem 1.5rem 3rem;
+}
+
+// Aviso mientras Contabilidad no esté conectada a la base de datos
+.aviso-guardado {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  color: var(--p-text-muted-color);
 }

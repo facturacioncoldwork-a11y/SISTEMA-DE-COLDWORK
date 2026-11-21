@@ -1,6 +1,7 @@
-import { computed, Injectable, signal } from '@angular/core';
-import { ASIENTOS_EJEMPLO } from '../data/ejemplo';
-import { ACTIVIDAD_EJEMPLO, CONTADORA, DUENO, nombrePersona, PERSONAS } from '../data/equipo-ejemplo';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { AuthService } from '../../../core/auth/services/auth.service';
+import { EmpresaActualService } from '../../../core/empresa/services/empresa-actual.service';
+import { veTodo } from '../../../core/permisos/areas';
 import { PCGE } from '../data/pcge';
 import { ACCIONES } from '../data/textos';
 import type {
@@ -12,7 +13,6 @@ import type {
   NuevoAsiento,
   Persona,
   Regimen,
-  RolContable,
   TramoIngresos,
 } from '../models/contabilidad.model';
 import { validarAsiento } from '../utils/partida-doble';
@@ -21,10 +21,10 @@ import { permisosDe, puedeEditar } from '../utils/permisos';
 /**
  * Estado del módulo Contabilidad: UNA sola fuente de datos que ven el dueño y el contador.
  *
- * PROTOTIPO: todo vive en memoria (se pierde al recargar). Al conectarlo:
- *  - los métodos llamarán al backend (/api/v1/contabilidad) con la misma forma;
- *  - la persona actual saldrá de la sesión (EmpresaActualService) en vez del selector "Ver como";
- *  - los cambios de otros llegarán en vivo con Supabase Realtime.
+ * La persona y su rol salen de la sesión real (cuenta + empresa elegida).
+ * Pendiente: guardar los asientos en la base de datos (hoy viven en memoria y se pierden al recargar);
+ * los métodos llamarán al backend (/api/v1/contabilidad) con la misma forma y los cambios de otros
+ * llegarán en vivo con Supabase Realtime.
  */
 @Injectable({ providedIn: 'root' })
 export class ContabilidadService {
@@ -37,17 +37,26 @@ export class ContabilidadService {
   readonly regimen = signal<Regimen>('rmt');
   readonly tramo = signal<TramoIngresos>('hasta300');
 
-  // ─── Quién está usando el módulo (simulación) ─────────────────
-  readonly personas = PERSONAS;
-  readonly vista = signal<RolContable>('dueno');
-  readonly persona = computed<Persona>(() => (this.vista() === 'dueno' ? DUENO : CONTADORA));
+  // ─── Quién está usando el módulo (sesión real) ─────────────────
+  private readonly auth = inject(AuthService);
+  private readonly empresa = inject(EmpresaActualService);
+
+  /** Dueño y admin aprueban; el resto trabaja como contador (envía a aprobación). */
+  readonly persona = computed<Persona>(() => {
+    const usuario = this.auth.usuario();
+    const nombre = (usuario?.user_metadata?.['nombre'] as string | undefined) || usuario?.email || 'Usuario';
+    return { id: usuario?.id ?? 'sin-sesion', nombre, rol: veTodo(this.empresa.rol()) ? 'dueno' : 'contador' };
+  });
+
+  /** Nombres de quienes hicieron algo (para la actividad). */
+  private readonly nombres = new Map<string, string>();
   readonly config = signal<ConfigAprobacion>({ contadorRegistraDirecto: false, contadorVeLibros: true });
   readonly permisos = computed(() => permisosDe(this.persona(), this.config()));
 
   // ─── Periodo, asientos y actividad ────────────────────────────
-  readonly periodo = signal('2026-11');
-  private readonly todos = signal<Asiento[]>(structuredClone(ASIENTOS_EJEMPLO));
-  readonly actividad = signal<Actividad[]>(structuredClone(ACTIVIDAD_EJEMPLO));
+  readonly periodo = signal(periodoActual());
+  private readonly todos = signal<Asiento[]>([]);
+  readonly actividad = signal<Actividad[]>([]);
 
   /** Asientos del periodo elegido, del más reciente al más antiguo. */
   readonly asientos = computed(() =>
@@ -70,10 +79,11 @@ export class ContabilidadService {
 
   /** "Tú" si es quien mira la pantalla; si no, el nombre de la persona. */
   nombrePersona(id: string | undefined): string {
-    return id === this.persona().id ? 'Tú' : nombrePersona(id);
+    if (id === this.persona().id) return 'Tú';
+    return (id && this.nombres.get(id)) || 'Otro usuario';
   }
 
-  /** Frase de una actividad desde el punto de vista de quien mira: "Tú aprobaste" / "María aprobó". */
+  /** Frase de una actividad desde el punto de vista de quien mira: "Tú aprobaste" / "Ana aprobó". */
   describir(personaId: string, accion: AccionActividad): string {
     const yo = personaId === this.persona().id;
     return `${this.nombrePersona(personaId)} ${yo ? ACCIONES[accion].textoYo : ACCIONES[accion].texto}`;
@@ -179,58 +189,6 @@ export class ContabilidadService {
     this.anotar(asiento, 'elimino');
   }
 
-  // ─── Simulación de trabajo en vivo ────────────────────────────
-
-  /**
-   * Simula que la contadora, desde otra computadora, registra una venta.
-   * Al conectar Supabase Realtime esto llegará solo, sin este método.
-   */
-  simularContadora(): Asiento {
-    const base = 800 + Math.round(Math.random() * 40) * 50;
-    const igv = Math.round(base * 18) / 100;
-    return this.crear(
-      {
-        fecha: this.periodo() + '-20',
-        origen: 'ventas',
-        glosa: 'Recarga de gas refrigerante R-404A',
-        moneda: 'PEN',
-        documento: {
-          tipo: '01',
-          serie: 'F001',
-          numero: String(127 + this.todos().length),
-          documentoTercero: '20000000004',
-          nombreTercero: 'Minimarket de Ejemplo S.A.C.',
-        },
-        lineas: [
-          { cuenta: '1212', debe: base + igv, haber: 0 },
-          { cuenta: '40111', debe: 0, haber: igv },
-          { cuenta: '7041', debe: 0, haber: base },
-        ],
-      },
-      true,
-      CONTADORA,
-    );
-  }
-
-  /**
-   * Simula que el dueño, desde su computadora, revisa el asiento más antiguo
-   * que envió la contadora: lo aprueba o lo devuelve con una observación.
-   */
-  simularDueno(): Actividad | null {
-    const pendiente = [...this.porAprobar()].sort((a, b) => a.numero - b.numero)[0];
-    if (!pendiente) return null;
-
-    if (pendiente.numero % 2 === 0) {
-      this.reemplazar({ ...pendiente, estado: 'registrado', registradoPor: DUENO.id });
-      this.anotar(pendiente, 'aprobo', DUENO);
-    } else {
-      const comentario = 'Adjunta la foto del comprobante, por favor.';
-      this.reemplazar({ ...pendiente, estado: 'observado', observacion: comentario });
-      this.anotar(pendiente, 'observo', DUENO, comentario);
-    }
-    return this.actividad()[0];
-  }
-
   // ─── Internos ────────────────────────────────────────────────
 
   private exigirValido(datos: NuevoAsiento): void {
@@ -243,6 +201,7 @@ export class ContabilidadService {
   }
 
   private anotar(asiento: Asiento, accion: AccionActividad, persona = this.persona(), detalle?: string): void {
+    this.nombres.set(persona.id, persona.nombre);
     const entrada: Actividad = {
       id: crypto.randomUUID(),
       fecha: new Date().toISOString(),
@@ -262,4 +221,10 @@ export class ContabilidadService {
       .map((a) => a.numero);
     return Math.max(0, ...numeros) + 1;
   }
+}
+
+/** Mes actual en hora local: "AAAA-MM". */
+function periodoActual(): string {
+  const hoy = new Date();
+  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
 }

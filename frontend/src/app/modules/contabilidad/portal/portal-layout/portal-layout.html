@@ -1,12 +1,3 @@
-<!-- Franja de simulación (se quita al conectar cuentas reales) -->
-<aside class="simulacion" aria-label="Simulación del prototipo">
-  <span><i class="pi pi-eye"></i> <strong>Simulación:</strong> así ve la app {{ conta.persona().nombre }} (contadora) desde su computadora.</span>
-  <span class="acciones-sim">
-    <button type="button" (click)="simularDueno()"><i class="pi pi-play"></i> Simular que el dueño revisa</button>
-    <button type="button" (click)="volverAlDueno()"><i class="pi pi-arrow-left"></i> Volver a la vista del dueño</button>
-  </span>
-</aside>
-
 <!-- Barra superior propia del portal -->
 <header class="barra">
   <!-- Fila 1: marca, periodo y usuario -->
@@ -29,14 +20,8 @@
         <ng-template #item let-p>{{ p | periodo }}</ng-template>
       </p-select>
 
-      <!-- Cuenta: cambiar de empresa y cerrar sesión (simulando a María) -->
-      <app-menu-cuenta
-        [nombre]="conta.persona().nombre"
-        simCorreo="maria.quispe@ejemplo.com"
-        [simEmpresas]="empresasMaria"
-        simActualId="sim-coldwork"
-        (elegirSimulada)="elegirSimulada($event)"
-      />
+      <!-- Cuenta: cambiar de empresa y cerrar sesión -->
+      <app-menu-cuenta [nombre]="conta.persona().nombre" />
     </div>
   </div>
 
@@ -60,5 +45,9 @@
 </header>
 
 <main class="contenido">
+  <p class="aviso-guardado">
+    <i class="pi pi-info-circle"></i>
+    Aún no se guarda en la base de datos: lo que registres se borra al recargar la página.
+  </p>
   <router-outlet />
 </main>

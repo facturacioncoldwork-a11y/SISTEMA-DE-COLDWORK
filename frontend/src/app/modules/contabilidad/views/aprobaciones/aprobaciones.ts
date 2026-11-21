@@ -7,7 +7,6 @@ import { TextareaModule } from 'primeng/textarea';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ActividadLista } from '../../components/actividad-lista/actividad-lista';
 import { AsientoTarjeta } from '../../components/asiento-tarjeta/asiento-tarjeta';
-import { CONTADORA } from '../../data/equipo-ejemplo';
 import type { Asiento, ConfigAprobacion } from '../../models/contabilidad.model';
 import { ContabilidadService } from '../../services/contabilidad.service';
 
@@ -22,7 +21,6 @@ export class Aprobaciones {
   protected readonly conta = inject(ContabilidadService);
   private readonly avisos = inject(MessageService);
 
-  protected readonly contadora = CONTADORA;
   protected readonly pendientes = computed(() => [...this.conta.porAprobar()].sort((a, b) => a.numero - b.numero));
 
   // Diálogo "Observar"

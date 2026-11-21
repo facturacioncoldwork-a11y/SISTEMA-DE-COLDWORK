@@ -99,65 +99,6 @@
   }
 }
 
-// ─── Simulación ─────────────────────────────────────────────────
-
-.simulacion {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  padding: 0.5rem 0.9rem;
-  border: 1px dashed #e0a43c;
-  border-radius: 0.8rem;
-  background: #fff9ec;
-  color: #7a4b00;
-  font-size: 0.82rem;
-
-  .etiqueta-sim {
-    font-weight: 700;
-  }
-}
-
-.en-linea {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-
-  .punto {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background: var(--p-green-500);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-green-500) 25%, transparent);
-  }
-}
-
-.botones {
-  margin-left: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-
-  a,
-  button {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.3rem 0.75rem;
-    border: 1px solid #e0a43c;
-    border-radius: 2rem;
-    background: #fff;
-    color: #7a4b00;
-    font: inherit;
-    text-decoration: none;
-    cursor: pointer;
-
-    &:hover {
-      background: #ffe7b3;
-    }
-  }
-}
-
 // ─── Pestañas (pastillas) ───────────────────────────────────────
 
 .pestanas {
@@ -212,4 +153,14 @@
 
 .contenido {
   padding-top: 0.25rem;
+}
+
+// Aviso mientras Contabilidad no esté conectada a la base de datos
+.aviso-guardado {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--p-text-muted-color);
 }
