@@ -1,0 +1,189 @@
+// Mismo fondo que el login, para que se sienta parte del ingreso
+.fondo {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #082f49, #0c4a6e 55%, #0369a1);
+}
+
+.panel {
+  width: min(30rem, 100%);
+  padding: 2rem;
+  border-radius: 1rem;
+  background: var(--p-content-background);
+  box-shadow: 0 20px 50px rgb(0 0 0 / 0.3);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--p-primary-color);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.sub {
+  margin: 0.35rem 0 1.25rem;
+  font-size: 0.9rem;
+  color: var(--p-text-muted-color);
+}
+
+// ─── Simulación ─────────────────────────────────────────────────
+
+.simulacion {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px dashed #e0a43c;
+  border-radius: 0.6rem;
+  background: #fff7e6;
+  color: #7a4b00;
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  input {
+    margin-top: 0.15rem;
+  }
+}
+
+// ─── Empresas ───────────────────────────────────────────────────
+
+.empresas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.empresa {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.8rem;
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--p-primary-color);
+    box-shadow: 0 4px 14px rgb(3 105 161 / 0.12);
+
+    > i {
+      color: var(--p-primary-color);
+    }
+  }
+
+  .avatar {
+    flex: none;
+    width: 2.6rem;
+    height: 2.6rem;
+    display: grid;
+    place-items: center;
+    border-radius: 0.7rem;
+    font-weight: 700;
+    background: var(--p-highlight-background);
+    color: var(--p-primary-color);
+  }
+
+  .datos {
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      display: block;
+    }
+
+    small {
+      color: var(--p-text-muted-color);
+    }
+  }
+
+  > i {
+    color: var(--p-text-muted-color);
+  }
+}
+
+.vacio {
+  color: var(--p-text-muted-color);
+  font-style: italic;
+}
+
+.sin-conexion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--p-orange-500) 12%, transparent);
+  color: var(--p-orange-800);
+  font-size: 0.9rem;
+}
+
+// ─── Crear empresa ──────────────────────────────────────────────
+
+.crear {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--p-content-border-color);
+  border-radius: 0.8rem;
+  color: var(--p-text-color);
+  text-decoration: none;
+
+  > i {
+    font-size: 1.4rem;
+    color: var(--p-primary-color);
+  }
+
+  small {
+    display: block;
+    color: var(--p-text-muted-color);
+  }
+
+  &:hover {
+    border-color: var(--p-primary-color);
+  }
+}
+
+// ─── Pie ────────────────────────────────────────────────────────
+
+.pie {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--p-text-muted-color);
+}
+
+.enlace {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--p-primary-color);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

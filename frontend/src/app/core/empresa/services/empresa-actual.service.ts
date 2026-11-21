@@ -4,6 +4,8 @@ import { veTodo, type Area } from '../../permisos/areas';
 import type { MiEmpresa } from '../../../modules/empresas/models/empresa.model';
 
 const CLAVE = 'coldwork-empresa';
+/** Marca de "ya eligió empresa en esta sesión" (se borra al cerrar el navegador). */
+const CLAVE_SESION = 'coldwork-empresa-elegida';
 
 /**
  * Empresa con la que se está trabajando (se recuerda entre visitas) y lo que
@@ -62,15 +64,22 @@ export class EmpresaActualService {
     this.carga = Promise.resolve(lista);
   }
 
+  /** ¿Ya eligió con qué empresa trabajar en esta sesión? */
+  readonly eligioEnSesion = signal(sessionStorage.getItem(CLAVE_SESION) === '1');
+
   elegir(id: string) {
     this.elegidaId.set(id);
     localStorage.setItem(CLAVE, id);
+    this.eligioEnSesion.set(true);
+    sessionStorage.setItem(CLAVE_SESION, '1');
   }
 
   limpiar() {
     this.empresas.set([]);
     this.elegidaId.set(null);
     this.carga = null;
+    this.eligioEnSesion.set(false);
     localStorage.removeItem(CLAVE);
+    sessionStorage.removeItem(CLAVE_SESION);
   }
 }

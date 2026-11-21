@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Router, Routes } from '@angular/router';
 import { conSesion } from '../../../core/auth/guards/auth.guards';
-import { conPortal } from '../../../core/permisos/permisos.guards';
+import { conEmpresaElegida, conPortal } from '../../../core/permisos/permisos.guards';
 import { ContabilidadService } from '../services/contabilidad.service';
 
 /** SIMULACIÓN: al entrar al portal se actúa como la contadora (luego vendrá de la cuenta real). */
@@ -20,7 +20,7 @@ const conPermisoLibros = () => inject(ContabilidadService).permisos().verLibros 
 export const PORTAL_TRABAJO_ROUTES: Routes = [
   {
     path: 'trabajo',
-    canActivate: [conSesion, conPortal('contable'), entrarComoContador],
+    canActivate: [conSesion, conEmpresaElegida, conPortal('contable'), entrarComoContador],
     loadComponent: () => import('./portal-layout/portal-layout').then((m) => m.PortalLayout),
     children: [
       {

@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { necesitaElegir } from '../empresa/eleccion';
 import { EmpresaActualService } from '../empresa/services/empresa-actual.service';
 import type { Area } from './areas';
 import { portalDe, RUTA_PORTAL, type Portal } from './portales';
@@ -21,13 +22,26 @@ export const conArea =
  * En el ERP (shell): quien tiene un portal propio es llevado a él.
  * Así un contador nunca ve el menú ni los módulos del dueño, aunque escriba la dirección.
  */
-export const alPortalCorrecto: CanActivateFn = async () => {
+export const alPortalCorrecto: CanActivateFn = async (_ruta, estado) => {
+  // Crear su propia empresa está permitido para cualquiera (ahí será dueño)
+  if (estado.url.startsWith('/empresa/nueva')) return true;
+
   const empresa = inject(EmpresaActualService);
   const router = inject(Router);
   await empresa.asegurar().catch(() => []);
   const e = empresa.actual();
   const portal = portalDe(e?.rol, e?.areas);
   return portal === 'erp' ? true : router.createUrlTree([RUTA_PORTAL[portal]]);
+};
+
+/** Con varias empresas, primero se elige a cuál entrar (una vez por sesión). */
+export const conEmpresaElegida: CanActivateFn = async (_ruta, estado) => {
+  if (estado.url.startsWith('/empresa/nueva')) return true;
+
+  const empresa = inject(EmpresaActualService);
+  const router = inject(Router);
+  const lista = await empresa.asegurar().catch(() => []);
+  return necesitaElegir(lista.length, empresa.eligioEnSesion()) ? router.createUrlTree(['/elegir-empresa']) : true;
 };
 
 /** Entrada a un portal: su dueño natural, o dueño/admin para supervisar. */
