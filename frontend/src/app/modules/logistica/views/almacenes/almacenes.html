@@ -1,0 +1,72 @@
+<div class="lg-toolbar">
+  <span class="info"
+    ><b>{{ store.almacenesActivos().length }}</b> almacenes activos ·
+    <b>{{ total() | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</b> en stock</span
+  >
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="transferir()">
+    <i class="pi pi-arrow-right-arrow-left"></i> Transferir stock
+  </button>
+  <button type="button" class="lg-cta" (click)="abrir(null)">
+    <i class="pi pi-plus"></i> Nuevo almacén
+  </button>
+</div>
+
+<div class="grid">
+  @for (a of store.almacenes(); track a.id) {
+    <article class="alm lg-card" [class.inactivo]="!a.activo" [attr.data-tipo]="a.tipo">
+      <div class="franja"></div>
+      <div class="cab">
+        <span class="ico"><i [class]="tipos[a.tipo].icono"></i></span>
+        <div class="nom">
+          <span class="lg-mono">{{ a.codigo }} · {{ tipos[a.tipo].nombre }}</span>
+          <strong>{{ a.nombre }}</strong>
+        </div>
+        <button type="button" class="editar" (click)="abrir(a)" aria-label="Editar">
+          <i class="pi pi-pencil"></i>
+        </button>
+      </div>
+      <div class="cifras">
+        <div>
+          <small>Valorizado</small
+          ><b>{{ a.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</b>
+        </div>
+        <div>
+          <small>Productos</small><b>{{ a.productos }}</b>
+        </div>
+        <div>
+          <small>Del total</small><b>{{ (a.valorizado / total()) * 100 | number: '1.0-0' }}%</b>
+        </div>
+      </div>
+      <div class="barra"><span [style.width.%]="(a.valorizado / total()) * 100"></span></div>
+      @if (top().get(a.id)?.length) {
+        <ul class="top">
+          @for (x of top().get(a.id); track x.nombre) {
+            <li>
+              <span>{{ x.nombre }}</span><b>{{ x.cantidad | number: '1.0-2' }} {{ x.unidad }}</b>
+            </li>
+          }
+        </ul>
+      }
+      <div class="pie">
+        @if (a.responsable) {
+          <span><i class="pi pi-user"></i> {{ a.responsable }}</span>
+        }
+        @if (a.direccion) {
+          <span><i class="pi pi-map-marker"></i> {{ a.direccion }}</span>
+        }
+      </div>
+    </article>
+  } @empty {
+    <div class="lg-card lg-vacio" style="grid-column: 1 / -1">
+      <i class="pi pi-warehouse"></i>
+      <h4>Aún no hay almacenes</h4>
+      <p>Crea tu almacén principal y una unidad móvil por cada técnico.</p>
+      <button type="button" class="lg-cta" (click)="abrir(null)">
+        <i class="pi pi-plus"></i> Crear almacén
+      </button>
+    </div>
+  }
+</div>
+
+<app-almacen-dialogo [(visible)]="dialogo" [almacen]="editando()" />

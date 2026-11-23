@@ -1,0 +1,51 @@
+<header class="cabecera">
+  <div>
+    <h1>Mis asientos</h1>
+    <p class="sub">Todo lo que registraste en {{ conta.periodo() | periodo }} y en qué estado está.</p>
+  </div>
+  <p-selectbutton
+    [options]="filtros"
+    optionLabel="etiqueta"
+    optionValue="valor"
+    [allowEmpty]="false"
+    [ngModel]="filtro()"
+    (ngModelChange)="filtro.set($event)"
+    ariaLabelledBy="Filtrar por estado"
+  />
+</header>
+
+<div class="libro">
+  <table>
+    <thead>
+      <tr>
+        <th>Nº</th>
+        <th>Fecha</th>
+        <th>Operación</th>
+        <th>Tipo</th>
+        <th class="num">Importe</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (a of visibles(); track a.id) {
+        <tr>
+          <td class="codigo">{{ a.numero | correlativo }}</td>
+          <td>{{ a.fecha.slice(8) }}/{{ a.fecha.slice(5, 7) }}</td>
+          <td>
+            {{ a.glosa }}
+            @if (a.observacion) {
+              <small class="observacion"><i class="pi pi-comment"></i> {{ a.observacion }}</small>
+            }
+          </td>
+          <td>{{ nombreOrigen(a.origen) }}</td>
+          <td class="num">S/ {{ totales(a.lineas).debe | importe: true }}</td>
+          <td><p-tag [value]="estados[a.estado].nombre" [severity]="estados[a.estado].severidad" [icon]="estados[a.estado].icono" /></td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="vacio">No tienes asientos con este filtro.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

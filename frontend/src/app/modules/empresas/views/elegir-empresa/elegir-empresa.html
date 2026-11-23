@@ -1,0 +1,55 @@
+<div class="fondo">
+  <main class="panel">
+    <!-- Marca -->
+    <div class="logo"><app-emoji nombre="copo" /> COLDWORK</div>
+
+    <h1>¿A qué empresa quieres entrar?</h1>
+    <p class="sub">Sesión iniciada como <strong>{{ correo() }}</strong></p>
+
+    <!-- Empresas -->
+    <ul class="empresas">
+      @for (e of lista(); track e.id) {
+        <li>
+          <button type="button" class="empresa" (click)="entrar(e)">
+            <span class="avatar">{{ iniciales(e.razonSocial) }}</span>
+            <span class="datos">
+              <strong>{{ e.razonSocial }}</strong>
+              <small>
+                {{ nombreRol[e.rol] }} · {{ nombreDestino(e) }}
+                @if (e.ruc) {
+                  · RUC {{ e.ruc }}
+                }
+              </small>
+            </span>
+            <i class="pi pi-arrow-right"></i>
+          </button>
+        </li>
+      } @empty {
+        @if (cargando()) {
+          <li class="vacio"><i class="pi pi-spin pi-spinner"></i> Cargando tus empresas…</li>
+        } @else if (sinConexion()) {
+          <li class="sin-conexion">
+            <span><i class="pi pi-wifi"></i> No hay conexión con el servidor.</span>
+            <p-button label="Reintentar" icon="pi pi-refresh" size="small" [text]="true" (onClick)="cargar()" />
+          </li>
+        } @else {
+          <li class="vacio">Aún no perteneces a ninguna empresa.</li>
+        }
+      }
+    </ul>
+
+    <!-- Crear empresa propia -->
+    <a class="crear" routerLink="/empresa/nueva">
+      <i class="pi pi-plus-circle"></i>
+      <span>
+        <strong>Crear mi propia empresa</strong>
+        <small>Serás el dueño. Sus datos quedan separados de las demás empresas.</small>
+      </span>
+    </a>
+
+    <p class="pie">
+      ¿No eres tú?
+      <button type="button" class="enlace" (click)="salir()">Cerrar sesión</button>
+    </p>
+  </main>
+</div>

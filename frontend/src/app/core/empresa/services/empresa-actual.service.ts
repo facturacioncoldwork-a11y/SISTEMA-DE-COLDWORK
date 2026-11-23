@@ -3,6 +3,7 @@ import { ApiService } from '../../api/services/api.service';
 import { veTodo, type Area } from '../../permisos/areas';
 import type { MiEmpresa } from '../../../modules/empresas/models/empresa.model';
 
+/** Última empresa usada en este dispositivo: se entra directo a ella la próxima vez. */
 const CLAVE = 'coldwork-empresa';
 
 /**
@@ -15,6 +16,8 @@ export class EmpresaActualService {
 
   readonly empresas = signal<MiEmpresa[]>([]);
   private readonly elegidaId = signal<string | null>(localStorage.getItem(CLAVE));
+  /** Id de la última empresa elegida (puede ya no existir si le quitaron el acceso). */
+  readonly ultimaElegida = this.elegidaId.asReadonly();
   private carga: Promise<MiEmpresa[]> | null = null;
 
   readonly actual = computed(() => {
@@ -25,6 +28,8 @@ export class EmpresaActualService {
   readonly rol = computed(() => this.actual()?.rol ?? null);
   /** Dueño o admin: ve todas las áreas y gestiona el equipo. */
   readonly esAdmin = computed(() => veTodo(this.rol()));
+  /** Dueño (CEO): el único que da accesos. */
+  readonly esDueno = computed(() => this.rol() === 'dueno');
 
   /** ¿Puede entrar a esta área en la empresa actual? */
   puede(area: Area): boolean {
@@ -69,8 +74,8 @@ export class EmpresaActualService {
 
   limpiar() {
     this.empresas.set([]);
-    this.elegidaId.set(null);
     this.carga = null;
-    localStorage.removeItem(CLAVE);
+    // La última empresa elegida se recuerda en el dispositivo: no es un dato sensible
+    // y si otra cuenta entra aquí, no le sirve (se le pregunta).
   }
 }

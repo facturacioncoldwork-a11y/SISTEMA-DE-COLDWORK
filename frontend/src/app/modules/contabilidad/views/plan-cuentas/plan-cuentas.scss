@@ -1,0 +1,99 @@
+@use '../../styles/libro';
+
+.barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  input {
+    min-width: 20rem;
+  }
+}
+
+.fuente {
+  color: var(--p-text-muted-color);
+}
+
+// ─── Elementos ──────────────────────────────────────────────────
+
+.elementos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.8rem 0.35rem 0.35rem;
+    border: 1px solid var(--p-content-border-color);
+    border-radius: 2rem;
+    background: var(--p-content-background);
+    color: var(--p-text-color);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+
+    span {
+      width: 1.5rem;
+      height: 1.5rem;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      font-weight: 700;
+      background: var(--p-highlight-background);
+      color: var(--p-primary-color);
+    }
+
+    &.activo {
+      border-color: var(--p-primary-color);
+      background: var(--p-highlight-background);
+      font-weight: 600;
+    }
+  }
+}
+
+// ─── Tabla ──────────────────────────────────────────────────────
+
+.col-codigo {
+  width: 7rem;
+}
+
+.elemento td {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--p-primary-color);
+  background: var(--p-highlight-background);
+}
+
+// Sangría por nivel: cuenta → subcuenta → divisionaria
+.nivel-1 .nombre {
+  font-weight: 700;
+}
+
+.nivel-2 .nombre {
+  padding-left: 1.8rem;
+}
+
+.nivel-3 .nombre {
+  padding-left: 3.2rem;
+}
+
+.nivel-4 .nombre {
+  padding-left: 4.6rem;
+}
+
+.naturaleza {
+  text-transform: capitalize;
+  color: var(--p-text-muted-color);
+}
+
+.resumen {
+  font-size: 0.82rem;
+  color: var(--p-text-muted-color);
+}

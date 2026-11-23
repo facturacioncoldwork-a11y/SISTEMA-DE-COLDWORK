@@ -1,0 +1,120 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(40rem, 96vw)' }"
+  [header]="producto() ? 'Editar producto' : 'Nuevo producto'"
+>
+  <form class="lg-form" (ngSubmit)="guardar()">
+    <div class="full">
+      <span class="lbl">Tipo</span>
+      <div class="lg-opciones">
+        @for (t of tipos; track t.clave) {
+          <button type="button" [class.on]="tipo() === t.clave" (click)="tipo.set(t.clave)">
+            <i [class]="t.icono" [style.color]="t.color"></i><strong>{{ t.nombre }}</strong>
+          </button>
+        }
+      </div>
+    </div>
+    <div>
+      <label for="p-sku">SKU / código</label>
+      <input
+        pInputText
+        id="p-sku"
+        name="sku"
+        placeholder="GAS-R410A-11"
+        [ngModel]="sku()"
+        (ngModelChange)="sku.set($event)"
+      />
+    </div>
+    <div>
+      <label for="p-marca">Marca</label>
+      <input
+        pInputText
+        id="p-marca"
+        name="marca"
+        placeholder="Danfoss, Copeland…"
+        [ngModel]="marca()"
+        (ngModelChange)="marca.set($event)"
+      />
+    </div>
+    <div class="full">
+      <label for="p-nombre">Nombre</label>
+      <input
+        pInputText
+        id="p-nombre"
+        name="nombre"
+        placeholder="Compresor scroll 5 TR 220V"
+        [ngModel]="nombre()"
+        (ngModelChange)="nombre.set($event)"
+      />
+    </div>
+    <div>
+      <label for="p-unidad">Unidad</label>
+      <p-select
+        inputId="p-unidad"
+        name="unidad"
+        [options]="unidades"
+        [ngModel]="unidad()"
+        (ngModelChange)="unidad.set($event)"
+        appendTo="body"
+        [editable]="true"
+      />
+    </div>
+    <div>
+      <label for="p-min">Stock mínimo</label>
+      <p-inputnumber
+        inputId="p-min"
+        name="min"
+        [min]="0"
+        [maxFractionDigits]="3"
+        [ngModel]="stockMinimo()"
+        (ngModelChange)="stockMinimo.set($event)"
+      />
+    </div>
+    <div class="full">
+      <label for="p-desc">Descripción <small>(opcional)</small></label>
+      <textarea
+        pTextarea
+        id="p-desc"
+        name="desc"
+        rows="2"
+        [ngModel]="descripcion()"
+        (ngModelChange)="descripcion.set($event)"
+      ></textarea>
+    </div>
+    @if (producto()) {
+      <div class="full" style="display: flex; gap: 0.6rem; align-items: center">
+        <p-toggleswitch
+          inputId="p-activo"
+          name="activo"
+          [ngModel]="activo()"
+          (ngModelChange)="activo.set($event)"
+        />
+        <label for="p-activo" style="margin: 0">Producto activo</label>
+      </div>
+    }
+    @if (error(); as e) {
+      <p class="error"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
+    }
+    <div class="full lg-pie-dialogo">
+      @if (producto()) {
+        <button
+          type="button"
+          class="lg-cta lg-cta--suave lg-peligro"
+          style="margin-right: auto"
+          [disabled]="guardando()"
+          (click)="eliminar()"
+        >
+          <i class="pi pi-trash"></i> Eliminar
+        </button>
+      }
+      <button type="button" class="lg-cta lg-cta--suave" (click)="visible.set(false)">
+        Cancelar
+      </button>
+      <button type="submit" class="lg-cta" [disabled]="guardando()">
+        <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"></i> Guardar
+      </button>
+    </div>
+  </form>
+</p-dialog>

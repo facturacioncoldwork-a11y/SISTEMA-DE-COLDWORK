@@ -1,0 +1,49 @@
+<!-- Barra superior propia del portal -->
+<header class="barra">
+  <!-- Fila 1: marca, periodo y usuario -->
+  <div class="fila-superior">
+    <div class="marca">
+      <app-emoji nombre="copo" />
+      <strong>COLDWORK</strong>
+      <span class="area">Área contable</span>
+    </div>
+
+    <div class="derecha">
+      <p-select
+        [options]="conta.periodos()"
+        [ngModel]="conta.periodo()"
+        (ngModelChange)="conta.periodo.set($event)"
+        size="small"
+        ariaLabel="Periodo"
+      >
+        <ng-template #selectedItem let-p>{{ p | periodo }}</ng-template>
+        <ng-template #item let-p>{{ p | periodo }}</ng-template>
+      </p-select>
+
+      <!-- Cuenta: cambiar de empresa y cerrar sesión -->
+      <app-menu-cuenta [nombre]="conta.persona().nombre" />
+    </div>
+  </div>
+
+  <!-- Fila 2: secciones -->
+  <nav aria-label="Secciones del portal">
+    @for (e of enlaces(); track e.ruta) {
+      <a
+        [routerLink]="e.ruta"
+        routerLinkActive="activo"
+        [routerLinkActiveOptions]="{ exact: !!e.exacto }"
+        ariaCurrentWhenActive="page"
+      >
+        <i [class]="e.icono"></i>
+        <span>{{ e.etiqueta }}</span>
+        @if (e.exacto && porCorregir()) {
+          <span class="alerta">{{ porCorregir() }}</span>
+        }
+      </a>
+    }
+  </nav>
+</header>
+
+<main class="contenido">
+  <router-outlet />
+</main>

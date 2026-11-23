@@ -1,0 +1,50 @@
+<div class="modulo">
+  <!-- ===== Encabezado del módulo ===== -->
+  <header class="hero">
+    <div class="burbujas" aria-hidden="true"><span></span><span></span></div>
+
+    <div class="texto">
+      <p class="etiqueta">Módulo</p>
+      <h1>Contabilidad</h1>
+      <p class="sub">Supervisa el trabajo contable, aprueba asientos y revisa los libros.</p>
+    </div>
+
+    <div class="lado">
+      <div class="periodo">
+        <label for="conta-periodo">Periodo</label>
+        <p-select
+          inputId="conta-periodo"
+          [options]="conta.periodos()"
+          [ngModel]="conta.periodo()"
+          (ngModelChange)="conta.periodo.set($event)"
+        >
+          <ng-template #selectedItem let-p>{{ p | periodo }}</ng-template>
+          <ng-template #item let-p>{{ p | periodo }}</ng-template>
+        </p-select>
+      </div>
+      <span class="sticker" aria-hidden="true"><app-emoji nombre="libro" style="--tam: 100%" /></span>
+    </div>
+  </header>
+
+  <!-- ===== Secciones ===== -->
+  <nav class="pestanas" aria-label="Secciones de contabilidad">
+    @for (p of pestanas(); track p.ruta) {
+      <a
+        [routerLink]="p.ruta"
+        routerLinkActive="activa"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      >
+        <i [class]="p.icono"></i>
+        <span>{{ p.etiqueta }}</span>
+        @if (p.conContador && conta.porAprobar().length) {
+          <span class="globo">{{ conta.porAprobar().length }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <section class="contenido">
+    <router-outlet />
+  </section>
+</div>

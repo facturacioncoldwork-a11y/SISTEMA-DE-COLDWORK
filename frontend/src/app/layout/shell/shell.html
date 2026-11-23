@@ -1,6 +1,6 @@
 <div class="shell" [class.abierto]="abierto()">
   <aside class="lateral">
-    <div class="logo"><app-emoji nombre="copo" /> COLDWORK</div>
+    <div class="logo"><app-logo alto="3.1rem" /></div>
     <nav>
       @for (grupo of menu(); track grupo.titulo) {
         <div class="grupo">{{ grupo.titulo }}</div>
@@ -8,7 +8,7 @@
           <a
             [routerLink]="item.ruta"
             routerLinkActive="activo"
-            [routerLinkActiveOptions]="{ exact: item.ruta === '/' }"
+            [routerLinkActiveOptions]="{ exact: item.ruta === '/' || !!item.exacta }"
             (click)="abierto.set(false)"
           >
             <i [class]="item.icono"></i> {{ item.etiqueta }}
@@ -23,30 +23,15 @@
   <div class="principal">
     <header class="barra">
       <p-button icon="pi pi-bars" [text]="true" class="solo-movil" (onClick)="abierto.set(true)" ariaLabel="Menú" />
-      @if (empresa.empresas().length > 1) {
-        <p-select
-          [options]="empresa.empresas()"
-          optionLabel="razonSocial"
-          optionValue="id"
-          [ngModel]="empresa.id()"
-          (ngModelChange)="empresa.elegir($event)"
-          size="small"
-          ariaLabel="Empresa"
-        />
-      } @else if (empresa.actual(); as e) {
+      @if (empresa.actual(); as e) {
         <span class="empresa"><i class="pi pi-building"></i> {{ e.razonSocial }}</span>
       }
       @if (entorno !== 'prod') {
         <span class="entorno">{{ entorno }}</span>
       }
       <span class="espacio"></span>
-      <span class="correo">
-        {{ auth.usuario()?.email }}
-        @if (empresa.rol(); as rol) {
-          <small class="rol">{{ nombreRol[rol] }}</small>
-        }
-      </span>
-      <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" (onClick)="salir()" ariaLabel="Cerrar sesión" />
+      <!-- Cuenta: cambiar de empresa, crear empresa y cerrar sesión -->
+      <app-menu-cuenta />
     </header>
     <main class="contenido"><router-outlet /></main>
   </div>

@@ -1,21 +1,178 @@
-<h1 class="titulo">Hola{{ nombre() ? ', ' + nombre() : '' }} <app-emoji nombre="saludo" etiqueta="saludo" /></h1>
-<p class="sub">
-  @if (empresa.actual(); as e) {
-    {{ e.razonSocial }} · <strong>{{ nombreRol[e.rol] }}</strong>
-    @if (!veTodo(e.rol)) {
-      · tus áreas: {{ misAreas() || 'ninguna todavía (pide acceso al dueño)' }}
-    }
-    .
+<div class="inicio">
+  <!-- ===== Saludo ===== -->
+  <header class="hero {{ momento().clase }}">
+    <div class="burbujas" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="texto">
+      <p class="fecha">
+        {{ ahora() | date: "EEEE d 'de' MMMM" }} · <b>{{ ahora() | date: 'HH:mm' }}</b>
+      </p>
+      <h1>{{ momento().saludo }}{{ nombre() ? ', ' + nombre() : '' }}</h1>
+      @if (empresa.actual(); as e) {
+        <p class="quien">
+          <span class="chip">{{ e.razonSocial }}</span>
+          <span class="chip">{{ nombreRol[e.rol] }}</span>
+          <span class="chip suave">Ves: {{ misAreas() }}</span>
+        </p>
+      }
+    </div>
+    <div class="sticker" aria-hidden="true">
+      <app-emoji [nombre]="momento().sticker" style="--tam: 100%" />
+    </div>
+  </header>
+
+  <!-- ===== Logística en vivo ===== -->
+  @if (logistica()) {
+    <section class="kpis">
+      <a class="kpi c1" routerLink="/logistica/inventario">
+        <span class="ico"><app-emoji nombre="caja" style="--tam: 1.9rem" /></span>
+        <small>Productos en inventario</small>
+        <strong><app-contador [valor]="resumen()?.productosActivos ?? 0" /></strong>
+        <em>Ver inventario →</em>
+      </a>
+      <a class="kpi c2" routerLink="/logistica/inventario" [queryParams]="{ nivel: 'reponer' }">
+        <span class="ico"><app-emoji nombre="idea" style="--tam: 1.9rem" /></span>
+        <small>Por reponer</small>
+        <strong><app-contador [valor]="resumen()?.bajoMinimo ?? 0" /></strong>
+        <em>{{ resumen()?.sinStock ?? 0 }} agotados →</em>
+      </a>
+      <a class="kpi c3" routerLink="/logistica/ordenes-compra">
+        <span class="ico"><app-emoji nombre="camion" style="--tam: 1.9rem" /></span>
+        <small>Compras en camino</small>
+        <strong><app-contador [valor]="resumen()?.ocPendientes ?? 0" /></strong>
+        <em>{{ atrasadas() ? atrasadas() + ' atrasada(s) →' : 'Todo a tiempo →' }}</em>
+      </a>
+      <a class="kpi c4" routerLink="/logistica/llegadas">
+        <span class="ico"><app-emoji nombre="grafico" style="--tam: 1.9rem" /></span>
+        <small>Movimientos del mes</small>
+        <strong
+          ><app-contador [valor]="(resumen()?.llegadasMes ?? 0) + (resumen()?.salidasMes ?? 0)"
+        /></strong>
+        <em
+          >{{ resumen()?.llegadasMes ?? 0 }} llegadas · {{ resumen()?.salidasMes ?? 0 }} salidas</em
+        >
+      </a>
+    </section>
+
+    <div class="dos">
+      <section class="panel">
+        <h2><app-emoji nombre="cohete" /> Acciones rápidas</h2>
+        <div class="acciones">
+          <a
+            class="accion a1"
+            routerLink="/logistica/ordenes-compra"
+            [queryParams]="{ importar: 1 }"
+            ><i class="pi pi-file-import"></i
+            ><span
+              ><b>Importar cotización</b><small>PDF del proveedor → orden de compra</small></span
+            ></a
+          >
+          <a class="accion a2" routerLink="/logistica/llegadas" [queryParams]="{ nuevo: 1 }"
+            ><i class="pi pi-download"></i
+            ><span><b>Registrar llegada</b><small>Lo que entra al almacén</small></span></a
+          >
+          <a class="accion a3" routerLink="/logistica/salidas" [queryParams]="{ nuevo: 1 }"
+            ><i class="pi pi-upload"></i
+            ><span><b>Registrar salida</b><small>Servicios, ventas, transferencias</small></span></a
+          >
+          <a class="accion a4" routerLink="/logistica/inventario" [queryParams]="{ nuevo: 1 }"
+            ><i class="pi pi-plus-circle"></i
+            ><span><b>Nuevo producto</b><small>Repuestos, gases, herramientas</small></span></a
+          >
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2><app-emoji nombre="reloj" /> Próximas llegadas</h2>
+        <ul class="llegadas">
+          @for (x of proximas(); track x.o.id) {
+            <li>
+              <a routerLink="/logistica/ordenes-compra" [queryParams]="{ ver: x.o.id }">
+                <span class="punto" [style.background]="colorLlegada(x.s.llegada)"></span>
+                <span class="info"
+                  ><b>{{ x.o.proveedor.razonSocial }}</b
+                  ><small
+                    >{{ x.o.codigo }}{{ x.o.cliente ? ' · para ' + x.o.cliente : '' }}</small
+                  ></span
+                >
+                <span class="eta" [style.color]="colorLlegada(x.s.llegada)">{{
+                  x.s.textoLlegada
+                }}</span>
+              </a>
+            </li>
+          } @empty {
+            <li class="vacio">
+              <app-emoji nombre="fiesta" style="--tam: 2rem" /> No hay compras en camino
+            </li>
+          }
+        </ul>
+      </section>
+    </div>
   }
-  Los indicadores aparecen aquí a medida que se construyan los módulos.
-</p>
-<div class="tiles">
-  @for (t of tiles; track t.titulo) {
-    <p-card>
-      <div class="tile">
-        <i [class]="t.icono"></i>
-        <div><small>{{ t.titulo }}</small><strong>—</strong></div>
+
+  <!-- ===== Áreas ===== -->
+  <h2 class="titulo-seccion">Tus áreas</h2>
+  <section class="areas">
+    @for (a of areas(); track a.clave) {
+      <a
+        class="area"
+        [routerLink]="a.ruta"
+        [style.--c1]="a.colores[0]"
+        [style.--c2]="a.colores[1]"
+        (pointermove)="inclinar($event)"
+        (pointerleave)="soltar($event)"
+      >
+        <span class="sticker-area"><app-emoji [nombre]="a.sticker" style="--tam: 2.6rem" /></span>
+        <b>{{ a.nombre }}</b>
+        <small>{{ a.descripcion }}</small>
+        <span class="estado">{{ a.lista ? 'Disponible' : 'Próximamente' }}</span>
+      </a>
+    } @empty {
+      <p class="sin-areas">Aún no tienes áreas asignadas. Pídele acceso al dueño de la empresa.</p>
+    }
+    @if (esDueno()) {
+      <a
+        class="area equipo"
+        routerLink="/equipo"
+        (pointermove)="inclinar($event)"
+        (pointerleave)="soltar($event)"
+      >
+        <span class="sticker-area"><app-emoji nombre="estrella" style="--tam: 2.6rem" /></span>
+        <b>Equipo y accesos</b>
+        <small>Solo tú das acceso a cada área</small>
+        <span class="estado">Dueño</span>
+      </a>
+    }
+  </section>
+
+  <!-- ===== Consejos ===== -->
+  @if (logistica()) {
+    <section class="consejos">
+      @for (c of consejos; track c.titulo; let i = $index) {
+        @if (i === consejo()) {
+          <div class="consejo">
+            <app-emoji [nombre]="c.sticker" style="--tam: 3rem" />
+            <div>
+              <b>{{ c.titulo }}</b>
+              <p>{{ c.texto }}</p>
+            </div>
+            @if (c.ruta) {
+              <a class="ir" [routerLink]="c.ruta" [queryParams]="c.query ?? {}"
+                >Probar <i class="pi pi-arrow-right"></i
+              ></a>
+            }
+          </div>
+        }
+      }
+      <div class="puntos">
+        @for (c of consejos; track c.titulo; let i = $index) {
+          <button
+            type="button"
+            [class.on]="i === consejo()"
+            (click)="consejo.set(i)"
+            [attr.aria-label]="'Consejo ' + (i + 1)"
+          ></button>
+        }
       </div>
-    </p-card>
+    </section>
   }
 </div>

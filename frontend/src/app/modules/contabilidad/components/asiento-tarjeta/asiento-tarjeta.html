@@ -1,0 +1,61 @@
+@let a = asiento();
+
+<article class="tarjeta" [class]="a.estado">
+  <!-- Cabecera -->
+  <header>
+    <div class="titulo">
+      <span class="numero">Nº {{ a.numero | correlativo }}</span>
+      <strong>{{ a.glosa }}</strong>
+      <p-tag [value]="estado().nombre" [severity]="estado().severidad" [icon]="estado().icono" />
+    </div>
+    <p class="meta">
+      {{ a.fecha.slice(8) }}/{{ a.fecha.slice(5, 7) }} · {{ nombreOrigen(a.origen) }}
+      @if (a.documento; as d) {
+        · {{ nombreComprobante(d.tipo) }} {{ d.serie }}-{{ d.numero }}
+        @if (d.nombreTercero) {
+          · {{ d.nombreTercero }}
+        }
+      }
+      @if (a.creadoPor !== conta.persona().id) {
+        · hecho por <strong>{{ conta.nombrePersona(a.creadoPor) }}</strong>
+      }
+    </p>
+  </header>
+
+  <!-- Sustento -->
+  @if (a.adjuntos?.length) {
+    <p class="sustento">
+      <i class="pi pi-paperclip"></i>
+      @for (adj of a.adjuntos; track adj.ruta) {
+        <button type="button" class="enlace" (click)="ver(adj.ruta)">{{ adj.nombre }}</button>
+      }
+    </p>
+  } @else if (a.documento) {
+    <p class="sustento falta"><i class="pi pi-exclamation-triangle"></i> Sin foto o PDF del comprobante</p>
+  }
+
+  <!-- Observación del dueño -->
+  @if (a.observacion) {
+    <p class="observacion"><i class="pi pi-comment"></i> {{ a.observacion }}</p>
+  }
+
+  <!-- Líneas -->
+  <table>
+    <tbody>
+      @for (l of a.lineas; track $index) {
+        <tr [class.abono]="l.haber > 0">
+          <td class="codigo">{{ l.cuenta }}</td>
+          <td>{{ conta.nombreCuenta(l.cuenta) }}</td>
+          <td class="num">{{ l.debe | importe }}</td>
+          <td class="num">{{ l.haber | importe }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <!-- Pie: total y acciones -->
+  <footer>
+    <span class="total">Total S/ {{ total() | importe: true }}</span>
+    <ng-content select="[acciones]" />
+  </footer>
+</article>

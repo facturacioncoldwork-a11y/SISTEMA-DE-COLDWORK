@@ -1,0 +1,126 @@
+.cabecera {
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+}
+
+.sub {
+  margin: 0.3rem 0 0;
+  color: var(--p-text-muted-color);
+}
+
+// ─── Avance ─────────────────────────────────────────────────────
+
+.avance {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  .numero {
+    min-width: 4rem;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--p-primary-color);
+  }
+
+  p-progressbar {
+    flex: 1;
+  }
+}
+
+// ─── Pasos ──────────────────────────────────────────────────────
+
+.pasos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.9rem;
+  background: var(--p-content-background);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.9rem 1.1rem;
+
+    & + li {
+      border-top: 1px solid var(--p-content-border-color);
+    }
+
+    > i {
+      font-size: 1.2rem;
+      color: var(--p-text-muted-color);
+    }
+
+    div {
+      flex: 1;
+    }
+
+    small {
+      display: block;
+      color: var(--p-text-muted-color);
+    }
+
+    a {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--p-primary-color);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+  }
+
+  .hecho {
+    > i {
+      color: var(--p-green-600);
+    }
+
+    strong {
+      color: var(--p-text-muted-color);
+      text-decoration: line-through;
+    }
+  }
+}
+
+// ─── Declaración ────────────────────────────────────────────────
+
+.declaracion {
+  margin-top: 1.5rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.9rem;
+  background: var(--p-highlight-background);
+
+  h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+  }
+}
+
+.dato {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+
+  strong {
+    font-size: 1.3rem;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.plazos {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  font-size: 0.88rem;
+
+  li {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+  }
+}

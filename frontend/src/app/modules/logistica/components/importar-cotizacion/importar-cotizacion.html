@@ -1,0 +1,450 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [maximizable]="true"
+  [style]="{ width: 'min(78rem, 98vw)' }"
+  header="Importar cotización → Orden de compra"
+>
+  <div class="lg-pasos">
+    @for (
+      t of ['Cargar cotización', 'Revisar y editar', 'Vista previa del PDF'];
+      track t;
+      let i = $index
+    ) {
+      <div class="paso" [class.actual]="paso() === i + 1" [class.hecho]="paso() > i + 1">
+        <b>
+          @if (paso() > i + 1) {
+            <i class="pi pi-check"></i>
+          } @else {
+            {{ i + 1 }}
+          }</b
+        ><span>{{ t }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- ================= PASO 1 ================= -->
+  @if (paso() === 1) {
+    <div class="lg-seg" style="margin-bottom: 1rem">
+      <button type="button" [class.on]="modo() === 'pdf'" (click)="modo.set('pdf')">
+        <i class="pi pi-file-pdf"></i> PDF de la cotización
+      </button>
+      <button type="button" [class.on]="modo() === 'texto'" (click)="modo.set('texto')">
+        <i class="pi pi-whatsapp"></i> Pegar texto de WhatsApp
+      </button>
+    </div>
+
+    @if (modo() === 'pdf') {
+      <label
+        class="zona"
+        [class.encima]="arrastrando()"
+        (dragover)="$event.preventDefault(); arrastrando.set(true)"
+        (dragleave)="arrastrando.set(false)"
+        (drop)="alSoltar($event)"
+      >
+        <input type="file" accept="application/pdf,.pdf" (change)="alElegir($event)" hidden />
+        @if (leyendo()) {
+          <i class="pi pi-spin pi-spinner"></i>
+          <strong>Leyendo {{ archivo() }}…</strong>
+        } @else {
+          <i class="pi pi-cloud-upload"></i>
+          <strong>Arrastra aquí el PDF de la cotización</strong>
+          <span
+            >el que te manda el proveedor por WhatsApp o correo · o
+            <u>haz clic para elegirlo</u></span
+          >
+        }
+      </label>
+    } @else {
+      <textarea
+        class="p-inputtext pegar"
+        rows="9"
+        placeholder="Pega aquí el mensaje del proveedor. Una línea por producto, con la cantidad y el precio:&#10;12 und 023U1921 Filtro NUC Danfoss $30.00&#10;Aceite POE32 4L x4 $61.70"
+        [ngModel]="texto()"
+        (ngModelChange)="texto.set($event)"
+      ></textarea>
+      <div class="lg-pie-dialogo" style="margin-top: 0.6rem">
+        <button type="button" class="lg-cta" [disabled]="leyendo()" (click)="leerTexto()">
+          <i class="pi pi-sparkles"></i> Leer texto
+        </button>
+      </div>
+    }
+
+    <div class="ayuda-pasos">
+      <div>
+        <i class="pi pi-search"></i
+        ><span><b>Leemos</b> proveedor, RUC, n° de cotización, moneda y cada producto.</span>
+      </div>
+      <div>
+        <i class="pi pi-pencil"></i
+        ><span><b>Tú decides</b> qué se compra y en qué cantidad: nada se guarda sin revisar.</span>
+      </div>
+      <div>
+        <i class="pi pi-file-pdf"></i
+        ><span><b>Sale tu orden</b> con el formato de COLD WORK, lista para enviar.</span>
+      </div>
+    </div>
+    <p class="blanco">
+      ¿Sin archivo?
+      <a href="" (click)="$event.preventDefault(); enBlanco()">Empieza con la tabla en blanco</a>
+    </p>
+  }
+
+  <!-- ================= PASO 2 ================= -->
+  @if (paso() === 2) {
+    @if (lectura(); as r) {
+      @if (r.items.length) {
+        <div class="leido">
+          <i class="pi pi-check-circle"></i>
+          <span>
+            Leí <b>{{ r.items.length }} productos</b>
+            @if (r.numero) {
+              de la cotización <b>{{ r.numero }}</b>
+            }
+            @if (r.proveedor.razonSocial) {
+              de <b>{{ r.proveedor.razonSocial }}</b>
+            }
+            @if (r.total) {
+              · total cotizado {{ simbolo[r.moneda] }} {{ r.total | number: '1.2-2' }}
+            }
+          </span>
+        </div>
+      }
+      @for (a of r.avisos; track a) {
+        <p class="aviso-lectura"><i class="pi pi-exclamation-triangle"></i> {{ a }}</p>
+      }
+    }
+
+    <div class="lg-form cabecera">
+      <div>
+        <label for="ic-prov">Proveedor</label>
+        <p-select
+          inputId="ic-prov"
+          [options]="opcionesProveedor()"
+          optionLabel="razonSocial"
+          optionValue="id"
+          [filter]="true"
+          filterBy="razonSocial,numeroDocumento"
+          placeholder="Elige el proveedor"
+          appendTo="body"
+          [ngModel]="proveedorId()"
+          (ngModelChange)="proveedorId.set($event)"
+        />
+      </div>
+      @if (proveedorNuevo()) {
+        <div class="nuevo-prov">
+          <input
+            class="p-inputtext"
+            placeholder="RUC (11 dígitos)"
+            [ngModel]="nuevoRuc()"
+            (ngModelChange)="nuevoRuc.set($event)"
+            aria-label="RUC del proveedor nuevo"
+          />
+          <input
+            class="p-inputtext"
+            placeholder="Razón social"
+            [ngModel]="nuevaRazon()"
+            (ngModelChange)="nuevaRazon.set($event)"
+            aria-label="Razón social del proveedor nuevo"
+          />
+        </div>
+      } @else {
+        <div>
+          <label for="ic-aten">Atención (vendedor)</label>
+          <input
+            id="ic-aten"
+            class="p-inputtext"
+            placeholder="Con quién se coordinó"
+            [ngModel]="atencion()"
+            (ngModelChange)="atencion.set($event)"
+          />
+        </div>
+      }
+      <div>
+        <span class="lbl">Moneda</span>
+        <p-selectbutton
+          [options]="monedas"
+          optionLabel="t"
+          optionValue="v"
+          [allowEmpty]="false"
+          [ngModel]="moneda()"
+          (ngModelChange)="moneda.set($event)"
+          ariaLabel="Moneda"
+        />
+      </div>
+      <div>
+        <label for="ic-ref">N° de cotización del proveedor</label>
+        <input
+          id="ic-ref"
+          class="p-inputtext"
+          placeholder="HC 1724"
+          [ngModel]="cotizacionRef()"
+          (ngModelChange)="cotizacionRef.set($event)"
+        />
+      </div>
+      <div>
+        <label for="ic-cond">Condiciones de pago</label>
+        <input
+          id="ic-cond"
+          class="p-inputtext"
+          list="ic-condiciones"
+          [ngModel]="condiciones()"
+          (ngModelChange)="condiciones.set($event)"
+        />
+        <datalist id="ic-condiciones">
+          <option value="Contado"></option>
+          <option value="Factura a 15 días"></option>
+          <option value="Factura a 30 días"></option>
+          <option value="Adelanto 50 %"></option>
+        </datalist>
+      </div>
+      <div>
+        <label for="ic-sol">Solicitado por</label>
+        <input
+          id="ic-sol"
+          class="p-inputtext"
+          [ngModel]="solicitado()"
+          (ngModelChange)="solicitado.set($event)"
+        />
+      </div>
+      <div>
+        <label for="ic-lugar">Lugar de entrega</label>
+        <input
+          id="ic-lugar"
+          class="p-inputtext"
+          [ngModel]="lugar()"
+          (ngModelChange)="lugar.set($event)"
+        />
+      </div>
+      <div>
+        <label for="ic-alm">Llega al almacén</label>
+        <p-select
+          inputId="ic-alm"
+          [options]="store.almacenesActivos()"
+          optionLabel="nombre"
+          optionValue="id"
+          appendTo="body"
+          [ngModel]="almacenId()"
+          (ngModelChange)="almacenId.set($event)"
+        />
+      </div>
+      <fieldset class="full bloque">
+        <legend>
+          <i class="pi pi-truck"></i> ¿Cuándo llega? <small>lo que dijo el proveedor</small>
+        </legend>
+        <app-plazo-entrega [inicial]="null" (cambio)="plazo.set($event)" />
+      </fieldset>
+    </div>
+
+    <div class="barra-tabla">
+      <h4>
+        Productos cotizados <small>desmarca lo que no vas a comprar · todo es editable</small>
+      </h4>
+      <span class="espacio"></span>
+      <label
+        class="chk"
+        pTooltip="Si el proveedor puso precios con IGV, se les quita el 18 % para la orden"
+        ><input type="checkbox" [ngModel]="conIgv()" (ngModelChange)="conIgv.set($event)" /> Precios
+        incluyen IGV</label
+      >
+      <button type="button" class="lg-cta lg-cta--suave mini" (click)="todas(true)">Todo</button>
+      <button type="button" class="lg-cta lg-cta--suave mini" (click)="todas(false)">Nada</button>
+    </div>
+
+    <div class="tabla-edit">
+      <div class="fila cab">
+        <span></span><span>Código</span><span>Descripción</span><span>Marca</span><span>Cant.</span
+        ><span>Und</span><span>P. unit. ({{ simbolo[moneda()] }})</span><span>Total</span
+        ><span>En el catálogo</span><span></span>
+      </div>
+      @for (f of filas(); track f.id) {
+        <div class="fila" [class.fuera]="!f.incluir">
+          <input
+            type="checkbox"
+            [checked]="f.incluir"
+            (change)="cambiar(f.id, 'incluir', !f.incluir)"
+            [attr.aria-label]="'Comprar ' + f.descripcion"
+          />
+          <input
+            class="p-inputtext"
+            [value]="f.codigo"
+            (change)="cambiar(f.id, 'codigo', $any($event.target).value)"
+            aria-label="Código"
+          />
+          <input
+            class="p-inputtext"
+            [value]="f.descripcion"
+            (change)="cambiar(f.id, 'descripcion', $any($event.target).value)"
+            aria-label="Descripción"
+          />
+          <input
+            class="p-inputtext"
+            [value]="f.marca"
+            (change)="cambiar(f.id, 'marca', $any($event.target).value)"
+            aria-label="Marca"
+          />
+          <input
+            class="p-inputtext num"
+            type="number"
+            min="0"
+            step="any"
+            [value]="f.cantidad"
+            (input)="cambiar(f.id, 'cantidad', numero($any($event.target).value))"
+            aria-label="Cantidad"
+          />
+          <input
+            class="p-inputtext"
+            [value]="f.unidad"
+            (change)="cambiar(f.id, 'unidad', $any($event.target).value.toUpperCase())"
+            aria-label="Unidad"
+          />
+          <input
+            class="p-inputtext num"
+            type="number"
+            min="0"
+            step="any"
+            [value]="f.precio"
+            (input)="cambiar(f.id, 'precio', numero($any($event.target).value))"
+            aria-label="Precio unitario"
+          />
+          <b class="total">{{ f.cantidad * precioNeto(f) | number: '1.2-2' }}</b>
+          <div class="catalogo">
+            <p-select
+              [options]="opcionesProducto()"
+              optionLabel="etiqueta"
+              optionValue="id"
+              [filter]="true"
+              appendTo="body"
+              size="small"
+              [ngModel]="f.productoId"
+              (ngModelChange)="cambiar(f.id, 'productoId', $event)"
+              ariaLabel="Producto del catálogo"
+            />
+            @if (f.productoId === 'nuevo') {
+              <select
+                class="p-inputtext tipo"
+                [value]="f.tipo"
+                (change)="cambiar(f.id, 'tipo', $any($event.target).value)"
+                aria-label="Tipo del producto nuevo"
+              >
+                @for (t of tipos; track t.clave) {
+                  <option [value]="t.clave">{{ t.nombre }}</option>
+                }
+              </select>
+            } @else {
+              <small class="match">{{
+                f.emparejado === 'codigo'
+                  ? '✓ mismo código'
+                  : f.emparejado === 'nombre'
+                    ? '≈ nombre parecido'
+                    : '✓ elegido'
+              }}</small>
+            }
+          </div>
+          <button type="button" class="quitar" (click)="quitar(f.id)" aria-label="Quitar fila">
+            <i class="pi pi-trash"></i>
+          </button>
+        </div>
+      }
+      <button type="button" class="agregar" (click)="agregarFila()">
+        <i class="pi pi-plus"></i> Agregar producto
+      </button>
+    </div>
+
+    <div class="resumen">
+      <span
+        ><b>{{ elegidas().length }}</b> de {{ filas().length }} productos
+        @if (nuevos()) {
+          · <b>{{ nuevos() }}</b> se crearán en el catálogo
+        }
+      </span>
+      <span class="espacio"></span>
+      <span
+        >Valor de venta <b>{{ simbolo[moneda()] }} {{ totales().base | number: '1.2-2' }}</b></span
+      >
+      <span
+        >IGV <b>{{ simbolo[moneda()] }} {{ totales().igv | number: '1.2-2' }}</b></span
+      >
+      <span class="grande"
+        >Total <b>{{ simbolo[moneda()] }} {{ totales().total | number: '1.2-2' }}</b></span
+      >
+    </div>
+  }
+
+  <!-- ================= PASO 3 ================= -->
+  @if (paso() === 3) {
+    <div class="previa">
+      <div class="hoja">
+        <app-vista-pdf [bytes]="pdf()" />
+      </div>
+      <aside class="lado">
+        <div class="lg-ticket">
+          <div class="fila">
+            <span>Proveedor</span><strong>{{ nombreProveedor() }}</strong>
+          </div>
+          <div class="fila">
+            <span>Productos</span><strong>{{ elegidas().length }}</strong>
+          </div>
+          @if (plazo().entregaHasta) {
+            <div class="fila">
+              <span>Llega</span><strong>{{ plazo().plazoTexto }}</strong>
+            </div>
+          }
+          <div class="fila total">
+            <span>Total</span
+            ><strong>{{ simbolo[moneda()] }} {{ totales().total | number: '1.2-2' }}</strong>
+          </div>
+        </div>
+        <p class="nota">
+          Así se verá la orden. El número se asigna al guardar y el PDF se descarga con él.
+        </p>
+        <button
+          type="button"
+          class="lg-cta"
+          [disabled]="guardando() || generando()"
+          (click)="guardar(true)"
+        >
+          <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check-circle'"></i> Aprobar,
+          guardar y descargar PDF
+        </button>
+        <button
+          type="button"
+          class="lg-cta lg-cta--suave"
+          [disabled]="guardando() || generando()"
+          (click)="guardar(false)"
+        >
+          <i class="pi pi-save"></i> Guardar como borrador
+        </button>
+        <button
+          type="button"
+          class="lg-cta lg-cta--suave"
+          [disabled]="guardando()"
+          (click)="paso.set(2)"
+        >
+          <i class="pi pi-pencil"></i> Volver a editar
+        </button>
+        @if (progreso()) {
+          <p class="nota"><i class="pi pi-spin pi-spinner"></i> {{ progreso() }}</p>
+        }
+      </aside>
+    </div>
+  }
+
+  @if (error(); as e) {
+    <p class="lg-form error" style="margin-top: 0.75rem">
+      <i class="pi pi-exclamation-circle"></i> {{ e }}
+    </p>
+  }
+  @if (paso() === 2) {
+    <div class="lg-pie-dialogo">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="paso.set(1)">
+        <i class="pi pi-arrow-left"></i> Cargar otra
+      </button>
+      <span style="flex: 1"></span>
+      <button type="button" class="lg-cta" (click)="aVistaPrevia()">
+        Ver PDF <i class="pi pi-arrow-right"></i>
+      </button>
+    </div>
+  }
+</p-dialog>

@@ -1,0 +1,101 @@
+<p-drawer
+  [(visible)]="visible"
+  position="right"
+  [style]="{ width: 'min(34rem, 100vw)' }"
+  [showCloseIcon]="true"
+>
+  <ng-template #header>
+    @if (producto(); as p) {
+      <div class="cab">
+        <span class="ico" [style.background]="tipos[p.tipo].color"
+          ><i [class]="tipos[p.tipo].icono"></i
+        ></span>
+        <div>
+          <span class="lg-mono">{{ p.sku }}</span>
+          <h3>{{ p.nombre }}</h3>
+        </div>
+      </div>
+    }
+  </ng-template>
+
+  @if (producto(); as p) {
+    <section class="tarjeta-resumen">
+      <app-medidor-stock [cantidad]="p.stockTotal" [minimo]="p.stockMinimo" [unidad]="p.unidad" />
+      <div class="cifras">
+        <div>
+          <small>Costo promedio</small
+          ><strong>{{ p.costoPromedio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
+        </div>
+        <div>
+          <small>Valorizado</small
+          ><strong>{{ p.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
+        </div>
+      </div>
+      <div class="botones">
+        <button type="button" class="lg-cta lg-cta--suave" (click)="editar.emit(p)">
+          <i class="pi pi-pencil"></i> Editar
+        </button>
+        <button type="button" class="lg-cta" (click)="pedir.emit(p)">
+          <i class="pi pi-file-edit"></i> Pedir a proveedor
+        </button>
+      </div>
+    </section>
+
+    <h4>Stock por almacén</h4>
+    <div class="almacenes">
+      <button type="button" [class.on]="filtroAlmacen() === null" (click)="filtroAlmacen.set(null)">
+        <span>Todos</span><b>{{ p.stockTotal | number: '1.0-2' }}</b>
+      </button>
+      @for (s of p.stock; track s.almacenId) {
+        <button
+          type="button"
+          [class.on]="filtroAlmacen() === s.almacenId"
+          (click)="filtroAlmacen.set(s.almacenId)"
+        >
+          <span>{{ nombreAlmacen(s.almacenId) }}</span><b>{{ s.cantidad | number: '1.0-2' }}</b>
+        </button>
+      }
+    </div>
+
+    <div class="kardex-cab">
+      <h4>Kardex</h4>
+      <span
+        ><b class="lg-pos">+{{ entradas() | number: '1.0-2' }}</b> ·
+        <b class="lg-neg">−{{ salidas() | number: '1.0-2' }}</b></span
+      >
+    </div>
+
+    @if (cargando()) {
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="lg-skel" style="height: 2.6rem; margin-bottom: 0.6rem"></div>
+      }
+    } @else {
+      <ul class="lg-tiempo">
+        @for (m of visibles(); track m.id) {
+          <li>
+            <span class="punto {{ m.tipo }}"
+              ><i [class]="m.tipo === 'entrada' ? 'pi pi-arrow-down' : 'pi pi-arrow-up'"></i
+            ></span>
+            <div class="txt">
+              <strong>{{ m.documento }} · {{ nombreAlmacen(m.almacenId) }}</strong>
+              <small>{{ m.detalle }} · {{ m.fecha | date: 'd MMM y, HH:mm' }}</small>
+            </div>
+            <div class="cant">
+              {{ m.tipo === 'entrada' ? '+' : '−' }}{{ m.cantidad | number: '1.0-2' }}
+              <small
+                >saldo {{ m.saldo | number: '1.0-2' }} ·
+                {{ m.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</small
+              >
+            </div>
+          </li>
+        } @empty {
+          <div class="lg-vacio">
+            <i class="pi pi-history"></i>
+            <h4>Sin movimientos</h4>
+            <p>Aparecen al registrar llegadas o salidas.</p>
+          </div>
+        }
+      </ul>
+    }
+  }
+</p-drawer>

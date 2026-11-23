@@ -6,12 +6,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { MessageModule } from 'primeng/message';
 import { AuthService } from '../../../../core/auth/services/auth.service';
-import { Emoji } from '../../../../shared/components/emoji/emoji';
+import { Logo } from '../../../../shared/components/logo/logo';
 import { BotonGoogle } from '../../components/boton-google/boton-google';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, Emoji, BotonGoogle],
+  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, Logo, BotonGoogle],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

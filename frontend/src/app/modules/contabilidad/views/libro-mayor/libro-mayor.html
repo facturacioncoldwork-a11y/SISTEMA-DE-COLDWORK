@@ -1,0 +1,61 @@
+<div class="barra">
+  <div class="campo">
+    <label for="mayor-cuenta">Cuenta</label>
+    <p-select
+      inputId="mayor-cuenta"
+      [options]="opciones()"
+      optionLabel="etiqueta"
+      optionValue="codigo"
+      [filter]="true"
+      filterBy="etiqueta"
+      [ngModel]="codigo()"
+      (ngModelChange)="codigo.set($event)"
+    />
+  </div>
+
+  @if (cuenta(); as c) {
+    <div class="ficha">
+      <span>Naturaleza <strong>{{ c.naturaleza }}</strong></span>
+      <span>Saldo al cierre de {{ conta.periodo() | periodo }} <strong>S/ {{ saldoFinal() | importe: true }}</strong></span>
+    </div>
+  }
+</div>
+
+<div class="libro">
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Asiento</th>
+        <th>Descripción</th>
+        <th class="num">Debe</th>
+        <th class="num">Haber</th>
+        <th class="num">Saldo</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of movimientos(); track $index) {
+        <tr>
+          <td>{{ m.fecha.slice(8) }}/{{ m.fecha.slice(5, 7) }}</td>
+          <td class="codigo">{{ m.numero | correlativo }}</td>
+          <td>{{ m.glosa }}</td>
+          <td class="num">{{ m.debe | importe }}</td>
+          <td class="num">{{ m.haber | importe }}</td>
+          <td class="num saldo" [class.negativo]="m.saldo < 0">{{ m.saldo | importe: true }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="vacio">Esta cuenta no tiene movimientos registrados en el periodo.</td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">Totales</td>
+        <td class="num">{{ suma().debe | importe: true }}</td>
+        <td class="num">{{ suma().haber | importe: true }}</td>
+        <td class="num">{{ saldoFinal() | importe: true }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>

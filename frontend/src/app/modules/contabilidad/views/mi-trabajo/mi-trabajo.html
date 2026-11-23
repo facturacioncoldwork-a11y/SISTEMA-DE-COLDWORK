@@ -1,0 +1,89 @@
+@let p = pendientes();
+
+<!-- Saludo (mismo estilo que el Inicio del sistema) -->
+<app-saludo [nombre]="conta.persona().nombre.split(' ')[0]" [chips]="chips()" />
+
+<!-- Tus áreas: una tarjeta por cada área que el dueño te dio -->
+<section class="areas">
+  <h2>Tus áreas</h2>
+  <div class="tarjetas-area">
+    @for (a of areas(); track a.clave) {
+      <a class="area" [routerLink]="a.ruta" [style.--c1]="a.colores[0]" [style.--c2]="a.colores[1]">
+        <span class="sticker"><app-emoji [nombre]="a.sticker" style="--tam: 2.2rem" /></span>
+        <strong>{{ a.nombre }}</strong>
+        <small>{{ a.resumen }}</small>
+      </a>
+    }
+    <div class="area proxima">
+      <i class="pi pi-plus-circle"></i>
+      <strong>¿Más áreas?</strong>
+      <small>Cuando el dueño te dé otra área (ej. Técnica), aparecerá aquí y como pestaña arriba.</small>
+    </div>
+  </div>
+</section>
+
+<h2 class="titulo-mes">Pendiente en {{ conta.periodo() | periodo }}</h2>
+
+<!-- Resumen rápido -->
+<div class="barra">
+  <div class="cifras">
+    <div class="cifra alerta"><strong>{{ p.observados.length }}</strong> por corregir</div>
+    <div class="cifra"><strong>{{ p.borradores.length }}</strong> borradores</div>
+    <div class="cifra info"><strong>{{ p.enRevision.length }}</strong> esperando al dueño</div>
+    <div class="cifra ok"><strong>{{ registrados() }}</strong> registrados</div>
+  </div>
+  <p-button label="Nuevo asiento" icon="pi pi-plus" (onClick)="nuevo()" />
+</div>
+
+@if (conta.permisos().registrar) {
+  <p class="aviso ok"><i class="pi pi-unlock"></i> El dueño te permitió registrar directo: tus asientos entran al libro sin esperar aprobación.</p>
+} @else {
+  <p class="aviso"><i class="pi pi-info-circle"></i> Tus asientos se envían al dueño; se registran cuando él los aprueba.</p>
+}
+
+<!-- 1. Observados: lo más urgente -->
+@if (p.observados.length) {
+  <h2><i class="pi pi-exclamation-circle"></i> Para corregir</h2>
+  <div class="tarjetas">
+    @for (a of p.observados; track a.id) {
+      <app-asiento-tarjeta [asiento]="a">
+        <div acciones class="acciones">
+          <p-button label="Corregir" icon="pi pi-pencil" severity="warn" size="small" (onClick)="corregir(a)" />
+        </div>
+      </app-asiento-tarjeta>
+    }
+  </div>
+}
+
+<!-- 2. Borradores -->
+<h2><i class="pi pi-file-edit"></i> Mis borradores</h2>
+<div class="tarjetas">
+  @for (a of p.borradores; track a.id) {
+    <app-asiento-tarjeta [asiento]="a">
+      <div acciones class="acciones">
+        <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" ariaLabel="Eliminar borrador" (onClick)="eliminar(a)" />
+        <p-button label="Editar" icon="pi pi-pencil" severity="secondary" [outlined]="true" size="small" (onClick)="corregir(a)" />
+        <p-button
+          [label]="conta.permisos().registrar ? 'Registrar' : 'Enviar al dueño'"
+          [icon]="conta.permisos().registrar ? 'pi pi-check' : 'pi pi-send'"
+          size="small"
+          (onClick)="enviar(a)"
+        />
+      </div>
+    </app-asiento-tarjeta>
+  } @empty {
+    <p class="vacio">No tienes borradores.</p>
+  }
+</div>
+
+<!-- 3. Esperando aprobación -->
+@if (p.enRevision.length) {
+  <h2><i class="pi pi-hourglass"></i> Esperando aprobación del dueño</h2>
+  <div class="tarjetas">
+    @for (a of p.enRevision; track a.id) {
+      <app-asiento-tarjeta [asiento]="a" />
+    }
+  </div>
+}
+
+<app-asiento-dialogo [(visible)]="dialogoVisible" [inicial]="editando()" [guardando]="guardando()" (guardar)="guardar($event)" />

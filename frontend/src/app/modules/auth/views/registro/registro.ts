@@ -7,12 +7,13 @@ import { PasswordModule } from 'primeng/password';
 import { MessageModule } from 'primeng/message';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { Emoji } from '../../../../shared/components/emoji/emoji';
+import { Logo } from '../../../../shared/components/logo/logo';
 import { BotonGoogle } from '../../components/boton-google/boton-google';
 
 /** Vista: crear cuenta nueva. */
 @Component({
   selector: 'app-registro',
-  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, Emoji, BotonGoogle],
+  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, Emoji, Logo, BotonGoogle],
   templateUrl: './registro.html',
   styleUrl: '../login/login.scss',
 })

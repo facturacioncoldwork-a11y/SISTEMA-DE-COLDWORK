@@ -31,7 +31,7 @@
     />
 
     @if (rol() === 'admin') {
-      <p-message severity="info">El administrador entra a todas las áreas y puede invitar trabajadores.</p-message>
+      <p-message severity="info">El administrador entra a todas las áreas (incluida la contable), pero no puede dar accesos: eso solo lo hace el dueño.</p-message>
     } @else {
       <span class="etiqueta">Áreas a las que tendrá acceso</span>
       <div class="areas">

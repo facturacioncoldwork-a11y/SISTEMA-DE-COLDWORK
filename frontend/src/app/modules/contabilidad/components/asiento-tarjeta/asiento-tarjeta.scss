@@ -1,0 +1,121 @@
+.tarjeta {
+  padding: 1rem 1.1rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--p-content-border-color);
+  border-left: 4px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+
+  &.por_aprobar {
+    border-left-color: var(--p-blue-500);
+  }
+
+  &.observado {
+    border-left-color: var(--p-orange-500);
+  }
+
+  &.registrado {
+    border-left-color: var(--p-green-500);
+  }
+}
+
+// ─── Cabecera ───────────────────────────────────────────────────
+
+.titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+
+  .numero {
+    font-family: ui-monospace, monospace;
+    font-weight: 700;
+    color: var(--p-primary-color);
+  }
+}
+
+.meta {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: var(--p-text-muted-color);
+}
+
+.sustento {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+
+  .enlace {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--p-primary-color);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  &.falta {
+    color: var(--p-orange-700);
+  }
+}
+
+.observacion {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+  background: color-mix(in srgb, var(--p-orange-500) 12%, transparent);
+  color: var(--p-orange-800);
+}
+
+// ─── Líneas ─────────────────────────────────────────────────────
+
+table {
+  width: 100%;
+  margin-top: 0.75rem;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+td {
+  padding: 0.3rem 0.4rem;
+}
+
+.abono td:nth-child(1),
+.abono td:nth-child(2) {
+  padding-left: 1.8rem;
+}
+
+.codigo {
+  width: 5rem;
+  font-family: ui-monospace, monospace;
+}
+
+.num {
+  width: 8rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+// ─── Pie ────────────────────────────────────────────────────────
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--p-content-border-color);
+}
+
+.total {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

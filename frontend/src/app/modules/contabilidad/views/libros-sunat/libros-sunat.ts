@@ -1,0 +1,38 @@
+import { Component, computed, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
+import { librosObligatorios, REGIMENES, TRAMOS } from '../../data/sunat';
+import type { ConfigAprobacion } from '../../models/contabilidad.model';
+import { ContabilidadService } from '../../services/contabilidad.service';
+
+/** Qué libros electrónicos debe llevar la empresa según su régimen e ingresos, y su estado. */
+@Component({
+  selector: 'app-libros-sunat',
+  imports: [FormsModule, ButtonModule, SelectModule, TagModule, TooltipModule],
+  templateUrl: './libros-sunat.html',
+  styleUrl: './libros-sunat.scss',
+})
+export class LibrosSunat {
+  protected readonly conta = inject(ContabilidadService);
+  private readonly avisos = inject(MessageService);
+
+  protected readonly regimenes = REGIMENES;
+  protected readonly tramos = TRAMOS;
+
+  protected readonly libros = computed(() => librosObligatorios(this.conta.regimen(), this.conta.tramo()));
+  protected readonly contabilidadCompleta = computed(
+    () => this.conta.regimen() !== 'rer' && this.conta.tramo() === 'mas1700',
+  );
+
+  /** Guarda el régimen o el tramo de ingresos (solo el dueño). */
+  protected cambiar(cambios: Partial<ConfigAprobacion>) {
+    this.conta
+      .guardarConfig(cambios)
+      .then(() => this.avisos.add({ severity: 'success', summary: 'Régimen guardado', life: 2500 }))
+      .catch((e: Error) => this.avisos.add({ severity: 'error', summary: 'No se pudo guardar', detail: e.message, life: 6000 }));
+  }
+}

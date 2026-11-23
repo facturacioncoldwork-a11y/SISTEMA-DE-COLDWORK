@@ -1,0 +1,63 @@
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+import { AuthService } from '../../../../core/auth/services/auth.service';
+import { destinoDe, iniciales, nombreDestino } from '../../../../core/empresa/eleccion';
+import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
+import { NOMBRE_ROL } from '../../../../core/permisos/areas';
+import { Emoji } from '../../../../shared/components/emoji/emoji';
+import type { MiEmpresa } from '../../models/empresa.model';
+
+/**
+ * "¿A qué empresa quieres entrar?"
+ * Aparece al iniciar sesión cuando la persona pertenece a más de una empresa,
+ * y desde el botón "Cambiar de empresa". Cada empresa lleva a su portal según el rol.
+ */
+@Component({
+  selector: 'app-elegir-empresa',
+  imports: [RouterLink, ButtonModule, Emoji],
+  templateUrl: './elegir-empresa.html',
+  styleUrl: './elegir-empresa.scss',
+})
+export class ElegirEmpresa implements OnInit {
+  private readonly auth = inject(AuthService);
+  private readonly empresa = inject(EmpresaActualService);
+  private readonly router = inject(Router);
+
+  protected readonly cargando = signal(true);
+  /** El servidor no respondió: no es lo mismo que "no tienes empresas". */
+  protected readonly sinConexion = signal(false);
+  protected readonly nombreRol = NOMBRE_ROL;
+  protected readonly nombreDestino = nombreDestino;
+  protected readonly iniciales = iniciales;
+
+  protected readonly lista = this.empresa.empresas;
+  protected readonly correo = computed(() => this.auth.usuario()?.email ?? '');
+
+  ngOnInit() {
+    void this.cargar();
+  }
+
+  protected async cargar() {
+    this.cargando.set(true);
+    this.sinConexion.set(false);
+    try {
+      await this.empresa.asegurar();
+    } catch {
+      this.sinConexion.set(true);
+    } finally {
+      this.cargando.set(false);
+    }
+  }
+
+  protected async entrar(e: MiEmpresa) {
+    this.empresa.elegir(e.id);
+    await this.router.navigateByUrl(destinoDe(e));
+  }
+
+  protected async salir() {
+    await this.auth.salir();
+    this.empresa.limpiar();
+    await this.router.navigateByUrl('/login');
+  }
+}

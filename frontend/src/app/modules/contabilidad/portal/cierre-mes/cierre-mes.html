@@ -1,0 +1,40 @@
+<header class="cabecera">
+  <h1>Cierre de {{ conta.periodo() | periodo }}</h1>
+  <p class="sub">Lo que falta para dejar el mes listo. Se marca solo a medida que avanzas.</p>
+</header>
+
+<!-- Avance -->
+<section class="avance">
+  <div class="numero">{{ avance() }}%</div>
+  <p-progressbar [value]="avance()" [showValue]="false" styleClass="barra" />
+</section>
+
+<!-- Pasos -->
+<ol class="pasos">
+  @for (p of pasos(); track p.texto) {
+    <li [class.hecho]="p.hecho">
+      <i [class]="p.hecho ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+      <div>
+        <strong>{{ p.texto }}</strong>
+        <small>{{ p.detalle }}</small>
+      </div>
+      @if (!p.hecho && p.ruta) {
+        <a [routerLink]="p.ruta">Resolver <i class="pi pi-arrow-right"></i></a>
+      }
+    </li>
+  }
+</ol>
+
+<!-- Datos para la declaración -->
+<section class="declaracion">
+  <h2>Para la declaración mensual (PDT 621)</h2>
+  <div class="dato">
+    <span>{{ igv() >= 0 ? 'IGV por pagar' : 'Crédito fiscal a favor' }}</span>
+    <strong>S/ {{ (igv() < 0 ? -igv() : igv()) | importe: true }}</strong>
+  </div>
+  <ul class="plazos">
+    <li><i class="pi pi-calendar"></i> La declaración vence según el último dígito del RUC (cronograma SUNAT).</li>
+    <li><i class="pi pi-clock"></i> El Libro Diario admite como máximo 3 meses de atraso.</li>
+    <li><i class="pi pi-folder"></i> Los comprobantes se conservan mientras el tributo no prescriba (mínimo 5 años).</li>
+  </ul>
+</section>

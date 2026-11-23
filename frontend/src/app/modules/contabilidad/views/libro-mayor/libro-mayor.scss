@@ -1,0 +1,43 @@
+@use '../../styles/libro';
+
+.barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: min(26rem, 100%);
+
+  label {
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+}
+
+.ficha {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: var(--p-text-muted-color);
+
+  strong {
+    color: var(--p-text-color);
+    text-transform: capitalize;
+  }
+}
+
+.saldo {
+  font-weight: 600;
+}
+
+.negativo {
+  color: var(--p-red-600);
+}

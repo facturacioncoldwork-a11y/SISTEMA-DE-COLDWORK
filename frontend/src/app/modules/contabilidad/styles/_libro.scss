@@ -1,0 +1,60 @@
+// Estilo común de los libros contables (Diario, Mayor, Balance, Plan de cuentas).
+// Uso en el .scss de cada vista:  @use '../../styles/libro';
+
+.libro {
+  overflow-x: auto;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: 0.9rem;
+  background: var(--p-content-background);
+}
+
+table {
+  width: 100%;
+  min-width: 46rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  padding: 0.5rem 0.9rem;
+  text-align: left;
+}
+
+thead th {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--p-text-muted-color);
+  background: var(--p-surface-50);
+  border-bottom: 1px solid var(--p-content-border-color);
+}
+
+tbody tr + tr td {
+  border-top: 1px solid var(--p-content-border-color);
+}
+
+tfoot td {
+  padding: 0.8rem 0.9rem;
+  font-weight: 700;
+  background: var(--p-surface-50);
+  border-top: 2px solid var(--p-content-border-color);
+}
+
+.num {
+  width: 9rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.codigo {
+  font-family: ui-monospace, monospace;
+}
+
+.vacio {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--p-text-muted-color);
+}
