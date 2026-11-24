@@ -1,0 +1,16 @@
+// El diseño general viene de las clases globales .lg-* (mismo estilo que Finanzas y Reportes)
+
+.periodo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 12rem;
+
+  label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7dd3fc;
+  }
+}

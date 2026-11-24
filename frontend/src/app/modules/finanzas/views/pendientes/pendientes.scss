@@ -1,0 +1,96 @@
+@use '../comprobantes/comprobantes';
+
+.antiguedad {
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1.1rem;
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+
+    h3 {
+      margin: 0;
+      font-size: 0.98rem;
+    }
+
+    small {
+      color: var(--lg-muted);
+      font-size: 0.78rem;
+    }
+  }
+}
+
+.barra {
+  display: flex;
+  height: 0.6rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #eef2f7;
+  margin-bottom: 0.9rem;
+
+  .seg {
+    height: 100%;
+
+    &.ok {
+      background: #22c55e;
+    }
+
+    &.bajo {
+      background: #f59e0b;
+    }
+
+    &.critico {
+      background: #f97316;
+    }
+
+    &.agotado {
+      background: #ef4444;
+    }
+  }
+}
+
+.tramos {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.tramo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.7rem 0.8rem;
+  border: 1.5px solid var(--lg-line);
+  border-radius: 0.8rem;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+
+  strong {
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  small {
+    color: var(--lg-muted);
+    font-size: 0.74rem;
+  }
+
+  &.on {
+    border-color: var(--lg-blue);
+    background: #eff6ff;
+  }
+}
+
+.chico {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+}

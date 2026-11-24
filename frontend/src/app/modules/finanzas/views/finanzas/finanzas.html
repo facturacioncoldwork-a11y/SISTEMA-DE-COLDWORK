@@ -1,0 +1,39 @@
+<div class="lg">
+  <header class="lg-hero">
+    <div class="lg-hero__fila">
+      <div>
+        <div class="lg-hero__miga"><i class="pi pi-wallet"></i> Finanzas</div>
+        <h1 class="lg-hero__titulo">{{ titulo() }}</h1>
+        <p class="lg-hero__sub">{{ sub() }}</p>
+      </div>
+      <div class="acciones" style="display: flex; gap: 0.5rem; flex-wrap: wrap">
+        @if (puedeCaja()) {
+          <button type="button" class="lg-cta lg-cta--vidrio" (click)="ir('/finanzas/caja-bancos')">
+            <i class="pi pi-arrow-right-arrow-left"></i> Cobro o pago
+          </button>
+        }
+        @if (puedeVender()) {
+          <button type="button" class="lg-cta" (click)="ir('/finanzas/ventas')">
+            <i class="pi pi-plus"></i> Registrar venta
+          </button>
+        }
+      </div>
+    </div>
+
+    <nav class="lg-nav" aria-label="Secciones de finanzas">
+      @for (p of pestanas(); track p.ruta) {
+        <a [routerLink]="p.ruta" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: !!p.exacta }">
+          <i [class]="p.icono"></i> {{ p.etiqueta }}
+          @if (p.etiqueta === 'Por cobrar' && vencido()) {
+            <span class="lg-nav__badge" aria-label="Hay deuda vencida">!</span>
+          }
+        </a>
+      }
+    </nav>
+  </header>
+
+  <div class="lg-cuerpo">
+    <router-outlet />
+  </div>
+</div>
+<p-confirmdialog [style]="{ width: 'min(28rem, 94vw)' }" />

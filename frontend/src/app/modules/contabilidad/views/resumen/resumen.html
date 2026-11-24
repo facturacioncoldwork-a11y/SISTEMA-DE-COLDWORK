@@ -1,0 +1,91 @@
+<!-- Aviso de aprobaciones pendientes -->
+@if (conta.porAprobar().length; as n) {
+  <a class="pendientes" routerLink="/contabilidad/aprobaciones">
+    <i class="pi pi-clock"></i>
+    <span><strong>{{ n }} {{ n === 1 ? 'asiento espera' : 'asientos esperan' }}</strong> tu aprobación</span>
+    <span class="ir">Revisar <i class="pi pi-arrow-right"></i></span>
+  </a>
+}
+
+<!-- Indicadores del periodo -->
+<section class="lg-kpis">
+  @for (i of indicadores(); track i.clave) {
+    <a class="lg-kpi" [routerLink]="i.ruta" [style.--c]="i.color">
+      <span class="icono"><i [class]="i.icono"></i></span>
+      <small>{{ i.titulo }}</small>
+      <strong><app-contador [valor]="i.valor" formato="1.2-2" prefijo="S/ " /></strong>
+      <span class="pie">{{ i.ayuda }}</span>
+    </a>
+  }
+</section>
+
+<div class="columnas">
+  <div class="columna">
+    <!-- Últimos asientos -->
+    <section class="lg-card">
+      <div class="lg-card__head">
+        <div>
+          <h3>Últimos asientos</h3>
+          <p>{{ conta.periodo() | periodo }}</p>
+        </div>
+        <a routerLink="/contabilidad/diario">Ver Libro Diario →</a>
+      </div>
+
+      <ul class="asientos">
+        @for (a of ultimos(); track a.id) {
+          <li>
+            <span class="numero lg-mono">{{ a.numero | correlativo }}</span>
+            <div class="detalle">
+              <strong>{{ a.glosa }}</strong>
+              <small>{{ a.fecha.slice(8) }}/{{ a.fecha.slice(5, 7) }} · {{ nombreOrigen(a.origen) }} · {{ conta.nombrePersona(a.creadoPor) }}</small>
+            </div>
+            <span class="monto">S/ {{ totales(a.lineas).debe | importe: true }}</span>
+            @if (a.estado !== 'registrado') {
+              <p-tag [value]="estados[a.estado].nombre" [severity]="estados[a.estado].severidad" />
+            }
+          </li>
+        } @empty {
+          <li class="vacio">Aún no hay asientos en este periodo.</li>
+        }
+      </ul>
+    </section>
+
+    <!-- Cierre del mes -->
+    <section class="lg-card">
+      <div class="lg-card__head">
+        <div>
+          <h3>Cierre del mes</h3>
+          <p>Se marca solo según lo registrado</p>
+        </div>
+        <span class="avance">{{ avanceCierre() }} %</span>
+      </div>
+      <div class="barra-avance"><span [style.width.%]="avanceCierre()"></span></div>
+
+      <ul class="cierre">
+        @for (c of cierre(); track c.texto) {
+          <li [class.hecho]="c.hecho">
+            <i [class]="c.hecho ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+            {{ c.texto }}
+          </li>
+        }
+      </ul>
+
+      <p class="nota">
+        <i class="pi pi-info-circle"></i>
+        <span>El Libro Diario puede tener como máximo <strong>3 meses de atraso</strong>; ventas y compras se envían cada mes por SIRE.</span>
+      </p>
+    </section>
+  </div>
+
+  <!-- Actividad del equipo -->
+  <section class="lg-card">
+    <div class="lg-card__head">
+      <div>
+        <h3>Actividad del equipo</h3>
+        <p>Quién hizo qué, al instante</p>
+      </div>
+      <span class="vivo"><span class="punto"></span> En vivo</span>
+    </div>
+    <app-actividad-lista [actividad]="conta.actividad()" />
+  </section>
+</div>

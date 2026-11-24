@@ -1,0 +1,150 @@
+<!-- Barra de herramientas -->
+<div class="barra">
+  <div class="filtros">
+    <p-iconfield>
+      <p-inputicon styleClass="pi pi-search" />
+      <input
+        pInputText
+        placeholder="Buscar glosa, comprobante o cuenta"
+        aria-label="Buscar asientos"
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
+    </p-iconfield>
+    <p-selectbutton
+      [options]="filtros"
+      optionLabel="etiqueta"
+      optionValue="valor"
+      [allowEmpty]="false"
+      [ngModel]="filtro()"
+      (ngModelChange)="filtro.set($event)"
+      ariaLabelledBy="Filtrar por estado"
+    />
+  </div>
+  <p-button label="Nuevo asiento" icon="pi pi-plus" (onClick)="nuevo()" />
+</div>
+
+<!-- Libro -->
+<div class="libro">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-cuenta">Cuenta</th>
+        <th>Denominación</th>
+        <th class="num">Debe</th>
+        <th class="num">Haber</th>
+      </tr>
+    </thead>
+
+    @for (a of visibles(); track a.id) {
+      <tbody [class]="a.estado">
+        <!-- Cabecera del asiento -->
+        <tr class="asiento">
+          <td colspan="4">
+            <div class="asiento-cab">
+              <span class="numero">Nº {{ a.numero | correlativo }}</span>
+              <span class="fecha">{{ a.fecha.slice(8) }}/{{ a.fecha.slice(5, 7) }}/{{ a.fecha.slice(0, 4) }}</span>
+              <strong class="glosa">{{ a.glosa }}</strong>
+
+              <span class="meta">
+                {{ nombreOrigen(a.origen) }}
+                @if (a.documento; as d) {
+                  · {{ nombreComprobante(d.tipo) }}
+                  @if (d.serie) {
+                    {{ d.serie }}-{{ d.numero }}
+                  }
+                  @if (d.nombreTercero) {
+                    · {{ d.nombreTercero }}
+                  }
+                }
+                @if (a.moneda === 'USD') {
+                  · US$ (T.C. {{ a.tipoCambio }})
+                }
+                · {{ conta.nombrePersona(a.creadoPor) }}
+              </span>
+
+              @if (a.estado !== 'registrado') {
+                <p-tag [value]="estados[a.estado].nombre" [severity]="estados[a.estado].severidad" />
+              }
+
+              <!-- Acciones según estado y permisos -->
+              <span class="acciones">
+                @switch (a.estado) {
+                  @case ('borrador') {
+                    @if (editable(a)) {
+                      <p-button
+                        [label]="conta.permisos().registrar ? 'Registrar' : 'Enviar'"
+                        [icon]="conta.permisos().registrar ? 'pi pi-check' : 'pi pi-send'"
+                        size="small"
+                        [text]="true"
+                        (onClick)="confirmar(a)"
+                      />
+                      <p-button icon="pi pi-pencil" size="small" [text]="true" severity="secondary" pTooltip="Editar" ariaLabel="Editar borrador" (onClick)="editar(a)" />
+                      <p-button icon="pi pi-trash" size="small" [text]="true" severity="danger" pTooltip="Eliminar borrador" ariaLabel="Eliminar borrador" (onClick)="eliminar(a)" />
+                    }
+                  }
+                  @case ('observado') {
+                    @if (editable(a)) {
+                      <p-button label="Corregir" icon="pi pi-pencil" size="small" [text]="true" severity="warn" (onClick)="editar(a)" />
+                    }
+                  }
+                  @case ('por_aprobar') {
+                    @if (conta.permisos().aprobar) {
+                      <p-button label="Revisar" icon="pi pi-inbox" size="small" [text]="true" routerLink="/contabilidad/aprobaciones" />
+                    }
+                  }
+                  @case ('registrado') {
+                    @if (conta.permisos().anular) {
+                      <p-button icon="pi pi-ban" size="small" [text]="true" severity="secondary" pTooltip="Anular" ariaLabel="Anular asiento" (onClick)="anular(a)" />
+                    }
+                  }
+                }
+              </span>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Líneas: los abonos van sangrados, como en el libro físico -->
+        @for (l of a.lineas; track $index) {
+          <tr class="linea" [class.abono]="l.haber > 0">
+            <td class="col-cuenta codigo">{{ l.cuenta }}</td>
+            <td>
+              {{ conta.nombreCuenta(l.cuenta) }}
+              @if (l.glosa) {
+                <small class="glosa-linea">{{ l.glosa }}</small>
+              }
+            </td>
+            <td class="num">{{ l.debe | importe }}</td>
+            <td class="num">{{ l.haber | importe }}</td>
+          </tr>
+        }
+
+        <tr class="subtotal">
+          <td colspan="2"></td>
+          <td class="num">{{ totales(a.lineas).debe | importe: true }}</td>
+          <td class="num">{{ totales(a.lineas).haber | importe: true }}</td>
+        </tr>
+      </tbody>
+    } @empty {
+      <tbody>
+        <tr>
+          <td colspan="4" class="vacio">
+            <i class="pi pi-book"></i>
+            No hay asientos que mostrar en {{ conta.periodo() | periodo }}.
+          </td>
+        </tr>
+      </tbody>
+    }
+
+    <tfoot>
+      <tr>
+        <td colspan="2">Totales del libro (solo registrados)</td>
+        <td class="num">{{ totalLibro().debe | importe: true }}</td>
+        <td class="num">{{ totalLibro().haber | importe: true }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<app-asiento-dialogo [(visible)]="dialogoVisible" [inicial]="editando()" [guardando]="guardando()" (guardar)="guardar($event)" />
+<p-confirmdialog [style]="{ width: 'min(30rem, 95vw)' }" />

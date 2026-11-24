@@ -18,3 +18,40 @@ body {
 .w-full {
   width: 100%;
 }
+
+/* Impresión de reportes: solo el contenido, sin menú ni botones */
+@media print {
+  .lateral,
+  .barra,
+  .fondo,
+  .lg-nav,
+  .no-imprimir,
+  p-toast {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  .shell,
+  .principal,
+  .contenido {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .lg-hero {
+    background: none !important;
+    color: #000 !important;
+    padding: 0 0 0.5rem !important;
+    box-shadow: none !important;
+  }
+
+  .lg-card {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}

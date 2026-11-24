@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners, LOCALE_ID } from '@angular/core';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { PreloadAllModules, provideRouter, withComponentInputBinding, withPreloading } from '@angular/router';
 import { registerLocaleData } from '@angular/common';
 import localeEsPE from '@angular/common/locales/es-PE';
 import { providePrimeNG } from 'primeng/config';
@@ -16,7 +16,8 @@ registerLocaleData(localeEsPE);
 export const crearAppConfig = (): ApplicationConfig => ({
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes, withComponentInputBinding()),
+    // Los módulos se descargan en segundo plano apenas carga la app: al abrirlos ya están listos
+    provideRouter(routes, withComponentInputBinding(), withPreloading(PreloadAllModules)),
     provideHttpClient(withFetch(), withInterceptors([apiInterceptor])),
     { provide: LOCALE_ID, useValue: 'es-PE' },
     providePrimeNG({

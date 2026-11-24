@@ -1,0 +1,153 @@
+// ─── Tus áreas ──────────────────────────────────────────────────
+
+.areas h2,
+.titulo-mes {
+  margin: 1.75rem 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.tarjetas-area {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 1.1rem;
+  color: #fff;
+  text-decoration: none;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: 0 16px 32px -22px var(--c1);
+  transition: transform 0.15s;
+
+  &:hover {
+    transform: translateY(-3px);
+  }
+
+  .sticker {
+    margin-bottom: 0.3rem;
+  }
+
+  strong {
+    font-size: 1.1rem;
+  }
+
+  small {
+    opacity: 0.9;
+  }
+
+  // Lugar para áreas futuras
+  &.proxima {
+    color: var(--p-text-muted-color);
+    background: none;
+    border: 1.5px dashed var(--p-content-border-color);
+    box-shadow: none;
+
+    &:hover {
+      transform: none;
+    }
+
+    i {
+      font-size: 1.6rem;
+      color: var(--p-primary-color);
+    }
+
+    strong {
+      color: var(--p-text-color);
+    }
+  }
+}
+
+.barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+// ─── Cifras ─────────────────────────────────────────────────────
+
+.cifras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cifra {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.7rem;
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+  font-size: 0.88rem;
+  color: var(--p-text-muted-color);
+
+  strong {
+    font-size: 1.2rem;
+    color: var(--p-text-color);
+  }
+
+  &.alerta strong {
+    color: var(--p-orange-600);
+  }
+
+  &.info strong {
+    color: var(--p-blue-600);
+  }
+
+  &.ok strong {
+    color: var(--p-green-600);
+  }
+}
+
+.aviso {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.6rem;
+  font-size: 0.88rem;
+  background: var(--p-highlight-background);
+
+  &.ok {
+    background: color-mix(in srgb, var(--p-green-500) 12%, transparent);
+  }
+}
+
+// ─── Secciones ──────────────────────────────────────────────────
+
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.75rem 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+  gap: 1rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.acciones {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.vacio {
+  margin: 0;
+  color: var(--p-text-muted-color);
+  font-style: italic;
+}

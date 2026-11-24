@@ -1,0 +1,34 @@
+.pdt {
+  th,
+  td {
+    padding: 0.5rem 0.9rem;
+    border-bottom: 1px solid var(--lg-line);
+    font-size: 0.9rem;
+    text-align: left;
+  }
+
+  .num {
+    text-align: right;
+  }
+
+  .sec th {
+    padding-top: 1rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--lg-muted);
+    border-bottom: 0;
+  }
+
+  .total td {
+    font-weight: 700;
+    border-bottom: 2px solid var(--lg-ink);
+  }
+
+}
+
+:host ::ng-deep .pdt .chico input {
+  width: 8rem;
+  text-align: right;
+  padding: 0.3rem 0.5rem;
+}

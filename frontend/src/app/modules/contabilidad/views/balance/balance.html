@@ -1,0 +1,57 @@
+<div class="barra">
+  <h2>Balance de comprobación · {{ conta.periodo() | periodo }}</h2>
+  @if (filas().length) {
+    <p-message [severity]="cuadra() ? 'success' : 'error'" [icon]="cuadra() ? 'pi pi-check-circle' : 'pi pi-times-circle'">
+      {{ cuadra() ? 'Cuadra: sumas y saldos iguales.' : 'No cuadra: revisa los asientos.' }}
+    </p-message>
+  }
+</div>
+
+<div class="libro">
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2" class="col-cuenta">Cuenta</th>
+        <th rowspan="2">Denominación</th>
+        <th colspan="2" class="grupo">Sumas del mayor</th>
+        <th colspan="2" class="grupo">Saldos</th>
+      </tr>
+      <tr>
+        <th class="num">Debe</th>
+        <th class="num">Haber</th>
+        <th class="num">Deudor</th>
+        <th class="num">Acreedor</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (f of filas(); track f.cuenta) {
+        <tr>
+          <td class="codigo">{{ f.cuenta }}</td>
+          <td>{{ f.nombre }}</td>
+          <td class="num">{{ f.sumaDebe | importe }}</td>
+          <td class="num">{{ f.sumaHaber | importe }}</td>
+          <td class="num">{{ f.saldoDeudor | importe }}</td>
+          <td class="num">{{ f.saldoAcreedor | importe }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="vacio">Aún no hay asientos registrados en este periodo.</td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2">Totales</td>
+        <td class="num">{{ total().sumaDebe | importe: true }}</td>
+        <td class="num">{{ total().sumaHaber | importe: true }}</td>
+        <td class="num">{{ total().saldoDeudor | importe: true }}</td>
+        <td class="num">{{ total().saldoAcreedor | importe: true }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<p class="nota">
+  <i class="pi pi-info-circle"></i>
+  Con este balance se arman luego el Estado de Situación Financiera y el Estado de Resultados.
+</p>

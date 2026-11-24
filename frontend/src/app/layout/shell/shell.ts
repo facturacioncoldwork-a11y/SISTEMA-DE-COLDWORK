@@ -1,32 +1,27 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
-import { AuthService } from '../../core/auth/services/auth.service';
 import { EmpresaActualService } from '../../core/empresa/services/empresa-actual.service';
-import { NOMBRE_ROL } from '../../core/permisos/areas';
 import { getConfig } from '../../core/config/runtime-config';
 import { Logo } from '../../shared/components/logo/logo';
+import { MenuCuenta } from '../../shared/components/menu-cuenta/menu-cuenta';
 import { MENU } from './menu';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FormsModule, ButtonModule, SelectModule, Logo],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonModule, Logo, MenuCuenta],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
 })
 export class Shell implements OnInit {
-  protected readonly auth = inject(AuthService);
   protected readonly empresa = inject(EmpresaActualService);
   private readonly router = inject(Router);
   private readonly avisos = inject(MessageService);
 
   protected readonly entorno = getConfig().entorno;
   protected readonly abierto = signal(false);
-  protected readonly nombreRol = NOMBRE_ROL;
 
   /** Menú filtrado: cada persona ve solo sus áreas; los grupos vacíos se ocultan. */
   protected readonly menu = computed(() => {
@@ -61,11 +56,5 @@ export class Shell implements OnInit {
         life: 6000,
       });
     }
-  }
-
-  async salir() {
-    await this.auth.salir();
-    this.empresa.limpiar();
-    await this.router.navigateByUrl('/login');
   }
 }

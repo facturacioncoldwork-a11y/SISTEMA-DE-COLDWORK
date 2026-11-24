@@ -1,0 +1,25 @@
+# Mantiene despierto el servidor de prueba en Render (plan gratis).
+# Render apaga el servicio tras 15 min sin uso y despertarlo tarda 30-60 s:
+# por eso los módulos "demoraban en cargar". Un aviso cada 10 min lo evita.
+#
+# Es una solución TEMPORAL y gratuita. Para producción con clientes, usar el plan
+# pagado de Render (no se duerme) y borrar este archivo.
+name: Mantener despierto el servidor
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # cada 10 minutos (GitHub puede retrasarlo unos minutos)
+  workflow_dispatch: {} # también se puede lanzar a mano desde la pestaña Actions
+
+permissions: {} # no necesita ningún permiso sobre el repositorio
+
+jobs:
+  avisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Llamar a /api/health
+        run: |
+          curl --silent --show-error --max-time 90 --retry 2 \
+            --output /dev/null --write-out "Servidor respondió %{http_code} en %{time_total}s\n" \
+            https://coldwork-api.onrender.com/api/health

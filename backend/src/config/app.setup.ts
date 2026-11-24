@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common
 import { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import compression from 'compression';
 import helmet from 'helmet';
 import type { Env } from './env.js';
 
@@ -17,6 +18,8 @@ export function configurarApp(app: INestApplication): void {
   (app as NestExpressApplication).set('trust proxy', 1);
 
   app.use(helmet());
+  // Respuestas comprimidas (gzip): listas de asientos o productos viajan hasta 5-10 veces más livianas
+  app.use(compression({ threshold: 1024 }));
   app.enableCors({
     origin: config.get('CORS_ORIGINS', { infer: true }),
     allowedHeaders: ['Authorization', 'Content-Type', 'X-Empresa-Id', 'X-Request-Id'],
@@ -39,7 +42,8 @@ export function configurarApp(app: INestApplication): void {
 
   app.enableShutdownHooks(); // cierre ordenado al escalar hacia abajo / redeploy
 
-  if (config.get('SWAGGER_ENABLED', { infer: true })) {
+  // Documentación interactiva solo fuera de producción: publicada sería un mapa de la API para un atacante
+  if (config.get('SWAGGER_ENABLED', { infer: true }) && process.env['NODE_ENV'] !== 'production') {
     const doc = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()

@@ -1,0 +1,18 @@
+<ol class="lista">
+  @for (a of actividad().slice(0, limite()); track a.id) {
+    <li [class]="a.accion">
+      <i [class]="acciones[a.accion].icono"></i>
+      <div>
+        <p>
+          <strong>{{ conta.describir(a.personaId, a.accion) }}</strong>&nbsp;<span class="asiento">{{ a.numero | correlativo }} · {{ a.glosa }}</span>
+        </p>
+        @if (a.detalle) {
+          <p class="detalle">“{{ a.detalle }}”</p>
+        }
+        <small>{{ a.fecha | date: 'dd/MM HH:mm' }}</small>
+      </div>
+    </li>
+  } @empty {
+    <li class="vacio">Sin actividad todavía.</li>
+  }
+</ol>

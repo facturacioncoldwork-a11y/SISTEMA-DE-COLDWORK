@@ -1,0 +1,26 @@
+@use '../../styles/libro';
+
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+}
+
+.sub {
+  margin: 0.3rem 0 0;
+  color: var(--p-text-muted-color);
+}
+
+.observacion {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--p-orange-700);
+}

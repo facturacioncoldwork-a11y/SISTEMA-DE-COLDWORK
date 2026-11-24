@@ -1,0 +1,252 @@
+<p-dialog
+  [(visible)]="visible"
+  [header]="inicial() ? 'Corregir asiento ' + inicial()!.numero : 'Nuevo asiento'"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(64rem, 96vw)' }"
+>
+  <!-- Observación del dueño (al corregir) -->
+  @if (inicial()?.observacion; as obs) {
+    <p class="observacion"><i class="pi pi-comment"></i> <strong>El dueño observó:</strong> {{ obs }}</p>
+  }
+
+  <!-- Cabecera del asiento -->
+  <div class="cabecera">
+    <div class="campo">
+      <label for="as-fecha">Fecha de la operación</label>
+      <input pInputText id="as-fecha" type="date" [(ngModel)]="fecha" [ngModelOptions]="{ standalone: true }" />
+    </div>
+
+    <div class="campo">
+      <label for="as-origen">Tipo de operación</label>
+      <p-select
+        inputId="as-origen"
+        [options]="origenes"
+        optionLabel="nombre"
+        optionValue="valor"
+        [(ngModel)]="origen"
+        [ngModelOptions]="{ standalone: true }"
+      />
+    </div>
+
+    <div class="campo">
+      <span class="etiqueta">Moneda</span>
+      <p-selectbutton
+        [options]="monedas"
+        optionLabel="etiqueta"
+        optionValue="valor"
+        [allowEmpty]="false"
+        [ngModel]="moneda()"
+        (ngModelChange)="moneda.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+        ariaLabelledBy="Moneda"
+      />
+    </div>
+
+    @if (moneda() === 'USD') {
+      <div class="campo">
+        <label for="as-tc">Tipo de cambio (SBS)</label>
+        <p-inputnumber
+          inputId="as-tc"
+          [(ngModel)]="tipoCambio"
+          [ngModelOptions]="{ standalone: true }"
+          [minFractionDigits]="3"
+          [maxFractionDigits]="3"
+          placeholder="3.750"
+        />
+      </div>
+    }
+
+    <div class="campo ancho">
+      <label for="as-glosa">Glosa</label>
+      <input
+        pInputText
+        id="as-glosa"
+        placeholder="Ej. Mantenimiento preventivo de cámara frigorífica"
+        [(ngModel)]="glosa"
+        [ngModelOptions]="{ standalone: true }"
+      />
+    </div>
+  </div>
+
+  <!-- Comprobante que sustenta -->
+  <div class="documento">
+    <label class="interruptor" for="as-con-doc">
+      <input id="as-con-doc" type="checkbox" [(ngModel)]="conDocumento" [ngModelOptions]="{ standalone: true }" />
+      Tiene comprobante de pago (factura, boleta, recibo…)
+    </label>
+
+    @if (conDocumento) {
+      <div class="fila-doc">
+        <div class="campo">
+          <label for="as-tipo-doc">Tipo</label>
+          <p-select
+            inputId="as-tipo-doc"
+            [options]="comprobantes"
+            optionLabel="nombre"
+            optionValue="codigo"
+            [(ngModel)]="documento.tipo"
+            [ngModelOptions]="{ standalone: true }"
+          />
+        </div>
+        <div class="campo corto">
+          <label for="as-serie">Serie</label>
+          <input pInputText id="as-serie" placeholder="F001" [(ngModel)]="documento.serie" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="campo corto">
+          <label for="as-numero">Número</label>
+          <input pInputText id="as-numero" placeholder="125" [(ngModel)]="documento.numero" [ngModelOptions]="{ standalone: true }" />
+        </div>
+        <div class="campo">
+          <label for="as-ruc">RUC / DNI</label>
+          <input
+            pInputText
+            id="as-ruc"
+            inputmode="numeric"
+            maxlength="11"
+            placeholder="20xxxxxxxxx"
+            [(ngModel)]="documento.documentoTercero"
+            [ngModelOptions]="{ standalone: true }"
+          />
+        </div>
+        <div class="campo ancho">
+          <label for="as-tercero">Cliente o proveedor</label>
+          <input pInputText id="as-tercero" [(ngModel)]="documento.nombreTercero" [ngModelOptions]="{ standalone: true }" />
+        </div>
+      </div>
+
+      <!-- Foto o PDF del comprobante -->
+      <div class="adjuntos">
+        <label class="subir" for="as-archivos" [class.ocupado]="subiendo()">
+          <i [class]="subiendo() ? 'pi pi-spin pi-spinner' : 'pi pi-paperclip'"></i>
+          {{ subiendo() ? 'Subiendo…' : 'Adjuntar foto o PDF del comprobante' }}
+          <input
+            id="as-archivos"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            multiple
+            [disabled]="subiendo()"
+            (change)="elegirArchivos($event)"
+          />
+        </label>
+        <small class="ayuda">Máximo 3 archivos de 5 MB, en una carpeta privada de la empresa. SUNAT puede pedir el sustento mientras el tributo no prescriba.</small>
+
+        @for (adj of adjuntos(); track adj.ruta; let i = $index) {
+          <div class="adjunto">
+            <i [class]="adj.tipo === 'application/pdf' ? 'pi pi-file-pdf' : 'pi pi-image'"></i>
+            <button type="button" class="enlace" (click)="verAdjunto(adj.ruta)">{{ adj.nombre }}</button>
+            <small>{{ pesoLegible(adj.tamano) }}</small>
+            <p-button icon="pi pi-times" [text]="true" size="small" severity="danger" ariaLabel="Quitar archivo" (onClick)="quitarAdjunto(i)" />
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Líneas -->
+  <div class="titulo-lineas">
+    <h3>Líneas del asiento</h3>
+    <div class="atajos">
+      <span>Plantillas:</span>
+      <p-button label="Venta con IGV" icon="pi pi-bolt" size="small" [text]="true" (onClick)="plantillaIgv('venta')" />
+      <p-button label="Compra con IGV" icon="pi pi-bolt" size="small" [text]="true" (onClick)="plantillaIgv('compra')" />
+    </div>
+  </div>
+
+  <div class="lineas">
+    <div class="fila encabezado">
+      <span>Cuenta</span>
+      <span class="num">Debe</span>
+      <span class="num">Haber</span>
+      <span></span>
+    </div>
+
+    @for (l of lineas(); track $index; let i = $index) {
+      <div class="fila">
+        <p-select
+          [options]="cuentas"
+          optionLabel="etiqueta"
+          optionValue="codigo"
+          [filter]="true"
+          filterBy="etiqueta"
+          placeholder="Busca por código o nombre"
+          appendTo="body"
+          [ngModel]="l.cuenta"
+          (ngModelChange)="cambiar(i, 'cuenta', $event)"
+          [ngModelOptions]="{ standalone: true }"
+          [ariaLabel]="'Cuenta de la línea ' + (i + 1)"
+        />
+        <p-inputnumber
+          [ngModel]="l.debe || null"
+          (ngModelChange)="cambiar(i, 'debe', $event)"
+          [ngModelOptions]="{ standalone: true }"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          [min]="0"
+          [ariaLabel]="'Debe de la línea ' + (i + 1)"
+        />
+        <p-inputnumber
+          [ngModel]="l.haber || null"
+          (ngModelChange)="cambiar(i, 'haber', $event)"
+          [ngModelOptions]="{ standalone: true }"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          [min]="0"
+          [ariaLabel]="'Haber de la línea ' + (i + 1)"
+        />
+        <div class="acciones-linea">
+          <p-button icon="pi pi-equals" [text]="true" size="small" severity="secondary" ariaLabel="Cuadrar en esta línea" (onClick)="cuadrarEn(i)" />
+          <p-button
+            icon="pi pi-times"
+            [text]="true"
+            size="small"
+            severity="danger"
+            ariaLabel="Quitar línea"
+            [disabled]="lineas().length <= 2"
+            (onClick)="quitarLinea(i)"
+          />
+        </div>
+      </div>
+    }
+
+    <div class="fila pie">
+      <p-button label="Agregar línea" icon="pi pi-plus" size="small" [text]="true" (onClick)="agregarLinea()" />
+      <strong class="num">{{ suma().debe | importe: true }}</strong>
+      <strong class="num">{{ suma().haber | importe: true }}</strong>
+      <span></span>
+    </div>
+  </div>
+
+  <p class="cuadre" [class.ok]="suma().debe > 0 && suma().diferencia === 0">
+    @if (suma().debe > 0 && suma().diferencia === 0) {
+      <i class="pi pi-check-circle"></i> El asiento cuadra.
+    } @else {
+      <i class="pi pi-exclamation-circle"></i> Diferencia: {{ suma().diferencia | importe: true }}
+    }
+  </p>
+
+  <!-- Pie fijo: errores siempre visibles junto a los botones -->
+  <ng-template #footer>
+    <div class="pie">
+      @if (errores().length) {
+        <p-message severity="error" styleClass="errores">
+          <ul>
+            @for (e of errores(); track e) {
+              <li>{{ e }}</li>
+            }
+          </ul>
+        </p-message>
+      }
+
+      <div class="botones">
+        <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="visible.set(false)" />
+        <p-button label="Guardar borrador" icon="pi pi-save" severity="secondary" [outlined]="true" [disabled]="guardando() || subiendo()" (onClick)="enviar(false)" />
+        @if (conta.permisos().registrar) {
+          <p-button label="Registrar asiento" icon="pi pi-check" [loading]="guardando()" [disabled]="subiendo()" (onClick)="enviar(true)" />
+        } @else {
+          <p-button label="Enviar a aprobación" icon="pi pi-send" [loading]="guardando()" [disabled]="subiendo()" (onClick)="enviar(true)" />
+        }
+      </div>
+    </div>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,61 @@
+<div class="barra">
+  <p-iconfield>
+    <p-inputicon styleClass="pi pi-search" />
+    <input
+      pInputText
+      placeholder="Código o nombre de la cuenta"
+      aria-label="Buscar cuenta"
+      [ngModel]="busqueda()"
+      (ngModelChange)="busqueda.set($event)"
+    />
+  </p-iconfield>
+  <small class="fuente">PCGE modificado 2019 · Res. N.° 002-2019-EF/30</small>
+</div>
+
+<!-- Elementos del PCGE -->
+<div class="elementos" role="group" aria-label="Filtrar por elemento">
+  @for (e of elementos; track e.numero) {
+    <button type="button" [class.activo]="elemento() === e.numero" (click)="alternarElemento(e.numero)">
+      <span>{{ e.numero }}</span>
+      {{ e.nombre }}
+    </button>
+  }
+</div>
+
+<div class="libro">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-codigo">Código</th>
+        <th>Denominación</th>
+        <th>Naturaleza</th>
+        <th>Uso</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of visibles(); track c.codigo; let primero = $first) {
+        @if (primero || c.elemento !== visibles()[$index - 1].elemento) {
+          <tr class="elemento">
+            <td colspan="4">Elemento {{ c.elemento }} · {{ nombreElemento(c.elemento) }}</td>
+          </tr>
+        }
+        <tr [class]="'nivel-' + c.nivel">
+          <td class="codigo col-codigo">{{ c.codigo }}</td>
+          <td class="nombre">{{ c.nombre }}</td>
+          <td class="naturaleza">{{ c.naturaleza }}</td>
+          <td>
+            @if (c.movimiento) {
+              <p-tag value="Recibe asientos" severity="success" />
+            } @else {
+              <span class="resumen">Cuenta de resumen</span>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="vacio">No hay cuentas con ese código o nombre.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

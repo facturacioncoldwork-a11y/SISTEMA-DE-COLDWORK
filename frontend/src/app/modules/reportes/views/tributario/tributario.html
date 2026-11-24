@@ -1,0 +1,91 @@
+@let x = r();
+@let c = calculo();
+@let e = empresa.actual();
+
+<div class="filtros">
+  <label class="fecha">Periodo <input type="month" [ngModel]="mes()" (ngModelChange)="cambiarMes($event)" aria-label="Periodo" /></label>
+  <div class="lg-seg" role="group" aria-label="Régimen tributario">
+    @for (g of regimenes; track g.clave) {
+      <button type="button" [class.on]="regimen() === g.clave" (click)="regimen.set(g.clave)">{{ g.nombre }}</button>
+    }
+  </div>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="imprimir()"><i class="pi pi-print"></i> Imprimir / PDF</button>
+</div>
+
+@if (faltan().length === 1) {
+  <p class="alerta"><i class="pi pi-lock"></i> No tienes acceso a {{ faltan()[0] }}: el resumen está incompleto.</p>
+}
+
+<section class="lg-kpis">
+  <div class="lg-kpi">
+    <small><i class="pi pi-percentage"></i> {{ c.igvPagar > 0 ? 'IGV por pagar' : 'Saldo a favor de IGV' }}</small>
+    <strong [class.lg-neg]="c.igvPagar > 0" [class.lg-pos]="c.saldoFavor > 0">{{ dinero(c.igvPagar > 0 ? c.igvPagar : c.saldoFavor) }}</strong>
+    <span class="pie">{{ c.igvPagar > 0 ? 'Débito − crédito fiscal' : 'Se aplica el mes siguiente' }}</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-calculator"></i> Pago a cuenta de renta</small>
+    <strong>{{ dinero(c.renta) }}</strong>
+    <span class="pie">{{ c.regimen.nota }}</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-user"></i> Retenciones de 4.ª categoría</small>
+    <strong>{{ dinero(x.retenciones4ta) }}</strong>
+    <span class="pie">Se declaran en el PDT 621 (PLAME si aplica)</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-calendar"></i> Total a pagar a SUNAT</small>
+    <strong>{{ dinero(c.igvPagar + c.renta + x.retenciones4ta) }}</strong>
+    <span class="pie">
+      @if (ultimoDigito() !== null) {
+        RUC terminado en {{ ultimoDigito() }}: revisa el cronograma
+      } @else {
+        Según el cronograma por último dígito del RUC
+      }
+    </span>
+  </div>
+</section>
+
+<section class="lg-card estado">
+  <header>
+    <h2>Resumen tributario · PDT 621</h2>
+    <p>{{ e?.razonSocial }}{{ e?.ruc ? ' · RUC ' + e?.ruc : '' }} · Periodo {{ mes().slice(5) }}/{{ mes().slice(0, 4) }}</p>
+  </header>
+  <table class="pdt">
+    <tbody>
+      <tr class="sec"><th colspan="3">IGV — Ventas</th></tr>
+      <tr><td>Ventas netas gravadas</td><td class="num">{{ dinero(x.ventasGravadas) }}</td><td class="num">{{ dinero(x.igvVentas) }}</td></tr>
+      <tr><td>Ventas no gravadas (exoneradas, inafectas, exportación)</td><td class="num">{{ dinero(x.ventasNoGravadas) }}</td><td class="num">—</td></tr>
+      <tr class="sec"><th colspan="3">IGV — Compras con derecho a crédito fiscal</th></tr>
+      <tr><td>Compras netas gravadas (facturas, notas, servicios públicos)</td><td class="num">{{ dinero(x.comprasGravadas) }}</td><td class="num">{{ dinero(x.igvCompras) }}</td></tr>
+      <tr class="sec"><th colspan="3">Determinación del IGV</th></tr>
+      <tr><td>Impuesto resultante (débito − crédito)</td><td></td><td class="num">{{ dinero(x.igvResultado) }}</td></tr>
+      <tr>
+        <td><label for="t-saldo">Saldo a favor del mes anterior</label></td>
+        <td></td>
+        <td class="num">
+          <p-inputnumber inputId="t-saldo" [ngModel]="saldoAnterior()" (ngModelChange)="saldoAnterior.set($event ?? 0)" [min]="0" [minFractionDigits]="2" mode="decimal" locale="es-PE" styleClass="chico" />
+        </td>
+      </tr>
+      <tr class="total">
+        <td>{{ c.igvPagar > 0 ? 'IGV por pagar' : 'Saldo a favor para el mes siguiente' }}</td>
+        <td></td>
+        <td class="num">{{ dinero(c.igvPagar > 0 ? c.igvPagar : c.saldoFavor) }}</td>
+      </tr>
+      <tr class="sec"><th colspan="3">Renta</th></tr>
+      <tr><td>Ingresos netos del mes</td><td class="num">{{ dinero(c.ingresosNetos) }}</td><td></td></tr>
+      <tr class="total"><td>Pago a cuenta ({{ c.regimen.tasa }} %, redondeado)</td><td></td><td class="num">{{ dinero(c.renta) }}</td></tr>
+      <tr><td>Retenciones de 4.ª categoría del mes</td><td></td><td class="num">{{ dinero(x.retenciones4ta) }}</td></tr>
+    </tbody>
+  </table>
+  <div class="firma"><span>Contador público colegiado</span></div>
+</section>
+
+<p class="nota">
+  <i class="pi pi-info-circle"></i>
+  <span>
+    {{ cargando() ? 'Actualizando… ' : '' }}Sale de lo registrado en <a routerLink="/finanzas/ventas">Ventas</a> y
+    <a routerLink="/finanzas/compras">Compras</a> (anulados no cuentan; las notas de crédito restan). Es una referencia para preparar la
+    declaración: el contador confirma el régimen, el coeficiente de renta y las percepciones o retenciones de IGV antes de presentarla.
+  </span>
+</p>

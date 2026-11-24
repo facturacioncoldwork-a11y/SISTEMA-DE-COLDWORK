@@ -1,0 +1,84 @@
+@let r = er();
+@let e = empresa.actual();
+
+<div class="filtros">
+  <div class="lg-seg" role="group" aria-label="Periodo">
+    @for (x of rangos; track x.clave) {
+      <button type="button" [class.on]="rango() === x.clave" (click)="elegir(x.clave)">{{ x.nombre }}</button>
+    }
+  </div>
+  <label class="fecha">Del <input type="date" [ngModel]="desde()" (ngModelChange)="cambiarFecha('desde', $event)" aria-label="Desde" /></label>
+  <label class="fecha">al <input type="date" [ngModel]="hasta()" (ngModelChange)="cambiarFecha('hasta', $event)" aria-label="Hasta" /></label>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="exportar()"><i class="pi pi-download"></i> CSV</button>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="imprimir()"><i class="pi pi-print"></i> Imprimir / PDF</button>
+</div>
+
+<section class="lg-kpis">
+  <div class="lg-kpi">
+    <small><i class="pi pi-chart-line"></i> Ingresos</small>
+    <strong>{{ dinero(r.ingresos.total + (r.financieros.renglones[0]?.monto ?? 0)) }}</strong>
+    <span class="pie">Ventas netas y otros ingresos</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-shopping-cart"></i> Gastos</small>
+    <strong>{{ dinero(-(r.gastos.total + (r.financieros.renglones[1]?.monto ?? 0))) }}</strong>
+    <span class="pie">Operativos y financieros</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-wallet"></i> {{ r.resultadoNeto >= 0 ? 'Utilidad' : 'Pérdida' }} del periodo</small>
+    <strong [class.lg-pos]="r.resultadoNeto > 0" [class.lg-neg]="r.resultadoNeto < 0">{{ dinero(r.resultadoNeto) }}</strong>
+    <span class="pie">{{ r.impuestoRenta ? 'Después del impuesto a la renta' : 'Antes del impuesto a la renta' }}</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-percentage"></i> Margen neto</small>
+    <strong>{{ r.margen === null ? '—' : r.margen + ' %' }}</strong>
+    <span class="pie">Sobre las ventas netas</span>
+  </div>
+</section>
+
+<section class="lg-card estado">
+  <header>
+    <h2>Estado de Resultados</h2>
+    <p>{{ e?.razonSocial }}{{ e?.ruc ? ' · RUC ' + e?.ruc : '' }}</p>
+    <p>Del {{ fechaLarga(desde()) }} al {{ fechaLarga(hasta()) }} · Expresado en soles</p>
+  </header>
+  <table>
+    <tbody app-estado-seccion [seccion]="r.ingresos"></tbody>
+    <tbody app-estado-seccion [seccion]="r.gastos"></tbody>
+    <tbody>
+      <tr class="resultado">
+        <td>Resultado de operación</td>
+        <td class="num" [class.lg-neg]="r.resultadoOperativo < 0">{{ dinero(r.resultadoOperativo) }}</td>
+      </tr>
+    </tbody>
+    <tbody app-estado-seccion [seccion]="r.financieros"></tbody>
+    <tbody>
+      <tr class="resultado">
+        <td>Resultado antes del impuesto a la renta</td>
+        <td class="num" [class.lg-neg]="r.antesImpuestos < 0">{{ dinero(r.antesImpuestos) }}</td>
+      </tr>
+      @if (r.impuestoRenta) {
+        <tr class="linea">
+          <td>Impuesto a la renta</td>
+          <td class="num lg-neg">{{ dinero(r.impuestoRenta) }}</td>
+        </tr>
+      }
+      <tr class="resultado final">
+        <td>Resultado neto del periodo</td>
+        <td class="num">{{ dinero(r.resultadoNeto) }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="firma"><span>Gerente general</span><span>Contador público colegiado</span></div>
+</section>
+
+<p class="nota">
+  <i class="pi pi-info-circle"></i>
+  <span>
+    {{ cargando() ? 'Actualizando… ' : '' }}Se arma con los asientos <strong>registrados</strong> del
+    <a routerLink="/contabilidad/diario">Libro Diario</a> (los borradores y anulados no cuentan). Toca un renglón para ver sus cuentas.
+    El impuesto a la renta aparece cuando el contador registra la provisión (cuenta 88). Es información de gestión: los estados
+    oficiales los firma el contador.
+  </span>
+</p>

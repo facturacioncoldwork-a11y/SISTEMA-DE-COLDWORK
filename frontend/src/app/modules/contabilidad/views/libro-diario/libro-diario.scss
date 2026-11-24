@@ -1,0 +1,113 @@
+@use '../../styles/libro';
+
+// ─── Barra ──────────────────────────────────────────────────────
+
+.barra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.filtros {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  input {
+    min-width: 18rem;
+  }
+}
+
+// ─── Asientos ───────────────────────────────────────────────────
+
+// En el Diario las líneas de un asiento no llevan separador; solo entre asientos
+tbody tr + tr td {
+  border-top: none;
+}
+
+.col-cuenta {
+  width: 6rem;
+}
+
+.asiento td {
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--p-content-border-color);
+}
+
+tbody:first-of-type .asiento td {
+  border-top: none;
+}
+
+.asiento-cab {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+
+  .numero {
+    font-family: ui-monospace, monospace;
+    font-weight: 700;
+    color: var(--p-primary-color);
+  }
+
+  .fecha,
+  .meta {
+    color: var(--p-text-muted-color);
+    font-size: 0.85rem;
+  }
+
+  .acciones {
+    margin-left: auto;
+    display: flex;
+  }
+}
+
+// Los abonos van sangrados, como en el libro físico
+.linea.abono td:nth-child(1),
+.linea.abono td:nth-child(2) {
+  padding-left: 2.4rem;
+}
+
+.glosa-linea {
+  display: block;
+  color: var(--p-text-muted-color);
+}
+
+.subtotal td {
+  padding-bottom: 0.9rem;
+  font-size: 0.82rem;
+  color: var(--p-text-muted-color);
+
+  &.num {
+    border-top: 1px dashed var(--p-content-border-color);
+  }
+}
+
+// ─── Estados ────────────────────────────────────────────────────
+
+tbody.borrador {
+  background: var(--p-surface-50);
+}
+
+tbody.por_aprobar {
+  background: color-mix(in srgb, var(--p-blue-500) 5%, transparent);
+}
+
+tbody.observado {
+  background: color-mix(in srgb, var(--p-orange-500) 6%, transparent);
+}
+
+tbody.anulado .linea td,
+tbody.anulado .subtotal td {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.vacio i {
+  display: block;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}

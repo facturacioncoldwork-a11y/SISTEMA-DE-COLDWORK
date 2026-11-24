@@ -1,0 +1,294 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(60rem, 97vw)' }"
+  [header]="esVenta() ? 'Registrar venta' : 'Registrar compra'"
+>
+  <form class="lg-form" (ngSubmit)="guardar()">
+    <!-- ===== Quién ===== -->
+    <div class="full con-boton">
+      <div class="crece">
+        <label for="c-ter">{{ esVenta() ? 'Cliente' : 'Proveedor' }}</label>
+        <p-select
+          inputId="c-ter"
+          name="ter"
+          [options]="terceros()"
+          optionLabel="etiqueta"
+          optionValue="id"
+          [filter]="true"
+          filterBy="etiqueta"
+          [placeholder]="esVenta() ? 'Busca por nombre o RUC' : 'Busca el proveedor'"
+          appendTo="body"
+          [ngModel]="terceroId()"
+          (ngModelChange)="terceroId.set($event)"
+        />
+      </div>
+      <button type="button" class="lg-cta lg-cta--suave" (click)="dialogoTercero.set(true)">
+        <i class="pi pi-user-plus"></i> Nuevo
+      </button>
+    </div>
+
+    <!-- ===== Comprobante ===== -->
+    <div>
+      <label for="c-tipo">Tipo de comprobante</label>
+      <p-select
+        inputId="c-tipo"
+        name="tipo"
+        [options]="tiposDoc()"
+        optionLabel="nombre"
+        optionValue="codigo"
+        appendTo="body"
+        [ngModel]="tipoDoc()"
+        (ngModelChange)="cambiarTipoDoc($event)"
+      />
+    </div>
+    <div class="dos-campos">
+      <div>
+        <label for="c-serie">Serie</label>
+        <input pInputText id="c-serie" name="serie" maxlength="4" placeholder="F001" [(ngModel)]="serie" />
+      </div>
+      <div>
+        <label for="c-num">Número</label>
+        <input pInputText id="c-num" name="num" inputmode="numeric" placeholder="125" [(ngModel)]="numero" />
+      </div>
+    </div>
+
+    @if (esNotaCredito()) {
+      <div class="full">
+        <label for="c-ref">Comprobante que corrige</label>
+        <p-select
+          inputId="c-ref"
+          name="ref"
+          [options]="referencias()"
+          optionLabel="etiqueta"
+          optionValue="id"
+          appendTo="body"
+          placeholder="Elige primero el cliente o proveedor"
+          [ngModel]="referenciaId()"
+          (ngModelChange)="referenciaId.set($event)"
+        />
+      </div>
+    }
+
+    <div>
+      <label for="c-emi">Fecha de emisión</label>
+      <input
+        pInputText
+        id="c-emi"
+        name="emi"
+        type="date"
+        [ngModel]="fechaEmision()"
+        (ngModelChange)="fechaEmision.set($event)"
+      />
+    </div>
+    <div>
+      <label for="c-venc">Vencimiento</label>
+      <input
+        pInputText
+        id="c-venc"
+        name="venc"
+        type="date"
+        [ngModel]="fechaVencimiento()"
+        (ngModelChange)="fechaVencimiento.set($event)"
+      />
+      <small class="ayuda">Según los días de crédito del {{ esVenta() ? 'cliente' : 'proveedor' }}.</small>
+    </div>
+
+    <!-- ===== Importes ===== -->
+    <fieldset class="full bloque">
+      <legend>Importes</legend>
+      <div class="importes">
+        <div>
+          <span class="lbl">Moneda</span>
+          <p-selectbutton
+            name="mon"
+            [options]="monedas"
+            optionLabel="etiqueta"
+            optionValue="valor"
+            [allowEmpty]="false"
+            [ngModel]="moneda()"
+            (ngModelChange)="moneda.set($event)"
+          />
+        </div>
+        @if (moneda() === 'USD') {
+          <div>
+            <label for="c-tc">Tipo de cambio (SUNAT)</label>
+            <p-inputnumber
+              inputId="c-tc"
+              name="tc"
+              [minFractionDigits]="3"
+              [maxFractionDigits]="3"
+              placeholder="3.750"
+              [ngModel]="tipoCambio()"
+              (ngModelChange)="tipoCambio.set($event)"
+            />
+          </div>
+        }
+        <div>
+          <label for="c-total">¿Tienes el total? Escríbelo aquí</label>
+          <p-inputnumber
+            inputId="c-total"
+            name="tcon"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            [(ngModel)]="totalConIgv"
+            (ngModelChange)="desdeTotal($event)"
+            [placeholder]="sinIgv() ? 'Total' : 'Total con IGV'"
+          />
+        </div>
+      </div>
+
+      <div class="importes">
+        <div>
+          <label for="c-base">Base gravada (sin IGV)</label>
+          <p-inputnumber
+            inputId="c-base"
+            name="base"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            [min]="0"
+            [disabled]="sinIgv()"
+            [ngModel]="baseGravada()"
+            (ngModelChange)="baseGravada.set($event ?? 0)"
+          />
+        </div>
+        <div>
+          <label for="c-nograv">{{ esHonorarios() ? 'Honorarios' : 'Exonerado / inafecto' }}</label>
+          <p-inputnumber
+            inputId="c-nograv"
+            name="nograv"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            [min]="0"
+            [ngModel]="noGravada()"
+            (ngModelChange)="noGravada.set($event ?? 0)"
+          />
+        </div>
+        <div class="calculado">
+          <span class="lbl">IGV 18 %</span>
+          <strong>{{ dinero(igv(), moneda()) }}</strong>
+        </div>
+        <div class="calculado total">
+          <span class="lbl">Total</span>
+          <strong>{{ dinero(total(), moneda()) }}</strong>
+        </div>
+      </div>
+
+      @if (sinIgv() && !esVenta()) {
+        <p class="aviso">
+          <i class="pi pi-info-circle"></i>
+          {{ esHonorarios() ? 'Los recibos por honorarios no llevan IGV.' : 'Una boleta o ticket no da crédito fiscal: el IGV va como parte del costo.' }}
+        </p>
+      }
+
+      @if (esHonorarios()) {
+        <label class="chk" for="c-ret">
+          <p-checkbox inputId="c-ret" name="ret" [binary]="true" [ngModel]="retener()" (ngModelChange)="retener.set($event)" />
+          Retener 8 % de renta de 4.ª categoría (si supera S/ 1 500):
+          <strong>{{ dinero(retencion(), moneda()) }}</strong>
+        </label>
+      }
+
+      @if (esVenta() && !esNotaCredito()) {
+        <div class="importes">
+          <div class="crece">
+            <label for="c-detr">Detracción (SPOT)</label>
+            <p-select
+              inputId="c-detr"
+              name="detr"
+              [options]="detracciones"
+              optionLabel="nombre"
+              optionValue="porcentaje"
+              appendTo="body"
+              [ngModel]="detraccion()"
+              (ngModelChange)="detraccion.set($event)"
+            />
+          </div>
+          @if (detraccion() > 0) {
+            <div class="calculado">
+              <span class="lbl">El cliente deposita en tu cuenta del Banco de la Nación</span>
+              <strong>S/ {{ montoDetr() }}</strong>
+            </div>
+          }
+        </div>
+        @if (sugerirDetraccion()) {
+          <p class="aviso">
+            <i class="pi pi-exclamation-triangle"></i> Supera S/ 700: si es un servicio de mantenimiento o reparación, aplica la detracción del 12 %.
+          </p>
+        }
+      }
+    </fieldset>
+
+    <!-- ===== Contabilidad ===== -->
+    <div>
+      <label for="c-cuenta">{{ esVenta() ? 'Tipo de ingreso' : 'A qué va el gasto' }}</label>
+      <p-select
+        inputId="c-cuenta"
+        name="cuenta"
+        [options]="cuentas()"
+        optionLabel="etiqueta"
+        optionValue="codigo"
+        appendTo="body"
+        [ngModel]="cuentaContable()"
+        (ngModelChange)="cuentaContable.set($event)"
+      />
+    </div>
+    <div>
+      <label for="c-glosa">Descripción (opcional)</label>
+      <input
+        pInputText
+        id="c-glosa"
+        name="glosa"
+        [placeholder]="esVenta() ? 'Mantenimiento de cámara frigorífica' : 'Compra de compresores'"
+        [(ngModel)]="glosa"
+      />
+    </div>
+
+    <!-- Vista previa del asiento -->
+    <div class="full asiento">
+      <span class="lbl"><i class="pi pi-book"></i> Así queda en el Libro Diario (en soles)</span>
+      <table class="lg-tabla">
+        <thead>
+          <tr>
+            <th>Cuenta</th>
+            <th class="num">Debe</th>
+            <th class="num">Haber</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of asiento(); track $index) {
+            <tr>
+              <td class="lg-mono">{{ l.cuenta }}</td>
+              <td class="num">{{ l.debe ? dinero(l.debe) : '' }}</td>
+              <td class="num">{{ l.haber ? dinero(l.haber) : '' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="vacio">Escribe el importe para ver el asiento.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (error(); as e) {
+      <p class="error"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
+    }
+
+    <div class="full lg-pie-dialogo">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="visible.set(false)">Cancelar</button>
+      <button type="submit" class="lg-cta" [disabled]="guardando()">
+        <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"></i>
+        {{ esVenta() ? 'Registrar venta' : 'Registrar compra' }}
+      </button>
+    </div>
+  </form>
+</p-dialog>
+
+<app-tercero-dialogo
+  [(visible)]="dialogoTercero"
+  [tercero]="null"
+  [sugerido]="{ esCliente: esVenta(), esProveedor: !esVenta() }"
+  (guardado)="terceroCreado($event)"
+/>

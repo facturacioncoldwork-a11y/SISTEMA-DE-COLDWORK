@@ -1,0 +1,96 @@
+<div class="columnas">
+  <!-- Bandeja de aprobación -->
+  <section>
+    <div class="titulo">
+      <h2>Por aprobar <span class="contador">{{ pendientes().length }}</span></h2>
+      @if (pendientes().length > 1) {
+        <p-button label="Aprobar todos" icon="pi pi-check-square" [text]="true" (onClick)="aprobarTodos()" />
+      }
+    </div>
+
+    <div class="tarjetas">
+      @for (a of pendientes(); track a.id) {
+        <app-asiento-tarjeta [asiento]="a">
+          <div acciones class="acciones">
+            <p-button label="Observar" icon="pi pi-comment" severity="warn" [outlined]="true" size="small" (onClick)="abrirObservar(a)" />
+            <p-button label="Aprobar" icon="pi pi-check" size="small" (onClick)="aprobar(a)" />
+          </div>
+        </app-asiento-tarjeta>
+      } @empty {
+        <div class="vacio">
+          <i class="pi pi-check-circle"></i>
+          <strong>Todo al día</strong>
+          <span>No hay asientos esperando tu aprobación.</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Permisos y actividad -->
+  <aside>
+    <section class="panel">
+      <h3>Permisos del contador</h3>
+      <label class="permiso" for="perm-directo">
+        <p-toggleswitch
+          inputId="perm-directo"
+          [ngModel]="conta.config().contadorRegistraDirecto"
+          (ngModelChange)="cambiarPermiso('contadorRegistraDirecto', $event)"
+        />
+        <span>
+          <strong>El contador puede registrar sin mi aprobación</strong>
+          <small>
+            @if (conta.config().contadorRegistraDirecto) {
+              Sus asientos entran directo al libro. Tú igual ves todo en la actividad.
+            } @else {
+              Sus asientos llegan aquí y tú decides si se registran.
+            }
+          </small>
+        </span>
+      </label>
+
+      <label class="permiso" for="perm-libros">
+        <p-toggleswitch
+          inputId="perm-libros"
+          [ngModel]="conta.config().contadorVeLibros"
+          (ngModelChange)="cambiarPermiso('contadorVeLibros', $event)"
+        />
+        <span>
+          <strong>Puede ver los libros de la empresa</strong>
+          <small>Diario, Mayor y Balance completos. Si está apagado, solo ve sus propios asientos.</small>
+        </span>
+      </label>
+      <p class="fijo"><i class="pi pi-lock"></i> Anular asientos y cambiar permisos es solo del dueño.</p>
+    </section>
+
+    <section class="panel">
+      <h3>Actividad del equipo</h3>
+      <app-actividad-lista [actividad]="conta.actividad()" [limite]="10" />
+    </section>
+  </aside>
+</div>
+
+<!-- Diálogo: devolver con observación -->
+<p-dialog
+  header="Devolver al contador"
+  [visible]="!!observando()"
+  (visibleChange)="!$event && observando.set(null)"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(30rem, 95vw)' }"
+>
+  @if (observando(); as a) {
+    <p class="quien">Asiento {{ a.numero }} · {{ a.glosa }}</p>
+    <label for="obs-comentario">¿Qué debe corregir?</label>
+    <textarea
+      pTextarea
+      id="obs-comentario"
+      rows="3"
+      placeholder="Ej. Falta el RUC del proveedor."
+      [(ngModel)]="comentario"
+    ></textarea>
+  }
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="observando.set(null)" />
+    <p-button label="Devolver" icon="pi pi-reply" severity="warn" [disabled]="!comentario.trim()" (onClick)="confirmarObservacion()" />
+  </ng-template>
+</p-dialog>

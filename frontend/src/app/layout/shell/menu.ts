@@ -30,12 +30,13 @@ export const MENU: GrupoMenu[] = [
   {
     titulo: 'Finanzas',
     items: [
-      { etiqueta: 'Clientes y proveedores', icono: 'pi pi-users', ruta: '/terceros', area: 'administracion' },
-      { etiqueta: 'Caja y bancos', icono: 'pi pi-wallet', ruta: '/caja-bancos', area: 'finanzas' },
-      { etiqueta: 'Ventas', icono: 'pi pi-arrow-up-right', ruta: '/ventas', area: 'ventas' },
-      { etiqueta: 'Compras', icono: 'pi pi-arrow-down-left', ruta: '/compras', area: 'contabilidad' },
-      { etiqueta: 'Cuentas por cobrar', icono: 'pi pi-inbox', ruta: '/cuentas-cobrar', area: 'finanzas' },
-      { etiqueta: 'Cuentas por pagar', icono: 'pi pi-send', ruta: '/cuentas-pagar', area: 'finanzas' },
+      { etiqueta: 'Panel de finanzas', icono: 'pi pi-th-large', ruta: '/finanzas', area: 'finanzas', exacta: true },
+      { etiqueta: 'Clientes y proveedores', icono: 'pi pi-users', ruta: '/finanzas/terceros', area: 'administracion' },
+      { etiqueta: 'Caja y bancos', icono: 'pi pi-wallet', ruta: '/finanzas/caja-bancos', area: 'finanzas' },
+      { etiqueta: 'Ventas', icono: 'pi pi-arrow-up-right', ruta: '/finanzas/ventas', area: 'ventas' },
+      { etiqueta: 'Compras', icono: 'pi pi-arrow-down-left', ruta: '/finanzas/compras', area: 'contabilidad' },
+      { etiqueta: 'Cuentas por cobrar', icono: 'pi pi-inbox', ruta: '/finanzas/cuentas-cobrar', area: 'finanzas' },
+      { etiqueta: 'Cuentas por pagar', icono: 'pi pi-send', ruta: '/finanzas/cuentas-pagar', area: 'finanzas' },
     ],
   },
   {
