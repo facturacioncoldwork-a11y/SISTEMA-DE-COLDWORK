@@ -578,7 +578,7 @@ begin
         where c.id = (p_datos ->> 'comprobanteId')::uuid and c.empresa_id = p_empresa
         for update;
       if not found or v_comp.estado <> 'registrado' or v_comp.tipo_doc = '07'
-         or v_comp.operacion <> case v_tipo when 'cobro' then 'venta' else 'compra' end then
+         or v_comp.operacion <> (case v_tipo when 'cobro' then 'venta' else 'compra' end) then
         raise exception 'Elige un comprobante pendiente válido.';
       end if;
       if v_comp.moneda <> v_cta.moneda then
