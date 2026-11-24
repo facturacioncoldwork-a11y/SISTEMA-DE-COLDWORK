@@ -123,10 +123,12 @@
       @for (l of lineas(); track l.producto.id; let i = $index) {
         <div class="lg-linea">
           <div class="prod">
-            <strong>{{ l.producto.nombre }}</strong><small
-              >{{ l.producto.sku }} · stock {{ l.producto.stockTotal }}
-              {{ l.producto.unidad }}</small
-            >
+            <strong>{{ l.producto.nombre }}</strong><small>{{ l.producto.sku }}</small>
+            @if (store.yaTienes(l.producto.id); as y) {
+              <span class="lg-ya-hay" [class.antiguo]="y.antiguo"
+                ><i class="pi pi-box"></i> {{ y.texto }}</span
+              >
+            }
           </div>
           <p-inputnumber
             [disabled]="!editaTodo()"

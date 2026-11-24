@@ -8,6 +8,12 @@ import { KardexPanel } from '../../components/kardex-panel/kardex-panel';
 import { MedidorStock } from '../../components/medidor-stock/medidor-stock';
 import { ProductoDialogo } from '../../components/producto-dialogo/producto-dialogo';
 import {
+  NIVELES_ANTIGUEDAD,
+  textoAntiguedad,
+  textoCorto,
+  type Antiguedad,
+} from '../../models/antiguedad';
+import {
   nivelStock,
   TIPOS_PRODUCTO,
   type NivelStock,
@@ -16,8 +22,8 @@ import {
 } from '../../models/logistica.model';
 import { LogisticaStore } from '../../services/logistica-store.service';
 
-type FiltroNivel = 'todos' | 'ok' | 'reponer' | 'agotado';
-type Orden = 'nombre' | 'stock' | 'valor';
+type FiltroNivel = 'todos' | 'ok' | 'reponer' | 'sin_stock' | 'antiguos';
+type Orden = 'nombre' | 'stock' | 'valor' | 'antiguedad';
 
 /** Vista: INVENTARIO (control de stock por producto y almacén). */
 @Component({
@@ -41,6 +47,7 @@ export class Inventario implements OnInit {
   private readonly router = inject(Router);
 
   protected readonly tipos = TIPOS_PRODUCTO;
+  protected readonly nivelesEdad = NIVELES_ANTIGUEDAD;
   protected readonly opcionesTipo = Object.entries(TIPOS_PRODUCTO).map(([clave, t]) => ({
     clave,
     nombre: t.nombre,
@@ -67,6 +74,39 @@ export class Inventario implements OnInit {
   private nivelDe(p: Producto): NivelStock {
     return nivelStock(this.cantidad(p), this.almacen() ? 0 : p.stockMinimo);
   }
+  protected edad(p: Producto): Antiguedad | undefined {
+    return this.store.antiguedad().get(p.id);
+  }
+  protected edadCorta(p: Producto): string {
+    const d = this.edad(p)?.desde;
+    return d ? textoCorto(d) : '—';
+  }
+  /** Texto del aviso al pasar el mouse. */
+  protected edadAyuda(p: Producto): string {
+    const a = this.edad(p);
+    if (!a?.desde) return 'Sin stock';
+    const base = `Lo más antiguo lleva ${textoAntiguedad(a.desde)} en almacén`;
+    return a.nivel === 'antiguo'
+      ? `${base}. ${a.cantidadAntigua} ${p.unidad} pasan de ${this.store.mesesAntiguedad()} meses: véndelos pronto, aunque sea con descuento.`
+      : a.nivel === 'envejeciendo'
+        ? `${base}. Se está poniendo antiguo: úsalo o véndelo primero.`
+        : base;
+  }
+  private filtra(p: Producto, f: FiltroNivel): boolean {
+    const n = this.nivelDe(p);
+    switch (f) {
+      case 'todos':
+        return true;
+      case 'ok':
+        return n === 'ok';
+      case 'reponer':
+        return n === 'critico' || n === 'bajo' || n === 'agotado';
+      case 'sin_stock':
+        return n === 'agotado' || n === 'vacio';
+      case 'antiguos':
+        return this.edad(p)?.nivel === 'antiguo';
+    }
+  }
 
   private readonly base = computed(() => {
     const t = this.texto().trim().toLowerCase();
@@ -79,37 +119,32 @@ export class Inventario implements OnInit {
   });
 
   protected readonly conteo = computed(() => {
-    const c = { todos: 0, ok: 0, reponer: 0, agotado: 0 };
+    const c: Record<FiltroNivel, number> = {
+      todos: 0,
+      ok: 0,
+      reponer: 0,
+      sin_stock: 0,
+      antiguos: 0,
+    };
     for (const p of this.base()) {
-      const n = this.nivelDe(p);
-      c.todos++;
-      if (n === 'agotado') c.agotado++;
-      else if (n === 'critico' || n === 'bajo') c.reponer++;
-      else c.ok++;
+      for (const f of Object.keys(c) as FiltroNivel[]) if (this.filtra(p, f)) c[f]++;
     }
     return c;
   });
 
   protected readonly lista = computed(() => {
     const f = this.nivel();
-    const r = this.base().filter((p) => {
-      const n = this.nivelDe(p);
-      return (
-        f === 'todos' ||
-        (f === 'agotado'
-          ? n === 'agotado'
-          : f === 'reponer'
-            ? n === 'critico' || n === 'bajo'
-            : n === 'ok')
-      );
-    });
+    const r = this.base().filter((p) => this.filtra(p, f));
     const o = this.orden();
+    const desde = (p: Producto) => this.edad(p)?.desde ?? '9999';
     return [...r].sort((a, b) =>
       o === 'nombre'
         ? a.nombre.localeCompare(b.nombre)
         : o === 'stock'
           ? this.cantidad(a) - this.cantidad(b)
-          : b.valorizado - a.valorizado,
+          : o === 'antiguedad'
+            ? desde(a).localeCompare(desde(b))
+            : b.valorizado - a.valorizado,
     );
   });
 
@@ -120,7 +155,12 @@ export class Inventario implements OnInit {
   ngOnInit() {
     const q = this.ruta.snapshot.queryParamMap;
     const n = q.get('nivel');
-    if (n === 'reponer' || n === 'agotado' || n === 'ok') this.nivel.set(n);
+    if (n === 'reponer' || n === 'sin_stock' || n === 'ok') this.nivel.set(n);
+    if (n === 'agotado') this.nivel.set('sin_stock');
+    if (n === 'antiguos') {
+      this.nivel.set('antiguos');
+      this.orden.set('antiguedad');
+    }
     if (q.get('nuevo')) this.nuevo();
   }
 
@@ -171,6 +211,9 @@ export class Inventario implements OnInit {
         'Mínimo',
         'Costo promedio',
         'Valorizado',
+        'Ingreso más antiguo',
+        'Tiempo en almacén',
+        'Cantidad antigua',
       ],
       ...this.lista().map((p) => [
         p.sku,
@@ -182,6 +225,9 @@ export class Inventario implements OnInit {
         String(p.stockMinimo),
         p.costoPromedio.toFixed(2),
         p.valorizado.toFixed(2),
+        this.edad(p)?.desde?.slice(0, 10) ?? '',
+        this.edad(p)?.desde ? textoAntiguedad(this.edad(p)!.desde!) : '',
+        String(this.edad(p)?.cantidadAntigua ?? 0),
       ]),
     ];
     const csv =

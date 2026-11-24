@@ -448,6 +448,62 @@
   &.agotado {
     --c: #dc2626;
   }
+  &.vacio {
+    --c: #94a3b8;
+  }
+}
+
+// ---------- Antigüedad en almacén ----------
+.lg-chip.edad {
+  gap: 0.3rem;
+  &::before {
+    display: none;
+  }
+  i {
+    font-size: 0.68rem;
+  }
+  &.alerta {
+    color: #fff;
+    background: var(--c);
+    animation: lg-latido 2.4s ease-in-out infinite;
+  }
+}
+@keyframes lg-latido {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 0.3rem color-mix(in srgb, var(--c) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lg-chip.edad.alerta {
+    animation: none;
+  }
+}
+
+// "Ya tienes X en almacén" al armar una compra (para no pedir de más)
+.lg-ya-hay {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #b45309;
+  background: #fef3c7;
+  i {
+    font-size: 0.7rem;
+  }
+  &.antiguo {
+    color: #b91c1c;
+    background: #fee2e2;
+  }
 }
 
 // ---------- Tabla propia ----------
@@ -521,6 +577,9 @@
   }
   &.agotado span {
     background: #ef4444;
+  }
+  &.vacio span {
+    background: #cbd5e1;
   }
 }
 

@@ -31,6 +31,22 @@ export interface FilaProductoStock extends ProductoEntity {
 export const COLUMNAS_PRODUCTO =
   'id, empresa_id, sku, nombre, descripcion, tipo, marca, unidad, stock_minimo, costo_promedio, activo, creado_en';
 
+/**
+ * Vista `public.stock_lotes`: qué parte del stock actual vino de cada llegada
+ * (PEPS: sale primero lo más antiguo). Sirve para saber cuánto tiempo lleva.
+ */
+export interface LoteEntity {
+  producto_id: string;
+  llegada_id: string;
+  llegada_numero: number;
+  fecha: string;
+  cantidad: number;
+  costo_unitario: number;
+}
+
+export const COLUMNAS_LOTE =
+  'producto_id, llegada_id, llegada_numero, fecha, cantidad, costo_unitario';
+
 /** Entidad `public.movimientos` (kardex). */
 export interface MovimientoEntity {
   id: number;

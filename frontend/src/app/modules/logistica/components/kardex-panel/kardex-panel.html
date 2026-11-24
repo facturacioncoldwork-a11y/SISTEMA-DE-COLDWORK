@@ -5,7 +5,7 @@
   [showCloseIcon]="true"
 >
   <ng-template #header>
-    @if (producto(); as p) {
+    @if (actual(); as p) {
       <div class="cab">
         <span class="ico" [style.background]="tipos[p.tipo].color"
           ><i [class]="tipos[p.tipo].icono"></i
@@ -18,7 +18,31 @@
     }
   </ng-template>
 
-  @if (producto(); as p) {
+  @if (actual(); as p) {
+    @if (edad(); as a) {
+      @if (a.nivel !== 'reciente' && a.desde) {
+        <div class="aviso-edad" [style.--c]="niveles[a.nivel].color">
+          <i [class]="niveles[a.nivel].icono"></i>
+          <div>
+            <strong>
+              @if (a.nivel === 'antiguo') {
+                Lleva {{ textoAntiguedad(a.desde) }} en almacén: véndelo pronto, aunque sea con
+                descuento
+              } @else {
+                Se está poniendo antiguo ({{ textoAntiguedad(a.desde) }}): úsalo o véndelo primero
+              }
+            </strong>
+            @if (a.nivel === 'antiguo') {
+              <small
+                >{{ a.cantidadAntigua | number: '1.0-2' }} {{ p.unidad }} pasan de
+                {{ store.mesesAntiguedad() }} meses ·
+                {{ a.valorAntiguo | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }} a costo</small
+              >
+            }
+          </div>
+        </div>
+      }
+    }
     <section class="tarjeta-resumen">
       <app-medidor-stock [cantidad]="p.stockTotal" [minimo]="p.stockMinimo" [unidad]="p.unidad" />
       <div class="cifras">
@@ -56,6 +80,70 @@
         </button>
       }
     </div>
+
+    @if (p.lotes?.length) {
+      <h4>¿Desde cuándo está en almacén?</h4>
+      <ul class="lotes">
+        @for (l of p.lotes; track l.llegadaId) {
+          <li [style.--c]="niveles[nivelLote(l)].color">
+            <span class="lg-chip edad sin-punto" [class.alerta]="nivelLote(l) === 'antiguo'"
+              ><i [class]="niveles[nivelLote(l)].icono"></i> {{ textoAntiguedad(l.fecha) }}</span
+            >
+            <div class="txt">
+              <strong>{{ l.cantidad | number: '1.0-2' }} {{ p.unidad }}</strong>
+              @if (editandoLote() === l.llegadaId) {
+                <span class="editar">
+                  <input
+                    type="date"
+                    [max]="hoy"
+                    [ngModel]="nuevaFecha()"
+                    (ngModelChange)="nuevaFecha.set($event)"
+                    aria-label="Nueva fecha de ingreso"
+                  />
+                  <button
+                    type="button"
+                    class="lg-cta mini"
+                    (click)="guardarFecha(l)"
+                    [disabled]="guardando()"
+                  >
+                    <i class="pi pi-check"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="lg-cta lg-cta--suave mini"
+                    (click)="editandoLote.set(null)"
+                    aria-label="Cancelar"
+                  >
+                    <i class="pi pi-times"></i>
+                  </button>
+                </span>
+                <small class="nota">Cambia la fecha de toda la llegada {{ l.documento }}.</small>
+              } @else {
+                <small
+                  >Ingresó el {{ l.fecha | date: 'd MMM y' }} · {{ l.documento }} ·
+                  {{ l.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }} c/u</small
+                >
+              }
+            </div>
+            @if (editandoLote() !== l.llegadaId) {
+              <button
+                type="button"
+                class="lapiz"
+                (click)="editarFecha(l)"
+                aria-label="Corregir fecha de ingreso"
+                title="Corregir fecha de ingreso"
+              >
+                <i class="pi pi-calendar-plus"></i>
+              </button>
+            }
+          </li>
+        }
+      </ul>
+      <p class="ayuda">
+        Se asume que sale primero lo más antiguo. Si cargaste stock que ya estaba guardado de antes,
+        corrige aquí la fecha real en que llegó.
+      </p>
+    }
 
     <div class="kardex-cab">
       <h4>Kardex</h4>

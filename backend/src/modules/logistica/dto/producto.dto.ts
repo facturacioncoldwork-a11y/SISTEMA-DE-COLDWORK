@@ -13,6 +13,7 @@ import {
 import {
   TipoProducto,
   type FilaProductoStock,
+  type LoteEntity,
   type MovimientoEntity,
 } from '../entities/producto.entity.js';
 
@@ -71,6 +72,28 @@ export class StockAlmacenDto {
   @ApiProperty() cantidad!: number;
 }
 
+/** Parte del stock que vino de una llegada (para saber cuánto tiempo lleva). */
+export class LoteDto {
+  @ApiProperty({ format: 'uuid' }) llegadaId!: string;
+  @ApiProperty({ example: 'LL-000012' }) documento!: string;
+  @ApiProperty({ description: 'Fecha en que llegó (fecha de ingreso)' })
+  fecha!: string;
+  @ApiProperty({ description: 'Cuánto de esa llegada sigue en almacén' })
+  cantidad!: number;
+  @ApiProperty({ description: 'Costo unitario de esa llegada (S/)' })
+  costoUnitario!: number;
+
+  static desde(l: LoteEntity): LoteDto {
+    return {
+      llegadaId: l.llegada_id,
+      documento: `LL-${String(l.llegada_numero).padStart(6, '0')}`,
+      fecha: l.fecha,
+      cantidad: Number(l.cantidad),
+      costoUnitario: Number(l.costo_unitario),
+    };
+  }
+}
+
 /** Producto con su stock total y por almacén. */
 export class ProductoDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
@@ -89,8 +112,27 @@ export class ProductoDto {
   valorizado!: number;
   @ApiProperty({ type: [StockAlmacenDto] }) stock!: StockAlmacenDto[];
   @ApiProperty() activo!: boolean;
+  @ApiProperty({
+    type: [LoteDto],
+    description:
+      'Stock actual por fecha de ingreso, del más antiguo al más reciente',
+  })
+  lotes!: LoteDto[];
+  @ApiPropertyOptional({
+    nullable: true,
+    type: String,
+    description:
+      'Fecha de ingreso de lo más antiguo que queda (null si no hay stock)',
+  })
+  ingresoMasAntiguo!: string | null;
 
-  static desde(f: FilaProductoStock): ProductoDto {
+  static desde(
+    f: FilaProductoStock,
+    filasLotes: LoteEntity[] = [],
+  ): ProductoDto {
+    const lotes = filasLotes
+      .map((l) => LoteDto.desde(l))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha));
     const stock = (f.stock ?? []).map((s) => ({
       almacenId: s.almacen_id,
       cantidad: Number(s.cantidad),
@@ -110,6 +152,8 @@ export class ProductoDto {
       valorizado: Math.round(stockTotal * Number(f.costo_promedio) * 100) / 100,
       stock,
       activo: f.activo,
+      lotes,
+      ingresoMasAntiguo: lotes[0]?.fecha ?? null,
     };
   }
 }

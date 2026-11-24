@@ -6,6 +6,7 @@ import {
   CrearLlegadaDto,
   CrearOrdenCompraDto,
   CrearSalidaDto,
+  GuardarAjustesLogisticaDto,
 } from './index.js';
 
 /**
@@ -107,5 +108,17 @@ describe('contrato de la API de logística', () => {
         campoNuevo: 1,
       }),
     ).toContain('campoNuevo');
+  });
+
+  it('límite de antigüedad: entero entre 3 y 120 meses', async () => {
+    expect(
+      await errores(GuardarAjustesLogisticaDto, { mesesAntiguedad: 24 }),
+    ).toEqual([]);
+    expect(
+      await errores(GuardarAjustesLogisticaDto, { mesesAntiguedad: 1 }),
+    ).toContain('mesesAntiguedad');
+    expect(
+      await errores(GuardarAjustesLogisticaDto, { mesesAntiguedad: 18.5 }),
+    ).toContain('mesesAntiguedad');
   });
 });

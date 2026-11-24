@@ -15,6 +15,7 @@ Todo se hace en **Supabase → SQL Editor** (pega el archivo completo → **Run*
    | `20261121000001_logistica_plazos_crud.sql` | plazos de entrega, seguimiento al cliente, editar y eliminar |
    | `20261122000001_accesos_solo_dueno.sql` | solo el dueño da accesos |
    | `20261123000001_oc_formato_y_moneda.sql` | formato de la orden de compra, moneda y tipo de cambio |
+   | `20261126000001_logistica_antiguedad.sql` | antigüedad del inventario (vender lo que lleva años) |
 
 3. **Vuelve a ejecutar** `estado-migraciones.sql`: todo debe salir `true`.
 4. **Carga tus datos**: abre `supabase/datos-iniciales.sql`, cambia los ejemplos por tus almacenes, proveedores y productos (el RUC de la empresa arriba) y ejecútalo. Se puede correr varias veces sin duplicar.
@@ -24,12 +25,13 @@ Todo se hace en **Supabase → SQL Editor** (pega el archivo completo → **Run*
 
 ## Cómo crear las tablas en Supabase
 
-Son **cuatro archivos** y se ejecutan **en este orden** (una sola vez cada uno):
+Son **cinco archivos** y se ejecutan **en este orden** (una sola vez cada uno):
 
 1. `supabase/migrations/20261120000001_logistica.sql` → tablas, RLS y funciones de stock.
 2. `supabase/migrations/20261121000001_logistica_plazos_crud.sql` → plazos de entrega, seguimiento al cliente y eliminar/editar.
 3. `supabase/migrations/20261122000001_accesos_solo_dueno.sql` → solo el dueño (CEO) da accesos.
 4. `supabase/migrations/20261123000001_oc_formato_y_moneda.sql` → orden de compra en formato COLD WORK, moneda (S/ o US$) y tipo de cambio en las llegadas.
+5. `supabase/migrations/20261126000001_logistica_antiguedad.sql` → antigüedad del inventario: lotes por fecha de ingreso, límite para "vender pronto" y fecha de llegada corregible.
 
 Supabase → **SQL Editor** → pega el archivo completo → **Run**.
 (No lo crees a mano tabla por tabla: también crea las reglas RLS y las funciones que mueven el stock.)
@@ -76,6 +78,17 @@ Todas llevan `empresa_id` y RLS: solo las ve quien tiene el área **Logística**
 - El proveedor dice "2-3 semanas", "1 mes" o una fecha exacta: se guarda el texto y la app calcula la **ventana** de llegada desde la fecha de la orden.
 - Al recibir todo, la BD llena `fecha_llegada_real` con la fecha que se puso en la llegada (por defecto hoy).
 - Con `cliente` y `compromiso_cliente`, la app avisa si la llegada estimada pasa la fecha prometida, y se marca `entregado_cliente` cuando se entrega.
+
+## Antigüedad del inventario (vender lo que lleva años)
+
+El almacén guarda sobrantes de proyectos: no siempre se repone, pero hay que saber **qué hay y desde cuándo**, para no comprar de más y para vender pronto (aunque sea con descuento) lo que lleva años guardado.
+
+- **Cómo se calcula:** la vista `stock_lotes` reparte el stock actual entre las llegadas que lo trajeron, asumiendo que sale primero lo más antiguo (PEPS). Si un producto se compra y se usa seguido, no aparece como antiguo; solo lo que de verdad no se movió. Las transferencias entre almacenes no cambian la antigüedad.
+- **Límite:** por defecto **24 meses** (tabla `logistica_ajustes`). Solo el dueño o un admin lo cambian, desde *Panel de almacén → Vender pronto → Cambiar*. Avisa en ámbar unos meses antes (con 24, desde los 18).
+- **Dónde se ve:** el indicador y la tarjeta *Vender pronto* del panel, el filtro *Antiguos* y la columna *En almacén* del inventario, y el aviso rojo en el panel lateral de cada producto.
+- **Stock que ya estaba guardado:** al cargarlo con *Registrar llegada → Compra directa u otro ingreso*, pon la **fecha aproximada en que llegó**. Si te equivocas, en el panel lateral del producto (*¿Desde cuándo está en almacén?*) puedes corregirla. Eso cambia la fecha de toda la llegada, el kardex y la orden de compra se actualizan solos y no se acepta una fecha futura.
+- **Para no pedir de más:** al armar una orden de compra o importar una cotización, cada producto muestra *Ya tienes X en almacén* (en rojo si lo que hay es antiguo).
+- **Stock mínimo:** es opcional. Con 0 no hay aviso de reposición, y quedarse sin stock se muestra en gris (*Sin stock*) en vez de rojo (*Agotado*).
 
 ## Eliminar (CRUD)
 

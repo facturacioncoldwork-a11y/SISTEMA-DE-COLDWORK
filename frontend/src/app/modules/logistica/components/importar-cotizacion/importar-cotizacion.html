@@ -340,6 +340,11 @@
                     ? '≈ nombre parecido'
                     : '✓ elegido'
               }}</small>
+              @if (store.yaTienes(f.productoId); as y) {
+                <span class="lg-ya-hay" [class.antiguo]="y.antiguo"
+                  ><i class="pi pi-box"></i> {{ y.texto }}</span
+                >
+              }
             }
           </div>
           <button type="button" class="quitar" (click)="quitar(f.id)" aria-label="Quitar fila">

@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { ApiService } from '../../../core/api/services/api.service';
 import type {
+  AjustesLogistica,
   GuardarProducto,
   Movimiento,
   Producto,
@@ -29,5 +30,12 @@ export class ProductosService {
   }
   kardex(id: string): Promise<Movimiento[]> {
     return this.api.get(`/logistica/productos/${id}/kardex`);
+  }
+  ajustes(): Promise<AjustesLogistica> {
+    return this.api.get('/logistica/ajustes');
+  }
+  /** Solo dueño o admin. */
+  guardarAjustes(datos: AjustesLogistica): Promise<AjustesLogistica> {
+    return this.api.put('/logistica/ajustes', datos);
   }
 }

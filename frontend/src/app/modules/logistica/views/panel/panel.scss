@@ -8,21 +8,25 @@
   .tipos {
     grid-column: span 4;
   }
+  .antiguos {
+    grid-column: span 7;
+  }
+  .reponer {
+    grid-column: span 5;
+  }
   .proximas {
     grid-column: span 6;
   }
-  .reponer {
+  .actividad {
     grid-column: span 6;
   }
-  .actividad {
-    grid-column: span 7;
-  }
   .almacenes {
-    grid-column: span 5;
+    grid-column: span 12;
   }
   @media (max-width: 1100px) {
     .flujo,
     .tipos,
+    .antiguos,
     .proximas,
     .reponer,
     .actividad,
@@ -121,4 +125,70 @@
 }
 .lista li {
   grid-template-columns: minmax(0, 1fr) 9rem auto;
+}
+
+.antiguos h3 i {
+  color: #dc2626;
+  font-size: 0.95rem;
+  margin-right: 0.2rem;
+}
+.lista.viejos li {
+  grid-template-columns: minmax(0, 1fr) auto 6.5rem;
+  &.clic {
+    cursor: pointer;
+    border-radius: 0.6rem;
+  }
+  &.clic:hover {
+    background: var(--lg-soft);
+  }
+  .cuanto,
+  .valor {
+    display: grid;
+    gap: 0.15rem;
+    justify-items: end;
+  }
+  small {
+    color: var(--lg-muted);
+    font-size: 0.72rem;
+  }
+}
+.limite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--lg-line);
+  font-size: 0.78rem;
+  color: var(--lg-muted);
+  b {
+    color: var(--lg-ink);
+  }
+  input {
+    width: 4.5rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--lg-line);
+    border-radius: 0.5rem;
+    font: inherit;
+    color: var(--lg-ink);
+  }
+  .lnk {
+    border: 0;
+    background: none;
+    color: var(--lg-blue);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+  }
+}
+@media (max-width: 640px) {
+  .lista.viejos li {
+    grid-template-columns: 1fr;
+    .cuanto,
+    .valor {
+      justify-items: start;
+    }
+  }
 }

@@ -2,8 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { datosOError } from '../../../common/index.js';
 import { SupabaseService } from '../../../database/supabase/supabase.service.js';
 import {
+  COLUMNAS_LOTE,
   COLUMNAS_PRODUCTO,
   type FilaProductoStock,
+  type LoteEntity,
   type MovimientoEntity,
   type ProductoEntity,
 } from '../entities/index.js';
@@ -36,6 +38,22 @@ export class ProductosRepository {
       .eq('id', id)
       .single<FilaProductoStock>();
     return datosOError(r);
+  }
+
+  /** Lotes vivos (vista stock_lotes) de la empresa, o de un solo producto. */
+  async lotes(
+    token: string,
+    empresaId: string,
+    productoId?: string,
+  ): Promise<LoteEntity[]> {
+    let q = this.supabase
+      .paraUsuario(token)
+      .from('stock_lotes')
+      .select(COLUMNAS_LOTE)
+      .eq('empresa_id', empresaId);
+    if (productoId) q = q.eq('producto_id', productoId);
+    const r = await q.order('fecha');
+    return (datosOError(r) as LoteEntity[] | null) ?? [];
   }
 
   async crear(token: string, fila: Partial<ProductoEntity>): Promise<string> {

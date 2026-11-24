@@ -15,6 +15,18 @@ export interface StockAlmacen {
   cantidad: number;
 }
 
+/** Parte del stock que vino de una llegada (PEPS: sale primero lo más antiguo). */
+export interface Lote {
+  llegadaId: string;
+  /** LL-000012 */
+  documento: string;
+  /** Fecha de ingreso al almacén. */
+  fecha: string;
+  /** Cuánto de esa llegada sigue en almacén. */
+  cantidad: number;
+  costoUnitario: number;
+}
+
 export interface Producto {
   id: string;
   sku: string;
@@ -29,6 +41,16 @@ export interface Producto {
   valorizado: number;
   stock: StockAlmacen[];
   activo: boolean;
+  /** Stock actual por fecha de ingreso, del más antiguo al más reciente. */
+  lotes: Lote[];
+  /** Fecha de ingreso de lo más antiguo que queda (null si no hay stock). */
+  ingresoMasAntiguo: string | null;
+}
+
+/** Ajustes de logística de la empresa. */
+export interface AjustesLogistica {
+  /** Meses en almacén desde los que un producto es antiguo (por defecto 24). */
+  mesesAntiguedad: number;
 }
 
 export interface GuardarProducto {
@@ -336,10 +358,14 @@ export const UNIDADES = [
   'CAJA',
 ];
 
-/** Nivel de stock para el semáforo. */
-export type NivelStock = 'agotado' | 'critico' | 'bajo' | 'ok';
+/**
+ * Nivel de stock para el semáforo.
+ * El almacén guarda sobrantes de proyectos: sin stock mínimo (0) no hay aviso de reposición,
+ * y quedarse en 0 es normal ('vacio'), no una alarma ('agotado').
+ */
+export type NivelStock = 'agotado' | 'vacio' | 'critico' | 'bajo' | 'ok';
 export function nivelStock(cantidad: number, minimo: number): NivelStock {
-  if (cantidad <= 0) return 'agotado';
+  if (cantidad <= 0) return minimo > 0 ? 'agotado' : 'vacio';
   if (minimo <= 0) return 'ok';
   if (cantidad <= minimo) return 'critico';
   if (cantidad <= minimo * 1.5) return 'bajo';

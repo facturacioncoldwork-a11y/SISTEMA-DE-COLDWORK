@@ -253,3 +253,7 @@
     grid-template-columns: 1fr;
   }
 }
+
+.catalogo .lg-ya-hay {
+  grid-column: 1 / -1;
+}

@@ -67,5 +67,6 @@ export class MedidorStock {
     bajo: 'Bajo',
     critico: 'Reponer',
     agotado: 'Agotado',
+    vacio: 'Sin stock',
   } as const;
 }

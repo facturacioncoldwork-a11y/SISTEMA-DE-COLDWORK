@@ -23,9 +23,18 @@
       <span class="lg-chip bajo sin-punto" style="padding: 0; background: none">●</span> Reponer
       <span class="n">{{ conteo().reponer }}</span>
     </button>
-    <button type="button" [class.on]="nivel() === 'agotado'" (click)="nivel.set('agotado')">
-      <span class="lg-chip agotado sin-punto" style="padding: 0; background: none">●</span> Agotados
-      <span class="n">{{ conteo().agotado }}</span>
+    <button type="button" [class.on]="nivel() === 'sin_stock'" (click)="nivel.set('sin_stock')">
+      <span class="lg-chip vacio sin-punto" style="padding: 0; background: none">●</span> Sin stock
+      <span class="n">{{ conteo().sin_stock }}</span>
+    </button>
+    <button
+      type="button"
+      [class.on]="nivel() === 'antiguos'"
+      (click)="nivel.set('antiguos'); orden.set('antiguedad')"
+      [pTooltip]="'Llevan ' + store.mesesAntiguedad() + ' meses o más en almacén'"
+    >
+      <i class="pi pi-hourglass" style="color: #dc2626; font-size: 0.8rem"></i> Antiguos
+      <span class="n">{{ conteo().antiguos }}</span>
     </button>
   </div>
   <p-select
@@ -105,6 +114,9 @@
     <button type="button" [class.on]="orden() === 'valor'" (click)="orden.set('valor')">
       Mayor valor
     </button>
+    <button type="button" [class.on]="orden() === 'antiguedad'" (click)="orden.set('antiguedad')">
+      Más antiguo
+    </button>
   </div>
 </div>
 
@@ -140,6 +152,7 @@
           <th>Tipo</th>
           <th>Stock</th>
           <th>Por almacén</th>
+          <th>En almacén</th>
           <th class="num">Costo prom.</th>
           <th class="num">Valorizado</th>
           <th></th>
@@ -184,6 +197,23 @@
                 }
               </div>
             </td>
+            <td>
+              @if (edad(p)?.desde) {
+                <span
+                  class="lg-chip edad"
+                  [class.alerta]="edad(p)!.nivel === 'antiguo'"
+                  [style.--c]="nivelesEdad[edad(p)!.nivel].color"
+                  [pTooltip]="edadAyuda(p)"
+                  tooltipPosition="top"
+                  ><i [class]="nivelesEdad[edad(p)!.nivel].icono"></i> {{ edadCorta(p) }}</span
+                >
+                @if (edad(p)!.nivel === 'antiguo') {
+                  <span class="sub vender">Vender con descuento</span>
+                }
+              } @else {
+                <span class="sub">—</span>
+              }
+            </td>
             <td class="num">{{ p.costoPromedio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</td>
             <td class="num">
               <b>{{ p.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b>
@@ -203,6 +233,15 @@
             ><i [class]="tipos[p.tipo].icono"></i
           ></span>
           <span class="lg-mono">{{ p.sku }}</span>
+          @if (edad(p)?.desde) {
+            <span
+              class="lg-chip edad sin-punto"
+              [class.alerta]="edad(p)!.nivel === 'antiguo'"
+              [style.--c]="nivelesEdad[edad(p)!.nivel].color"
+              [pTooltip]="edadAyuda(p)"
+              ><i [class]="nivelesEdad[edad(p)!.nivel].icono"></i> {{ edadCorta(p) }}</span
+            >
+          }
         </div>
         <strong>{{ p.nombre }}</strong>
         <small>{{ p.marca || tipos[p.tipo].nombre }}</small>

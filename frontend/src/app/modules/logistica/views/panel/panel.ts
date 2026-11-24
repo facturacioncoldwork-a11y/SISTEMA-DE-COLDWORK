@@ -1,6 +1,8 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { GraficoDona, type Porcion } from '../../components/grafico-dona/grafico-dona';
 import { GraficoFlujo } from '../../components/grafico-flujo/grafico-flujo';
 import { MedidorStock } from '../../components/medidor-stock/medidor-stock';
@@ -17,6 +19,7 @@ import { MovimientosService } from '../../services/movimientos.service';
 import { ProductosService } from '../../services/productos.service';
 import { OrdenesCompraService } from '../../services/ordenes-compra.service';
 import { colorCliente, colorLlegada, seguimiento } from '../../models/plazos';
+import { NIVELES_ANTIGUEDAD, textoAntiguedad } from '../../models/antiguedad';
 import type { OrdenCompra } from '../../models/logistica.model';
 
 interface Actividad {
@@ -36,6 +39,7 @@ interface Actividad {
     CurrencyPipe,
     DatePipe,
     DecimalPipe,
+    FormsModule,
     RouterLink,
     GraficoFlujo,
     GraficoDona,
@@ -50,6 +54,20 @@ export class Panel implements OnInit {
   private readonly ocApi = inject(OrdenesCompraService);
   private readonly router = inject(Router);
   protected readonly store = inject(LogisticaStore);
+  /** Solo el dueño o un admin cambian el límite de antigüedad. */
+  protected readonly puedeAjustar = inject(EmpresaActualService).esAdmin;
+  protected readonly nivelesEdad = NIVELES_ANTIGUEDAD;
+  protected readonly textoAntiguedad = textoAntiguedad;
+  protected readonly editandoLimite = signal(false);
+  protected readonly limite = signal<number | null>(null);
+  protected readonly guardandoLimite = signal(false);
+
+  /** Lo que más tiempo lleva primero (máx. 6). */
+  protected readonly antiguos = computed(() => this.store.antiguos().slice(0, 6));
+  /** Plata parada en productos antiguos (a costo). */
+  protected readonly valorAntiguo = computed(() =>
+    this.store.antiguos().reduce((t, x) => t + x.antiguedad.valorAntiguo, 0),
+  );
 
   protected readonly resumen = signal<ResumenLogistica | null>(null);
   protected readonly llegadas = signal<Llegada[]>([]);
@@ -145,6 +163,26 @@ export class Panel implements OnInit {
     } finally {
       this.cargando.set(false);
     }
+  }
+
+  protected editarLimite() {
+    this.limite.set(this.store.mesesAntiguedad());
+    this.editandoLimite.set(true);
+  }
+
+  protected async guardarLimite() {
+    const m = this.limite();
+    if (m === null || !Number.isInteger(m) || m < 3 || m > 120) {
+      this.store.error('Límite inválido', new Error('Pon un número entero de 3 a 120 meses.'));
+      return;
+    }
+    this.guardandoLimite.set(true);
+    if (await this.store.guardarMesesAntiguedad(m)) this.editandoLimite.set(false);
+    this.guardandoLimite.set(false);
+  }
+
+  protected verAntiguos() {
+    void this.router.navigate(['/logistica/inventario'], { queryParams: { nivel: 'antiguos' } });
   }
 
   protected verOc(id: string) {

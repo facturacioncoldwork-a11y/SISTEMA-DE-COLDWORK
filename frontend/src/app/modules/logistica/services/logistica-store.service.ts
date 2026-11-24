@@ -1,6 +1,12 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
+import {
+  antiguedadDe,
+  MESES_ANTIGUEDAD_POR_DEFECTO,
+  textoAntiguedad,
+  type Antiguedad,
+} from '../models/antiguedad';
 import type { Almacen, Producto, Proveedor } from '../models/logistica.model';
 import { AlmacenesService } from './almacenes.service';
 import { ProductosService } from './productos.service';
@@ -22,6 +28,8 @@ export class LogisticaStore {
   readonly almacenes = signal<Almacen[]>([]);
   readonly proveedores = signal<Proveedor[]>([]);
   readonly cargando = signal(false);
+  /** Meses desde los que un producto es antiguo (ajuste de la empresa). */
+  readonly mesesAntiguedad = signal(MESES_ANTIGUEDAD_POR_DEFECTO);
   private cargado = false;
 
   readonly productosActivos = computed(() => this.productos().filter((p) => p.activo));
@@ -29,6 +37,23 @@ export class LogisticaStore {
   readonly proveedoresActivos = computed(() => this.proveedores().filter((p) => p.activo));
   readonly almacenPorId = computed(() => new Map(this.almacenes().map((a) => [a.id, a])));
   readonly productoPorId = computed(() => new Map(this.productos().map((p) => [p.id, p])));
+
+  /** Cuánto tiempo lleva cada producto en el almacén. */
+  readonly antiguedad = computed(() => {
+    const limite = this.mesesAntiguedad();
+    const hoy = new Date();
+    return new Map<string, Antiguedad>(
+      this.productos().map((p) => [p.id, antiguedadDe(p.lotes ?? [], limite, hoy)]),
+    );
+  });
+  /** Productos activos que pasaron el límite: venderlos pronto, aunque sea con descuento. */
+  readonly antiguos = computed(() => {
+    const a = this.antiguedad();
+    return this.productosActivos()
+      .map((p) => ({ producto: p, antiguedad: a.get(p.id)! }))
+      .filter((x) => x.antiguedad.nivel === 'antiguo')
+      .sort((x, y) => y.antiguedad.meses - x.antiguedad.meses);
+  });
 
   /** Carga los catálogos si aún no están. */
   async asegurar(): Promise<void> {
@@ -38,11 +63,14 @@ export class LogisticaStore {
   async recargar(): Promise<void> {
     this.cargando.set(true);
     try {
-      const [p, a, v] = await Promise.all([
+      const [p, a, v, aj] = await Promise.all([
         this.productosApi.listar(),
         this.almacenesApi.listar(),
         this.proveedoresApi.listar(),
+        // Si falla (p. ej. falta la migración), se sigue con el límite por defecto
+        this.productosApi.ajustes().catch(() => null),
       ]);
+      if (aj) this.mesesAntiguedad.set(aj.mesesAntiguedad);
       this.productos.set(p);
       this.almacenes.set(a);
       this.proveedores.set(v);
@@ -52,6 +80,35 @@ export class LogisticaStore {
     } finally {
       this.cargando.set(false);
     }
+  }
+
+  /** Cambia desde cuántos meses un producto es antiguo (solo dueño o admin). */
+  async guardarMesesAntiguedad(meses: number): Promise<boolean> {
+    try {
+      const r = await this.productosApi.guardarAjustes({ mesesAntiguedad: meses });
+      this.mesesAntiguedad.set(r.mesesAntiguedad);
+      this.ok('Límite guardado', `Antiguo desde ${r.mesesAntiguedad} meses en almacén`);
+      return true;
+    } catch (e) {
+      this.error('No se pudo guardar el límite', e);
+      return false;
+    }
+  }
+
+  /**
+   * Aviso para no comprar de más: "Ya tienes 5 UND en almacén".
+   * Si lo que hay se está poniendo viejo, pide usarlo antes de comprar. null si no hay stock.
+   */
+  yaTienes(productoId: string | null | undefined): { texto: string; antiguo: boolean } | null {
+    const p = productoId ? this.productoPorId().get(productoId) : undefined;
+    if (!p || p.stockTotal <= 0) return null;
+    const a = this.antiguedad().get(p.id);
+    const n = Math.round(p.stockTotal * 1000) / 1000;
+    let texto = `Ya tienes ${n} ${p.unidad} en almacén`;
+    if (a?.desde && a.nivel !== 'reciente') {
+      texto += ` (desde hace ${textoAntiguedad(a.desde)}): úsalo antes de comprar`;
+    }
+    return { texto, antiguo: a?.nivel === 'antiguo' };
   }
 
   /** Stock de un producto en un almacén. */
