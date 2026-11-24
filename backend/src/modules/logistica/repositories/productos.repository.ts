@@ -53,6 +53,8 @@ export class ProductosRepository {
       .eq('empresa_id', empresaId);
     if (productoId) q = q.eq('producto_id', productoId);
     const r = await q.order('fecha');
+    // Base sin la migración 0011 (vista stock_lotes): logística carga igual, sin antigüedad
+    if (faltaEnLaBase(r.error)) return [];
     return (datosOError(r) as LoteEntity[] | null) ?? [];
   }
 
@@ -129,4 +131,11 @@ export class ProductosRepository {
       .select('id');
     return ((datosOError(r) as { id: string }[] | null) ?? []).length > 0;
   }
+}
+
+/** La tabla o vista no existe (falta ejecutar su migración en Supabase). */
+export function faltaEnLaBase(
+  error: { code?: string } | null | undefined,
+): boolean {
+  return error?.code === 'PGRST205' || error?.code === '42P01';
 }

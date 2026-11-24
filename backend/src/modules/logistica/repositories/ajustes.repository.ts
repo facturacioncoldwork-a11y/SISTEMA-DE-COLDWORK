@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { datosOError } from '../../../common/index.js';
 import { SupabaseService } from '../../../database/supabase/supabase.service.js';
 import type { AjustesLogisticaEntity } from '../entities/index.js';
+import { faltaEnLaBase } from './productos.repository.js';
 
 /** Acceso a datos de `logistica_ajustes`. */
 @Injectable()
@@ -18,6 +19,8 @@ export class AjustesRepository {
       .select('empresa_id, meses_antiguedad')
       .eq('empresa_id', empresaId)
       .maybeSingle<AjustesLogisticaEntity>();
+    // Sin la migración 0011 se usan los valores por defecto
+    if (faltaEnLaBase(r.error)) return null;
     return datosOError(r) ?? null;
   }
 
