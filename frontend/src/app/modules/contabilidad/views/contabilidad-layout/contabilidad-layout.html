@@ -1,15 +1,12 @@
-<div class="modulo">
-  <!-- ===== Encabezado del módulo ===== -->
-  <header class="hero">
-    <div class="burbujas" aria-hidden="true"><span></span><span></span></div>
-
-    <div class="texto">
-      <p class="etiqueta">Módulo</p>
-      <h1>Contabilidad</h1>
-      <p class="sub">Supervisa el trabajo contable, aprueba asientos y revisa los libros.</p>
-    </div>
-
-    <div class="lado">
+<div class="lg">
+  <!-- ===== Encabezado del módulo (mismo diseño que Finanzas y Reportes) ===== -->
+  <header class="lg-hero">
+    <div class="lg-hero__fila">
+      <div>
+        <div class="lg-hero__miga"><i class="pi pi-book"></i> Contabilidad</div>
+        <h1 class="lg-hero__titulo">Asientos y libros</h1>
+        <p class="lg-hero__sub">Supervisa el trabajo contable, aprueba asientos y revisa los libros.</p>
+      </div>
       <div class="periodo">
         <label for="conta-periodo">Periodo</label>
         <p-select
@@ -22,29 +19,21 @@
           <ng-template #item let-p>{{ p | periodo }}</ng-template>
         </p-select>
       </div>
-      <span class="sticker" aria-hidden="true"><app-emoji nombre="libro" style="--tam: 100%" /></span>
     </div>
+
+    <nav class="lg-nav" aria-label="Secciones de contabilidad">
+      @for (p of pestanas(); track p.ruta) {
+        <a [routerLink]="p.ruta" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }" ariaCurrentWhenActive="page">
+          <i [class]="p.icono"></i> {{ p.etiqueta }}
+          @if (p.conContador && conta.porAprobar().length) {
+            <span class="lg-nav__badge">{{ conta.porAprobar().length }}</span>
+          }
+        </a>
+      }
+    </nav>
   </header>
 
-  <!-- ===== Secciones ===== -->
-  <nav class="pestanas" aria-label="Secciones de contabilidad">
-    @for (p of pestanas(); track p.ruta) {
-      <a
-        [routerLink]="p.ruta"
-        routerLinkActive="activa"
-        [routerLinkActiveOptions]="{ exact: true }"
-        ariaCurrentWhenActive="page"
-      >
-        <i [class]="p.icono"></i>
-        <span>{{ p.etiqueta }}</span>
-        @if (p.conContador && conta.porAprobar().length) {
-          <span class="globo">{{ conta.porAprobar().length }}</span>
-        }
-      </a>
-    }
-  </nav>
-
-  <section class="contenido">
+  <div class="lg-cuerpo">
     <router-outlet />
-  </section>
+  </div>
 </div>

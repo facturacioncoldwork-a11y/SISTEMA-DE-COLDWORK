@@ -1,10 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { Contador } from '../../../../shared/components/contador/contador';
-import { Emoji } from '../../../../shared/components/emoji/emoji';
-import type { NombreIcono } from '../../../../shared/components/emoji/iconos';
 import { ActividadLista } from '../../components/actividad-lista/actividad-lista';
 import { nombreOrigen } from '../../data/sunat';
 import { ESTADOS } from '../../data/textos';
@@ -13,29 +10,20 @@ import { ContabilidadService } from '../../services/contabilidad.service';
 import { saldo, totales } from '../../utils/partida-doble';
 
 interface Indicador {
+  clave: string;
   titulo: string;
   valor: number;
-  sticker: NombreIcono;
+  icono: string;
   ayuda: string;
-  /** Par de colores del degradado de la tarjeta. */
-  colores: [string, string];
-  ruta?: string;
+  /** Color del ícono de la tarjeta. */
+  color: string;
+  ruta: string;
 }
 
-/** Resumen del periodo: indicadores, pendientes del cierre y últimos asientos. */
+/** Resumen del periodo: indicadores, pendientes del cierre y últimos asientos. Todo sale de los asientos reales. */
 @Component({
   selector: 'app-resumen',
-  imports: [
-    RouterLink,
-    ButtonModule,
-    TagModule,
-    Contador,
-    Emoji,
-    ActividadLista,
-    ImportePipe,
-    PeriodoPipe,
-    CorrelativoPipe,
-  ],
+  imports: [RouterLink, TagModule, Contador, ActividadLista, ImportePipe, PeriodoPipe, CorrelativoPipe],
   templateUrl: './resumen.html',
   styleUrl: './resumen.scss',
 })
@@ -57,66 +45,46 @@ export class Resumen {
     const igv = saldo(a, '40111', 'acreedora');
 
     return [
+      { clave: 'ing', titulo: 'Ingresos del mes', valor: ingresos, icono: 'pi pi-arrow-up-right', ayuda: 'Cuentas 70 a 77', color: '#10b981', ruta: '/contabilidad/diario' },
+      { clave: 'gas', titulo: 'Gastos del mes', valor: gastos, icono: 'pi pi-arrow-down-left', ayuda: 'Cuentas 60 a 68', color: '#f59e0b', ruta: '/contabilidad/diario' },
       {
-        titulo: 'Ingresos del mes',
-        valor: ingresos,
-        sticker: 'dinero',
-        ayuda: 'Cuentas 70 a 77',
-        colores: ['#34d399', '#059669'],
-        ruta: '/contabilidad/diario',
-      },
-      {
-        titulo: 'Gastos del mes',
-        valor: gastos,
-        sticker: 'caja',
-        ayuda: 'Cuentas 60 a 68',
-        colores: ['#fb923c', '#e11d48'],
-        ruta: '/contabilidad/diario',
-      },
-      {
+        clave: 'res',
         titulo: resultado >= 0 ? 'Utilidad del mes' : 'Pérdida del mes',
         valor: Math.abs(resultado),
-        sticker: resultado >= 0 ? 'estrella' : 'idea',
+        icono: 'pi pi-chart-line',
         ayuda: 'Ingresos − gastos (antes de impuestos)',
-        colores: resultado >= 0 ? ['#a78bfa', '#7c3aed'] : ['#f87171', '#b91c1c'],
-        ruta: '/contabilidad/balance',
+        color: resultado >= 0 ? '#6366f1' : '#ef4444',
+        ruta: '/reportes',
       },
+      { clave: 'efe', titulo: 'Efectivo y bancos', valor: saldo(a, '10', 'deudora'), icono: 'pi pi-wallet', ayuda: 'Cuenta 10', color: '#06b6d4', ruta: '/contabilidad/mayor' },
       {
-        titulo: 'Efectivo y bancos',
-        valor: saldo(a, '10', 'deudora'),
-        sticker: 'edificio',
-        ayuda: 'Cuenta 10',
-        colores: ['#06b6d4', '#2563eb'],
-        ruta: '/contabilidad/mayor',
-      },
-      {
+        clave: 'igv',
         titulo: igv >= 0 ? 'IGV por pagar' : 'Crédito fiscal a favor',
         valor: Math.abs(igv),
-        sticker: 'libro',
+        icono: 'pi pi-percentage',
         ayuda: 'Cuenta 40111 · PDT 621',
-        colores: ['#fbbf24', '#d97706'],
-        ruta: '/contabilidad/libros-sunat',
+        color: '#3b82f6',
+        ruta: '/reportes/tributario',
       },
-      {
-        titulo: 'Detracciones (B. Nación)',
-        valor: saldo(a, '1042', 'deudora'),
-        sticker: 'grafico',
-        ayuda: 'Cuenta 1042 · solo para tributos',
-        colores: ['#f472b6', '#c026d3'],
-        ruta: '/contabilidad/mayor',
-      },
+      { clave: 'det', titulo: 'Detracciones (B. Nación)', valor: saldo(a, '1042', 'deudora'), icono: 'pi pi-lock', ayuda: 'Cuenta 1042 · solo para tributos', color: '#64748b', ruta: '/contabilidad/mayor' },
     ];
   });
 
-  /** Lista de cierre del mes: lo hecho se marca solo según los datos. */
-  protected readonly cierre = computed(() => [
-    { texto: 'Registrar compras y ventas del mes', hecho: this.registrados().length > 0 },
-    { texto: 'Registrar o eliminar los borradores', hecho: this.borradores().length === 0 },
-    { texto: 'Aprobar lo que envió el contador', hecho: this.conta.porAprobar().length === 0 },
-    { texto: 'Revisar que el Balance de comprobación cuadre', hecho: false },
-    { texto: 'Asientos de destino (clase 6 → 9 y 79)', hecho: false },
-    { texto: 'Generar los libros electrónicos (PLE / SIRE)', hecho: false },
-  ]);
+  /**
+   * Lista de cierre del mes: lo hecho se marca solo según los datos.
+   * Sin asientos registrados nada cuenta como hecho (un mes vacío empieza en 0 %).
+   */
+  protected readonly cierre = computed(() => {
+    const hayMovimiento = this.registrados().length > 0;
+    return [
+      { texto: 'Registrar compras y ventas del mes', hecho: hayMovimiento },
+      { texto: 'Registrar o eliminar los borradores', hecho: hayMovimiento && this.borradores().length === 0 },
+      { texto: 'Aprobar lo que envió el contador', hecho: hayMovimiento && this.conta.porAprobar().length === 0 },
+      { texto: 'Revisar que el Balance de comprobación cuadre', hecho: false },
+      { texto: 'Asientos de destino (clase 6 → 9 y 79)', hecho: false },
+      { texto: 'Generar los libros electrónicos (PLE / SIRE)', hecho: false },
+    ];
+  });
 
   protected readonly avanceCierre = computed(() => {
     const lista = this.cierre();
