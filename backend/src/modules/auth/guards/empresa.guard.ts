@@ -73,7 +73,9 @@ export class EmpresaGuard implements CanActivate {
       .maybeSingle<Membresia>();
     if (error) throw aHttp(error);
 
-    MEMBRESIAS.guardar(clave, data ?? null);
+    // Solo se recuerda una membresía confirmada: un "no es miembro" no se guarda, así quien
+    // recién fue invitado entra al instante en cuanto acepta (sin esperar a que venza la memoria)
+    if (data) MEMBRESIAS.guardar(clave, data);
     return data ?? null;
   }
 }
@@ -84,4 +86,4 @@ interface Membresia {
 }
 
 /** Memoria corta de membresías (por instancia del servidor). */
-export const MEMBRESIAS = new CacheTtl<Membresia | null>(30_000);
+export const MEMBRESIAS = new CacheTtl<Membresia>(30_000);

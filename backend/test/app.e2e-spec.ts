@@ -5,6 +5,7 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { configurarApp } from '../src/config/app.setup.js';
+import { MEMBRESIAS } from '../src/modules/auth/guards/empresa.guard.js';
 import { SupabaseService } from '../src/database/supabase/supabase.service.js';
 
 const URL_SB = 'https://prueba.supabase.co';
@@ -75,6 +76,7 @@ describe('COLDWORK API (e2e)', () => {
   beforeEach(() => {
     rolEnEmpresa = 'dueno';
     tokensUsados.length = 0;
+    MEMBRESIAS.olvidar(''); // cada prueba empieza sin membresías recordadas
   });
 
   it('GET /api/health es público', async () => {
