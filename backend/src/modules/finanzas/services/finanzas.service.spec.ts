@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diasVencido, fechaLima, tramoAntiguedad } from './finanzas.service.js';
+import { diasVencido, FECHA, fechaLima, tramoAntiguedad } from './finanzas.service.js';
 
 describe('finanzas · cobranza', () => {
   it('cuenta los días de atraso', () => {
@@ -19,5 +19,16 @@ describe('finanzas · cobranza', () => {
   it('usa la fecha de Lima (UTC-5)', () => {
     expect(fechaLima(new Date('2026-11-25T03:00:00Z'))).toBe('2026-11-24');
     expect(fechaLima(new Date('2026-11-25T06:00:00Z'))).toBe('2026-11-25');
+  });
+});
+
+describe('finanzas · fechas de los filtros', () => {
+  it('acepta solo fechas que existen', () => {
+    expect(FECHA.test('2026-11-24')).toBe(true);
+    expect(FECHA.test('2024-02-29')).toBe(true);
+    expect(FECHA.test('2026-02-30')).toBe(false);
+    expect(FECHA.test('2026-13-45')).toBe(false);
+    expect(FECHA.test("2026-11-24' or 1=1")).toBe(false);
+    expect(FECHA.test(['2026-11-24', '2026-11-25'])).toBe(false);
   });
 });

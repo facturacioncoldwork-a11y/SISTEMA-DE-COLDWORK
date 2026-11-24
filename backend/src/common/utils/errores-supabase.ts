@@ -37,11 +37,21 @@ export function aHttp(error: ErrorPostgrest): HttpException {
       return new ConflictException('Ya existe un registro con esos datos');
     case '23503':
       return new ConflictException('El registro está relacionado con otros datos');
+    // Datos que no cumplen una regla de la tabla: mensaje claro, sin nombres internos
+    // de tablas ni restricciones (no se le da pistas de la estructura a un atacante)
     case '23502':
+      return new BadRequestException('Falta un dato obligatorio');
     case '23514':
+      return new BadRequestException('Algún dato no es válido (revisa importes, fechas y códigos)');
     case '22P02':
+      return new BadRequestException('Formato de dato inválido');
     case '22001':
-      return new BadRequestException(error.message);
+      return new BadRequestException('Un texto es demasiado largo');
+    case '22007':
+    case '22008':
+      return new BadRequestException('Fecha inválida');
+    case '22003':
+      return new BadRequestException('Un importe es demasiado grande');
     case 'P0001': // raise exception desde una función SQL: mensaje pensado para el usuario
       return new BadRequestException(error.message);
     default:

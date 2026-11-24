@@ -42,7 +42,8 @@ export function configurarApp(app: INestApplication): void {
 
   app.enableShutdownHooks(); // cierre ordenado al escalar hacia abajo / redeploy
 
-  if (config.get('SWAGGER_ENABLED', { infer: true })) {
+  // Documentación interactiva solo fuera de producción: publicada sería un mapa de la API para un atacante
+  if (config.get('SWAGGER_ENABLED', { infer: true }) && process.env['NODE_ENV'] !== 'production') {
     const doc = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()

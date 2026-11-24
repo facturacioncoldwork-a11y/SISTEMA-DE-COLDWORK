@@ -276,14 +276,14 @@ begin
 
   if p_id is null then
     insert into public.fin_cuentas (empresa_id, nombre, tipo, banco, numero, moneda, cuenta_contable, activa)
-    values (p_empresa, trim(p_datos ->> 'nombre'), v_tipo, nullif(trim(coalesce(p_datos ->> 'banco', '')), ''),
-            nullif(trim(coalesce(p_datos ->> 'numero', '')), ''), coalesce(p_datos ->> 'moneda', 'PEN'), v_cc,
+    values (p_empresa, trim(p_datos ->> 'nombre'), v_tipo, left(nullif(trim(coalesce(p_datos ->> 'banco', '')), ''), 60),
+            left(nullif(trim(coalesce(p_datos ->> 'numero', '')), ''), 40), coalesce(p_datos ->> 'moneda', 'PEN'), v_cc,
             coalesce((p_datos ->> 'activa')::boolean, true))
     returning id into v_id;
   else
     update public.fin_cuentas set
-      nombre = trim(p_datos ->> 'nombre'), banco = nullif(trim(coalesce(p_datos ->> 'banco', '')), ''),
-      numero = nullif(trim(coalesce(p_datos ->> 'numero', '')), ''),
+      nombre = trim(p_datos ->> 'nombre'), banco = left(nullif(trim(coalesce(p_datos ->> 'banco', '')), ''), 60),
+      numero = left(nullif(trim(coalesce(p_datos ->> 'numero', '')), ''), 40),
       activa = coalesce((p_datos ->> 'activa')::boolean, true)
     where id = p_id and empresa_id = p_empresa
     returning id into v_id;
@@ -385,9 +385,19 @@ begin
     end if;
   end if;
 
+  -- Cuenta contable coherente con la operación (también si llaman a la función directo, sin la API)
+  if v_op = 'venta' and v_cc !~ '^7\d{1,7}$' then
+    raise exception 'La venta va a una cuenta de ingresos (70 a 79).';
+  elsif v_op = 'compra' and v_cc !~ '^[2-6]\d{1,7}$' then
+    raise exception 'La compra va a una cuenta de existencias, activo o gasto (20 a 69).';
+  end if;
+  if v_tc is not null and (v_tc <= 0 or v_tc >= 100) then
+    raise exception 'Tipo de cambio fuera de rango.';
+  end if;
+
   v_doc := v_serie || '-' || v_numero;
-  v_glosa := coalesce(nullif(trim(p_datos ->> 'glosa'), ''),
-    case v_op when 'venta' then 'Venta ' else 'Compra ' end || v_doc || ' · ' || v_ter.razon_social);
+  v_glosa := left(coalesce(nullif(trim(p_datos ->> 'glosa'), ''),
+    case v_op when 'venta' then 'Venta ' else 'Compra ' end || v_doc || ' · ' || v_ter.razon_social), 300);
   v_cxp := case when v_tipo = '02' then '424' else '4212' end;
 
   -- Asiento en soles (Debe/Haber se invierten en una nota de crédito)
@@ -425,7 +435,9 @@ begin
   ) values (
     p_empresa, v_op, v_ter.id, v_tipo, v_serie, v_numero, v_emision, v_venc, v_moneda,
     case when v_moneda = 'USD' then v_tc end, v_base, v_nograv, v_igv, v_total, v_ret, v_detr_pct,
-    round(v_total * v_f * v_detr_pct / 100, 0), v_cc, v_glosa, -- detracción: siempre en soles, sin decimales case when v_nc then v_ref.id end, v_asiento,
+    -- detracción: siempre en soles y sin decimales (así la pide SUNAT)
+    round(v_total * v_f * v_detr_pct / 100, 0), v_cc, v_glosa,
+    case when v_nc then v_ref.id end, v_asiento,
     (select auth.uid()), public._conta_nombre()
   ) returning id into v_id;
 
@@ -500,8 +512,8 @@ begin
   if exists (select 1 from public.fin_comprobantes n where n.referencia_id = v.id and n.estado = 'registrado') then
     raise exception 'Tiene notas de crédito: anúlalas primero.';
   end if;
-  update public.fin_comprobantes set estado = 'anulado', motivo_anulacion = trim(p_motivo) where id = v.id;
-  perform public._conta_anular_auto(p_empresa, v.asiento_id, 'Comprobante anulado: ' || trim(p_motivo));
+  update public.fin_comprobantes set estado = 'anulado', motivo_anulacion = left(trim(p_motivo), 300) where id = v.id;
+  perform public._conta_anular_auto(p_empresa, v.asiento_id, left('Comprobante anulado: ' || trim(p_motivo), 300));
 end;
 $$;
 
@@ -534,8 +546,10 @@ begin
   if v_monto <= 0 then
     raise exception 'Indica un monto mayor que cero.';
   end if;
+  -- Bloquea la cuenta: dos pagos al mismo tiempo no pueden dejarla en negativo
   select * into v_cta from public.fin_cuentas c
-    where c.id = (p_datos ->> 'cuentaId')::uuid and c.empresa_id = p_empresa and c.activa;
+    where c.id = (p_datos ->> 'cuentaId')::uuid and c.empresa_id = p_empresa and c.activa
+    for update;
   if not found then
     raise exception 'Elige una cuenta de caja o banco activa.';
   end if;
@@ -543,6 +557,9 @@ begin
   -- Tipo de cambio: obligatorio en cuentas en dólares
   if v_cta.moneda = 'USD' and coalesce(v_tc, 0) <= 0 then
     raise exception 'Indica el tipo de cambio del día para la cuenta en dólares.';
+  end if;
+  if v_tc is not null and v_tc >= 100 then
+    raise exception 'Tipo de cambio fuera de rango.';
   end if;
   v_f := case when v_cta.moneda = 'USD' then v_tc else 1 end;
 
@@ -556,8 +573,10 @@ begin
 
   case v_tipo
     when 'cobro', 'pago' then
+      -- Bloquea el comprobante: dos cobros a la vez no pueden pasar de lo pendiente
       select * into v_comp from public.fin_comprobantes c
-        where c.id = (p_datos ->> 'comprobanteId')::uuid and c.empresa_id = p_empresa;
+        where c.id = (p_datos ->> 'comprobanteId')::uuid and c.empresa_id = p_empresa
+        for update;
       if not found or v_comp.estado <> 'registrado' or v_comp.tipo_doc = '07'
          or v_comp.operacion <> case v_tipo when 'cobro' then 'venta' else 'compra' end then
         raise exception 'Elige un comprobante pendiente válido.';
@@ -626,6 +645,7 @@ begin
       raise exception 'Tipo de movimiento no válido.';
   end case;
 
+  v_glosa := left(v_glosa, 300);
   if v_f <> 1 then
     v_lineas := public._fin_cuadrar(v_lineas);
   end if;
@@ -637,7 +657,7 @@ begin
   ) values (
     p_empresa, v_cta.id, v_fecha, v_tipo, v_comp.id, v_dest.id, v_contra, v_monto,
     case when v_cta.moneda = 'USD' then v_tc end, coalesce(p_datos ->> 'medio', 'transferencia'),
-    nullif(trim(coalesce(p_datos ->> 'referencia', '')), ''), v_glosa, v_asiento,
+    left(nullif(trim(coalesce(p_datos ->> 'referencia', '')), ''), 60), v_glosa, v_asiento,
     (select auth.uid()), public._conta_nombre()
   ) returning id into v_id;
   return v_id;
@@ -658,6 +678,10 @@ begin
   if not found or v.estado = 'anulado' then
     raise exception 'El movimiento no existe o ya está anulado.';
   end if;
+  -- Bloquea la cuenta que pierde el dinero al anular (misma regla que al registrar)
+  perform 1 from public.fin_cuentas c
+    where c.id = case when v.tipo = 'transferencia' then v.cuenta_destino_id else v.cuenta_id end
+    for update;
   if coalesce(trim(p_motivo), '') = '' then
     raise exception 'Escribe el motivo de la anulación.';
   end if;
@@ -674,7 +698,7 @@ begin
     end if;
   end if;
   update public.fin_movimientos set estado = 'anulado' where id = v.id;
-  perform public._conta_anular_auto(p_empresa, v.asiento_id, 'Movimiento anulado: ' || trim(p_motivo));
+  perform public._conta_anular_auto(p_empresa, v.asiento_id, left('Movimiento anulado: ' || trim(p_motivo), 300));
 end;
 $$;
 

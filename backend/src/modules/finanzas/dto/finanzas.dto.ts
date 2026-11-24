@@ -13,6 +13,7 @@ import {
   Max,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 
 const recortar = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
@@ -87,12 +88,12 @@ export class ComprobanteDto {
   @ApiPropertyOptional({ example: '2026-12-24' }) @IsOptional() @IsDateString({ strict: true }) fechaVencimiento?: string;
 
   @ApiProperty({ enum: ['PEN', 'USD'] }) @IsIn(['PEN', 'USD']) moneda!: 'PEN' | 'USD';
-  @ApiPropertyOptional() @IsOptional() @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001) tipoCambio?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001) @Max(99.999) tipoCambio?: number;
 
   @ApiProperty() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Max(9_999_999_999) baseGravada!: number;
   @ApiProperty() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Max(9_999_999_999) noGravada!: number;
   @ApiProperty() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Max(9_999_999_999) igv!: number;
-  @ApiPropertyOptional() @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) retencionRenta?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Max(9_999_999_999) retencionRenta?: number;
 
   @ApiPropertyOptional({ description: 'Detracción (SPOT): 0, 4, 10, 12…' })
   @IsOptional()
@@ -117,6 +118,7 @@ export class AnularDto {
   @ApiProperty({ example: 'Error en el importe' })
   @Transform(recortar)
   @IsString()
+  @MinLength(3, { message: 'Escribe el motivo de la anulación' })
   @MaxLength(300)
   motivo!: string;
 }
@@ -146,7 +148,7 @@ export class MovimientoDto {
   @ApiPropertyOptional({ example: '5011' }) @IsOptional() @Matches(/^\d{3,8}$/) contrapartida?: string;
 
   @ApiProperty() @IsNumber({ maxDecimalPlaces: 2 }) @Min(0.01) @Max(9_999_999_999) monto!: number;
-  @ApiPropertyOptional() @IsOptional() @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001) tipoCambio?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber({ maxDecimalPlaces: 3 }) @Min(0.001) @Max(99.999) tipoCambio?: number;
 
   @ApiProperty({ enum: ['efectivo', 'transferencia', 'deposito', 'cheque', 'tarjeta', 'yape_plin', 'otro'] })
   @IsIn(['efectivo', 'transferencia', 'deposito', 'cheque', 'tarjeta', 'yape_plin', 'otro'])

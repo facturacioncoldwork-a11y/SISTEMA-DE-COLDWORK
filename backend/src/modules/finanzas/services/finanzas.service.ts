@@ -5,7 +5,15 @@ import type { AnularDto, ComprobanteDto, CuentaDto, MovimientoDto, TerceroDto } 
 import { FinanzasRepository } from '../repositories/finanzas.repository.js';
 
 type Fila = Record<string, unknown>;
-const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Fecha AAAA-MM-DD que existe de verdad (rechaza 2026-13-45 o 2026-02-30). */
+export const FECHA = {
+  test(v: unknown): boolean {
+    if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+    const d = new Date(`${v}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v && v >= '2000-01-01' && v <= '2100-12-31';
+  },
+};
 
 /** Texto seguro desde una fila de la base de datos. */
 const txt = (v: unknown): string =>

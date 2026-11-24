@@ -30,5 +30,7 @@ services:
       # Ej: https://coldwork.pages.dev,http://localhost:4200
       - key: CORS_ORIGINS
         sync: false
+      # La documentación de la API NO se publica en producción (sería un mapa para atacantes).
+      # El código además la apaga siempre que NODE_ENV=production.
       - key: SWAGGER_ENABLED
-        value: "true"
+        value: "false"
