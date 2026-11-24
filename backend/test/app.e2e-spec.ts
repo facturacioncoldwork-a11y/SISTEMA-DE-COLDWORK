@@ -41,10 +41,16 @@ const supabaseFalso = {
     };
     return {
       from: () => cadena,
-      rpc: async (fn: string) =>
-        fn === 'mis_empresas'
-          ? { data: [{ id: EMPRESA, razon_social: 'COLDWORK S.A.C.', ruc: '20123456789', rol: 'dueno' }], error: null }
-          : { data: null, error: { code: '42501', message: 'rls' } },
+      rpc: async (fn: string) => {
+        // EmpresasService.mias() acepta primero las invitaciones pendientes y luego lista
+        if (fn === 'aceptar_invitaciones') return { data: 0, error: null };
+        if (fn === 'mis_empresas')
+          return {
+            data: [{ id: EMPRESA, razon_social: 'COLDWORK S.A.C.', ruc: '20123456789', rol: 'dueno', areas: [] }],
+            error: null,
+          };
+        return { data: null, error: { code: '42501', message: 'rls' } };
+      },
     };
   },
 };
@@ -89,7 +95,7 @@ describe('COLDWORK API (e2e)', () => {
   it('con token → lista mis empresas y reenvía el token a Supabase (RLS)', async () => {
     const t = await token();
     const r = await request(app.getHttpServer()).get('/api/v1/empresas/mias').set('Authorization', `Bearer ${t}`).expect(200);
-    expect(r.body).toEqual([{ id: EMPRESA, razonSocial: 'COLDWORK S.A.C.', ruc: '20123456789', rol: 'dueno' }]);
+    expect(r.body).toEqual([{ id: EMPRESA, razonSocial: 'COLDWORK S.A.C.', ruc: '20123456789', rol: 'dueno', areas: [] }]);
     expect(tokensUsados).toContain(t);
   });
 
