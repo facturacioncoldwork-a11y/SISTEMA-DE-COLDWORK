@@ -14,6 +14,30 @@ const PERIODO = /^\d{4}-(0[1-9]|1[0-2])$/;
 export class ContabilidadService {
   constructor(private readonly repo: ContabilidadRepository) {}
 
+  /**
+   * Todo lo que muestra la pantalla en UNA sola petición (en vez de 5):
+   * asientos del periodo, pendientes de aprobación, actividad, periodos y configuración.
+   * Las consultas a la base de datos van en paralelo.
+   */
+  async panel(u: UsuarioActual, e: EmpresaActual, periodo: string) {
+    if (!PERIODO.test(periodo)) throw new BadRequestException('Periodo inválido (AAAA-MM)');
+    const [asientos, porAprobar, actividad, periodos, config] = await Promise.all([
+      this.repo.asientosDelPeriodo(u.token, e.id, periodo),
+      this.repo.porAprobar(u.token, e.id),
+      this.repo.actividad(u.token, e.id, 40),
+      this.repo.periodos(u.token, e.id),
+      this.repo.config(u.token, e.id),
+    ]);
+    return {
+      asientos: asientos.map((a) => AsientoRespuesta.desde(a)),
+      porAprobar: porAprobar.map((a) => AsientoRespuesta.desde(a)),
+      actividad: actividad.map((a) => ActividadRespuesta.desde(a)),
+      periodos,
+      // Dueño y admin aprueban: ya lo sabemos por el guard, sin otra consulta
+      config: { ...ConfigRespuesta.desde(config), aprobador: e.rol === 'dueno' || e.rol === 'admin' },
+    };
+  }
+
   async asientos(u: UsuarioActual, e: EmpresaActual, periodo: string) {
     if (!PERIODO.test(periodo)) throw new BadRequestException('Periodo inválido (AAAA-MM)');
     const filas = await this.repo.asientosDelPeriodo(u.token, e.id, periodo);

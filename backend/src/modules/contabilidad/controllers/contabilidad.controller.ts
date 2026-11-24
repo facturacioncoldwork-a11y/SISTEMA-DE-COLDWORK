@@ -32,6 +32,13 @@ export class ContabilidadController {
 
   // ─── Lectura ─────────────────────────────────────────────────
 
+  /** Todo lo de la pantalla en una sola petición (más rápido). */
+  @Get('panel')
+  @ApiQuery({ name: 'periodo', example: '2026-11' })
+  panel(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual, @Query('periodo') periodo: string) {
+    return this.conta.panel(u, e, periodo);
+  }
+
   /** Asientos de un periodo (AAAA-MM) con sus líneas. */
   @Get('asientos')
   @ApiQuery({ name: 'periodo', example: '2026-11' })

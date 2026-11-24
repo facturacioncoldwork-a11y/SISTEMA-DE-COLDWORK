@@ -8,6 +8,7 @@ import {
   type Area,
   type PeticionAutenticada,
 } from '../../../common/index.js';
+import { CacheTtl } from '../../../common/utils/cache-ttl.js';
 import { SupabaseService } from '../../../database/supabase/supabase.service.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -38,16 +39,7 @@ export class EmpresaGuard implements CanActivate {
       throw new BadRequestException('Cabecera X-Empresa-Id ausente o inválida');
     }
 
-    const { data, error } = await this.supabase
-      .paraUsuario(req.usuario.token)
-      .from('miembros')
-      .select('rol, areas')
-      .eq('empresa_id', empresaId)
-      .eq('usuario_id', req.usuario.id)
-      .eq('activo', true)
-      .maybeSingle<{ rol: Rol; areas: Area[] }>();
-
-    if (error) throw aHttp(error);
+    const data = await this.membresia(req.usuario.id, req.usuario.token, empresaId);
     if (!data) throw new ForbiddenException('No perteneces a esta empresa');
     if (roles.length > 0 && !roles.includes(data.rol)) {
       throw new ForbiddenException('Tu rol no permite esta acción');
@@ -60,4 +52,36 @@ export class EmpresaGuard implements CanActivate {
     req.empresa = { id: empresaId, rol: data.rol, areas: data.areas };
     return true;
   }
+
+  /**
+   * Rol y áreas del usuario en la empresa. Se recuerda 30 s para no consultar la base de datos
+   * en cada petición (la pantalla hace varias seguidas). Si el dueño quita un acceso, rige en ≤ 30 s;
+   * aun así los datos no se filtran: RLS lo vuelve a comprobar dentro de la base de datos.
+   */
+  private async membresia(usuarioId: string, token: string, empresaId: string): Promise<Membresia | null> {
+    const clave = `${usuarioId}:${empresaId}`;
+    const guardada = MEMBRESIAS.obtener(clave);
+    if (guardada !== undefined) return guardada;
+
+    const { data, error } = await this.supabase
+      .paraUsuario(token)
+      .from('miembros')
+      .select('rol, areas')
+      .eq('empresa_id', empresaId)
+      .eq('usuario_id', usuarioId)
+      .eq('activo', true)
+      .maybeSingle<Membresia>();
+    if (error) throw aHttp(error);
+
+    MEMBRESIAS.guardar(clave, data ?? null);
+    return data ?? null;
+  }
 }
+
+interface Membresia {
+  rol: Rol;
+  areas: Area[];
+}
+
+/** Memoria corta de membresías (por instancia del servidor). */
+export const MEMBRESIAS = new CacheTtl<Membresia | null>(30_000);

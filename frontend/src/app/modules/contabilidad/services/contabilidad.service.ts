@@ -22,6 +22,15 @@ import { permisosDe } from '../utils/permisos';
 
 type AccionEstado = 'enviar' | 'registrar' | 'observar' | 'anular' | 'eliminar';
 
+/** GET /api/v1/contabilidad/panel */
+interface Panel {
+  asientos: Asiento[];
+  porAprobar: Asiento[];
+  actividad: Actividad[];
+  periodos: string[];
+  config: ConfigAprobacion;
+}
+
 const CONFIG_INICIAL: ConfigAprobacion = {
   regimen: 'rmt',
   tramo: 'hasta300',
@@ -143,13 +152,10 @@ export class ContabilidadService {
     if (!this.empresa.id()) return;
     this.cargando.set(true);
     try {
-      const [asientos, porAprobar, actividad, periodos, config] = await Promise.all([
-        this.api.get<Asiento[]>(`/contabilidad/asientos?periodo=${this.periodo()}`),
-        this.api.get<Asiento[]>('/contabilidad/por-aprobar'),
-        this.api.get<Actividad[]>('/contabilidad/actividad'),
-        this.api.get<string[]>('/contabilidad/periodos'),
-        this.api.get<ConfigAprobacion>('/contabilidad/config'),
-      ]);
+      // Una sola petición trae todo (más rápido que varias)
+      const { asientos, porAprobar, actividad, periodos, config } = await this.api.get<Panel>(
+        `/contabilidad/panel?periodo=${this.periodo()}`,
+      );
       this.asientos.set(asientos);
       this.porAprobar.set(porAprobar);
       this.actividad.set(actividad);

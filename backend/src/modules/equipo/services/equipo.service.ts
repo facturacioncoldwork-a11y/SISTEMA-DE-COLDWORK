@@ -4,6 +4,7 @@ import { SupabaseService } from '../../../database/supabase/supabase.service.js'
 import { ActualizarMiembroDto, EquipoDto, InvitacionDto, InvitarDto, MiembroDto } from '../dto/index.js';
 import { COLUMNAS_INVITACION, type FilaEquipo, type InvitacionEntity } from '../entities/invitacion.entity.js';
 import type { MiembroEntity } from '../entities/miembro.entity.js';
+import { MEMBRESIAS } from '../../auth/guards/empresa.guard.js';
 
 /**
  * Equipo de la empresa: quién entra y a qué áreas.
@@ -94,6 +95,7 @@ export class EquipoService {
         .select('usuario_id'),
     ) as { usuario_id: string }[] | null;
     if (!filas?.length) throw new ForbiddenException('No puedes modificar a esa persona');
+    MEMBRESIAS.olvidar(`${usuarioId}:`); // el cambio de acceso rige al instante
   }
 
   async quitarMiembro(u: UsuarioActual, e: EmpresaActual, usuarioId: string): Promise<void> {
@@ -109,6 +111,7 @@ export class EquipoService {
         .select('usuario_id'),
     ) as { usuario_id: string }[] | null;
     if (!filas?.length) throw new ForbiddenException('No puedes quitar a esa persona');
+    MEMBRESIAS.olvidar(`${usuarioId}:`);
   }
 
   private soloDuenoDaAdmin(e: EmpresaActual, rol: Rol) {
