@@ -15,6 +15,7 @@ import {
   type Producto,
 } from '../../models/logistica.model';
 import { LogisticaStore } from '../../services/logistica-store.service';
+import { usarEliminarProducto } from '../../services/eliminar-producto';
 import { MovimientosService } from '../../services/movimientos.service';
 import { ProductosService } from '../../services/productos.service';
 import { MedidorStock } from '../medidor-stock/medidor-stock';
@@ -30,6 +31,7 @@ export class KardexPanel {
   private readonly api = inject(ProductosService);
   private readonly movimientosApi = inject(MovimientosService);
   protected readonly store = inject(LogisticaStore);
+  private readonly eliminarProducto = usarEliminarProducto();
 
   readonly visible = model(false);
   readonly producto = input<Producto | null>(null);
@@ -94,6 +96,10 @@ export class KardexPanel {
 
   protected nivelLote(l: Lote) {
     return nivelAntiguedad(mesesEntre(new Date(l.fecha), new Date()), this.store.mesesAntiguedad());
+  }
+
+  protected async eliminar(p: Producto) {
+    if (await this.eliminarProducto(p)) this.visible.set(false);
   }
 
   protected editarFecha(l: Lote) {

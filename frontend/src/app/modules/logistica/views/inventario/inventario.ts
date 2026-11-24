@@ -20,6 +20,7 @@ import {
   type Producto,
   type TipoProducto,
 } from '../../models/logistica.model';
+import { usarEliminarProducto } from '../../services/eliminar-producto';
 import { LogisticaStore } from '../../services/logistica-store.service';
 
 type FiltroNivel = 'todos' | 'ok' | 'reponer' | 'sin_stock' | 'antiguos';
@@ -45,6 +46,7 @@ export class Inventario implements OnInit {
   protected readonly store = inject(LogisticaStore);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly eliminarProducto = usarEliminarProducto();
 
   protected readonly tipos = TIPOS_PRODUCTO;
   protected readonly nivelesEdad = NIVELES_ANTIGUEDAD;
@@ -186,6 +188,12 @@ export class Inventario implements OnInit {
     this.kardexVisible.set(false);
     this.editando.set(p);
     this.dialogoVisible.set(true);
+  }
+  protected async eliminar(p: Producto, ev: Event) {
+    ev.stopPropagation();
+    if ((await this.eliminarProducto(p)) && this.seleccionado()?.id === p.id) {
+      this.kardexVisible.set(false);
+    }
   }
   protected pedir(p: Producto) {
     void this.router.navigate(['/logistica/ordenes-compra'], { queryParams: { producto: p.id } });

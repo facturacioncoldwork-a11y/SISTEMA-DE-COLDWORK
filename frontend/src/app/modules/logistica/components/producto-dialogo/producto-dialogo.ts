@@ -12,7 +12,7 @@ import {
   type Producto,
   type TipoProducto,
 } from '../../models/logistica.model';
-import { usarConfirmacion } from '../../services/confirmar';
+import { usarEliminarProducto } from '../../services/eliminar-producto';
 import { LogisticaStore, mensajeError } from '../../services/logistica-store.service';
 import { ProductosService } from '../../services/productos.service';
 
@@ -33,7 +33,7 @@ import { ProductosService } from '../../services/productos.service';
 export class ProductoDialogo {
   private readonly api = inject(ProductosService);
   private readonly store = inject(LogisticaStore);
-  private readonly confirmar = usarConfirmacion();
+  private readonly eliminarProducto = usarEliminarProducto();
 
   readonly visible = model(false);
   /** null = nuevo. */
@@ -105,28 +105,13 @@ export class ProductoDialogo {
     }
   }
 
-  /** DELETE real en la BD. Si tiene historial, la API responde por qué y se sugiere desactivar. */
+  /** Borra de la BD; si tiene historial, ofrece quitarlo de la lista (archivar). */
   async eliminar() {
     const x = this.producto();
     if (!x) return;
-    if (
-      !(await this.confirmar(
-        `¿Eliminar ${x.nombre}?`,
-        'Se borra de la base de datos. Esta acción no se puede deshacer.',
-      ))
-    )
-      return;
     this.guardando.set(true);
     this.error.set(null);
-    try {
-      await this.api.eliminar(x.id);
-      await this.store.recargar();
-      this.store.ok('Producto eliminado', x.nombre);
-      this.visible.set(false);
-    } catch (e) {
-      this.error.set(mensajeError(e) ?? 'No se pudo eliminar');
-    } finally {
-      this.guardando.set(false);
-    }
+    if (await this.eliminarProducto(x)) this.visible.set(false);
+    this.guardando.set(false);
   }
 }

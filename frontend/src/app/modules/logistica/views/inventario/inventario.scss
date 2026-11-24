@@ -116,3 +116,35 @@ tr.inactivo,
   font-weight: 600;
   font-size: 0.7rem !important;
 }
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.4rem;
+}
+.borrar {
+  border: 0;
+  background: none;
+  color: var(--lg-muted);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.55rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  opacity: 0.55;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    color 0.15s;
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+    color: #dc2626;
+    background: #fee2e2;
+  }
+}
+tr:hover .borrar {
+  opacity: 1;
+}

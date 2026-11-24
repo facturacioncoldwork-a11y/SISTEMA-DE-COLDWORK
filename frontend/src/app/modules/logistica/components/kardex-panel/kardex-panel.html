@@ -62,6 +62,14 @@
         <button type="button" class="lg-cta" (click)="pedir.emit(p)">
           <i class="pi pi-file-edit"></i> Pedir a proveedor
         </button>
+        <button
+          type="button"
+          class="lg-cta lg-cta--suave lg-peligro"
+          (click)="eliminar(p)"
+          aria-label="Eliminar producto"
+        >
+          <i class="pi pi-trash"></i> Eliminar
+        </button>
       </div>
     </section>
 

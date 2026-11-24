@@ -218,7 +218,21 @@
             <td class="num">
               <b>{{ p.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b>
             </td>
-            <td class="num"><i class="pi pi-angle-right" style="color: var(--lg-muted)"></i></td>
+            <td class="num">
+              <div class="acciones">
+                <button
+                  type="button"
+                  class="borrar"
+                  (click)="eliminar(p, $event)"
+                  [attr.aria-label]="'Eliminar ' + p.nombre"
+                  pTooltip="Eliminar"
+                  tooltipPosition="left"
+                >
+                  <i class="pi pi-trash"></i>
+                </button>
+                <i class="pi pi-angle-right" style="color: var(--lg-muted)"></i>
+              </div>
+            </td>
           </tr>
         }
       </tbody>
