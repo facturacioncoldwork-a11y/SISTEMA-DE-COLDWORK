@@ -7,7 +7,9 @@ import { CONTABILIDAD_ROUTES } from './modules/contabilidad/contabilidad.routes'
 import { PORTAL_TRABAJO_ROUTES } from './modules/contabilidad/portal/portal.routes';
 import { ELEGIR_EMPRESA_ROUTES, EMPRESAS_ROUTES } from './modules/empresas/empresas.routes';
 import { EQUIPO_ROUTES } from './modules/equipo/equipo.routes';
+import { FINANZAS_ROUTES } from './modules/finanzas/finanzas.routes';
 import { LOGISTICA_ROUTES } from './modules/logistica/logistica.routes';
+import { REPORTES_ROUTES } from './modules/reportes/reportes.routes';
 
 /**
  * Rutas raíz. Cada módulo tiene su propio `<modulo>.routes.ts` y aquí solo se juntan.
@@ -44,15 +46,8 @@ export const routes: Routes = [
       ...EQUIPO_ROUTES,
       ...LOGISTICA_ROUTES,
       ...CONTABILIDAD_ROUTES,
-
-      // Etapa 1 — Contabilidad y finanzas
-      enConstruccion('terceros', 'Clientes y proveedores', 'administracion'),
-      enConstruccion('caja-bancos', 'Caja y bancos', 'finanzas'),
-      enConstruccion('ventas', 'Ventas', 'ventas'),
-      enConstruccion('compras', 'Compras (comprobantes)', 'contabilidad'),
-      enConstruccion('cuentas-cobrar', 'Cuentas por cobrar', 'finanzas'),
-      enConstruccion('cuentas-pagar', 'Cuentas por pagar', 'finanzas'),
-      enConstruccion('reportes', 'Reportes', 'contabilidad'),
+      ...FINANZAS_ROUTES,
+      ...REPORTES_ROUTES,
 
       // Etapas siguientes
       enConstruccion('servicios', 'Servicios técnicos', 'tecnica'),

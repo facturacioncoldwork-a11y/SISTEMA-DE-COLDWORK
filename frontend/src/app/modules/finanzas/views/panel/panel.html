@@ -1,0 +1,67 @@
+@let r = store.resumen();
+
+<!-- Indicadores -->
+<section class="lg-kpis">
+  <a class="lg-kpi" routerLink="/finanzas/caja-bancos">
+    <small><i class="pi pi-wallet"></i> Disponible en caja y bancos</small>
+    <strong>{{ dinero(r?.disponible ?? 0) }}</strong>
+    <span class="pie">
+      @if (r?.disponibleUsd) {
+        + {{ dinero(r?.disponibleUsd ?? 0, 'USD') }} ·
+      }
+      Sin contar detracciones
+    </span>
+  </a>
+  <a class="lg-kpi" routerLink="/finanzas/cuentas-cobrar">
+    <small><i class="pi pi-inbox"></i> Por cobrar</small>
+    <strong>{{ dinero(r?.porCobrar ?? 0) }}</strong>
+    <span class="pie" [class.lg-neg]="(r?.porCobrarVencido ?? 0) > 0">
+      {{ dinero(r?.porCobrarVencido ?? 0) }} vencido
+    </span>
+  </a>
+  <a class="lg-kpi" routerLink="/finanzas/cuentas-pagar">
+    <small><i class="pi pi-send"></i> Por pagar</small>
+    <strong>{{ dinero(r?.porPagar ?? 0) }}</strong>
+    <span class="pie" [class.lg-neg]="(r?.porPagarVencido ?? 0) > 0">
+      {{ dinero(r?.porPagarVencido ?? 0) }} vencido
+    </span>
+  </a>
+  <a class="lg-kpi" routerLink="/finanzas/caja-bancos">
+    <small><i class="pi pi-lock"></i> Detracciones (Banco de la Nación)</small>
+    <strong>{{ dinero(r?.detracciones ?? 0) }}</strong>
+    <span class="pie">Solo para pagar tributos</span>
+  </a>
+</section>
+
+<!-- Este mes -->
+<div class="dos">
+  <section class="lg-card mes">
+    <h3><i class="pi pi-calendar"></i> Este mes (sin IGV)</h3>
+    <div class="barras">
+      <div>
+        <span>Ventas</span>
+        <strong class="lg-pos">{{ dinero(r?.ventasMes ?? 0) }}</strong>
+      </div>
+      <div>
+        <span>Compras y gastos</span>
+        <strong>{{ dinero(r?.comprasMes ?? 0) }}</strong>
+      </div>
+      <div>
+        <span>Diferencia</span>
+        <strong [class.lg-pos]="(r?.ventasMes ?? 0) >= (r?.comprasMes ?? 0)" [class.lg-neg]="(r?.ventasMes ?? 0) < (r?.comprasMes ?? 0)">
+          {{ dinero((r?.ventasMes ?? 0) - (r?.comprasMes ?? 0)) }}
+        </strong>
+      </div>
+    </div>
+    <p class="nota">Para la utilidad real (con depreciación, planilla y ajustes) revisa <a routerLink="/reportes">Reportes</a>.</p>
+  </section>
+
+  <section class="lg-card accesos">
+    <h3><i class="pi pi-bolt"></i> Acciones rápidas</h3>
+    <a routerLink="/finanzas/ventas" [queryParams]="{ nuevo: 1 }"><i class="pi pi-file-plus"></i> Registrar una venta</a>
+    <a routerLink="/finanzas/compras" [queryParams]="{ nuevo: 1 }"><i class="pi pi-file-import"></i> Registrar una compra</a>
+    <a routerLink="/finanzas/cuentas-cobrar"><i class="pi pi-arrow-down-left"></i> Registrar un cobro</a>
+    <a routerLink="/finanzas/cuentas-pagar"><i class="pi pi-arrow-up-right"></i> Registrar un pago</a>
+    <a routerLink="/finanzas/caja-bancos" [queryParams]="{ nuevo: 1 }"><i class="pi pi-building"></i> Agregar cuenta bancaria</a>
+  </section>
+</div>

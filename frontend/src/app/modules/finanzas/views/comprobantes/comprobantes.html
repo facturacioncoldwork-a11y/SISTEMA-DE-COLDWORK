@@ -1,0 +1,126 @@
+@let t = totales();
+
+<!-- Resumen del mes -->
+<section class="lg-kpis">
+  <div class="lg-kpi">
+    <small><i class="pi pi-file"></i> Comprobantes del mes</small>
+    <strong>{{ t.cantidad }}</strong>
+    <span class="pie">Sin contar anulados</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-chart-line"></i> {{ esVenta() ? 'Ventas netas' : 'Compras netas' }} (sin IGV)</small>
+    <strong>{{ dinero(t.base) }}</strong>
+    <span class="pie">Notas de crédito ya restadas</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-percentage"></i> {{ esVenta() ? 'IGV de ventas (débito)' : 'IGV de compras (crédito fiscal)' }}</small>
+    <strong>{{ dinero(t.igv) }}</strong>
+    <span class="pie">Para el PDT 621</span>
+  </div>
+  <a class="lg-kpi" [routerLink]="esVenta() ? '/finanzas/cuentas-cobrar' : '/finanzas/cuentas-pagar'">
+    <small><i class="pi pi-clock"></i> {{ esVenta() ? 'Falta cobrar' : 'Falta pagar' }}</small>
+    <strong>{{ dinero(t.pendiente) }}</strong>
+    <span class="pie">De los comprobantes de este mes →</span>
+  </a>
+</section>
+
+<!-- Herramientas -->
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input
+      type="text"
+      [placeholder]="esVenta() ? 'Buscar por número, cliente o RUC' : 'Buscar por número, proveedor o RUC'"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      aria-label="Buscar comprobantes"
+    />
+  </label>
+  <label class="mes">
+    <span>Mes</span>
+    <input type="month" [ngModel]="mes()" (ngModelChange)="mes.set($event)" aria-label="Mes" />
+  </label>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="exportar()" [disabled]="!lista().length">
+    <i class="pi pi-download"></i> Registro del mes (CSV)
+  </button>
+  <button type="button" class="lg-cta" (click)="dialogo.set(true)">
+    <i class="pi pi-plus"></i> {{ esVenta() ? 'Registrar venta' : 'Registrar compra' }}
+  </button>
+</div>
+
+<!-- Lista -->
+<section class="lg-card lg-scroll">
+  <table class="lg-tabla">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Comprobante</th>
+        <th>{{ esVenta() ? 'Cliente' : 'Proveedor' }}</th>
+        <th class="num">Base</th>
+        <th class="num">IGV</th>
+        <th class="num">Total</th>
+        <th class="num">{{ esVenta() ? 'Por cobrar' : 'Por pagar' }}</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of visibles(); track c.id) {
+        @let e = estado(c);
+        <tr [class.anulado]="c.estado === 'anulado'">
+          <td>{{ c.fechaEmision.slice(8) }}/{{ c.fechaEmision.slice(5, 7) }}</td>
+          <td>
+            <strong class="lg-mono">{{ c.serie }}-{{ c.numero }}</strong>
+            <small class="sub">{{ nombreTipoDoc(c.tipoDoc) }}{{ c.detraccionPorcentaje ? ' · detracción ' + c.detraccionPorcentaje + ' %' : '' }}</small>
+          </td>
+          <td>
+            {{ c.terceroNombre }}
+            <small class="sub lg-mono">{{ c.terceroTipoDocumento }} {{ c.terceroDocumento }}</small>
+          </td>
+          <td class="num">{{ dinero(c.baseGravada + c.noGravada, c.moneda) }}</td>
+          <td class="num">{{ dinero(c.igv, c.moneda) }}</td>
+          <td class="num"><strong>{{ dinero(c.total, c.moneda) }}</strong></td>
+          <td class="num">{{ c.pendiente > 0 ? dinero(c.pendiente, c.moneda) : '—' }}</td>
+          <td><span class="lg-chip" [class]="e.clase">{{ e.texto }}</span></td>
+          <td class="acciones">
+            @if (c.estado === 'registrado') {
+              <button type="button" class="icono" title="Anular" aria-label="Anular" (click)="anulando.set(c)">
+                <i class="pi pi-ban"></i>
+              </button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="9">
+            <div class="lg-vacio">
+              <i class="pi" [class]="esVenta() ? 'pi-arrow-up-right' : 'pi-arrow-down-left'"></i>
+              <h4>{{ cargando() ? 'Cargando…' : 'No hay comprobantes en este mes' }}</h4>
+              @if (!cargando()) {
+                <p>{{ esVenta() ? 'Registra tus facturas y boletas emitidas.' : 'Registra las facturas de tus proveedores para usar el crédito fiscal.' }}</p>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>
+
+<p class="nota">
+  <i class="pi pi-info-circle"></i>
+  Cada comprobante crea su asiento en
+  <a routerLink="/contabilidad/diario">Contabilidad · Libro Diario</a>. Para corregir uno, anúlalo (queda registrado como anulado) o emite una nota de crédito.
+</p>
+
+<app-comprobante-dialogo [(visible)]="dialogo" [operacion]="operacion()" (guardado)="registrado()" />
+<app-motivo-dialogo
+  [visible]="!!anulando()"
+  (visibleChange)="!$event && anulando.set(null)"
+  [titulo]="'Anular ' + (anulando()?.serie ?? '') + '-' + (anulando()?.numero ?? '')"
+  detalle="El comprobante y su asiento quedarán anulados en los libros (no se borran)."
+  [ocupado]="ocupado()"
+  [error]="errorAnular()"
+  (confirmar)="anular($event)"
+/>

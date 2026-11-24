@@ -1,0 +1,97 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: 'min(42rem, 96vw)' }"
+  [header]="tercero() ? 'Editar cliente o proveedor' : 'Nuevo cliente o proveedor'"
+>
+  <form class="lg-form" (ngSubmit)="guardar()">
+    <!-- Documento -->
+    <div>
+      <span class="lbl">Documento</span>
+      <p-selectbutton
+        name="tdoc"
+        [options]="tiposDoc"
+        [allowEmpty]="false"
+        [ngModel]="tipoDocumento()"
+        (ngModelChange)="tipoDocumento.set($event)"
+      />
+    </div>
+    <div>
+      <label for="t-doc">Número</label>
+      <input
+        pInputText
+        id="t-doc"
+        name="doc"
+        inputmode="numeric"
+        [placeholder]="tipoDocumento() === 'RUC' ? '20xxxxxxxxx' : tipoDocumento() === 'DNI' ? '8 dígitos' : ''"
+        [ngModel]="numeroDocumento()"
+        (ngModelChange)="numeroDocumento.set($event)"
+      />
+      @if (avisoDocumento(); as aviso) {
+        <small class="lg-neg">{{ aviso }}</small>
+      }
+    </div>
+
+    <div class="full">
+      <label for="t-rs">{{ tipoDocumento() === 'RUC' ? 'Razón social' : 'Nombre completo' }}</label>
+      <input pInputText id="t-rs" name="rs" [(ngModel)]="razonSocial" />
+    </div>
+
+    <!-- Rol -->
+    <div class="full roles">
+      <label class="chk" for="t-cli">
+        <p-checkbox inputId="t-cli" name="cli" [binary]="true" [(ngModel)]="esCliente" /> Es cliente (le vendes)
+      </label>
+      <label class="chk" for="t-prov">
+        <p-checkbox inputId="t-prov" name="prov" [binary]="true" [(ngModel)]="esProveedor" /> Es proveedor (le compras)
+      </label>
+    </div>
+
+    <!-- Condiciones -->
+    <div>
+      <label for="t-cred">Días de crédito</label>
+      <p-inputnumber inputId="t-cred" name="cred" [(ngModel)]="diasCredito" [min]="0" [max]="365" suffix=" días" />
+      <small class="ayuda">0 = al contado. Se usa para calcular el vencimiento.</small>
+    </div>
+    <div>
+      <label for="t-rubro">Rubro</label>
+      <input pInputText id="t-rubro" name="rubro" placeholder="Supermercado, minería, gases…" [(ngModel)]="rubro" />
+    </div>
+
+    <!-- Contacto -->
+    <div>
+      <label for="t-cont">Contacto</label>
+      <input pInputText id="t-cont" name="cont" [(ngModel)]="contacto" />
+    </div>
+    <div>
+      <label for="t-tel">Teléfono / WhatsApp</label>
+      <input pInputText id="t-tel" name="tel" inputmode="tel" [(ngModel)]="telefono" />
+    </div>
+    <div>
+      <label for="t-correo">Correo</label>
+      <input pInputText id="t-correo" name="correo" type="email" [(ngModel)]="correo" />
+    </div>
+    <div>
+      <label for="t-dir">Dirección fiscal</label>
+      <input pInputText id="t-dir" name="dir" [(ngModel)]="direccion" />
+    </div>
+
+    @if (tercero()) {
+      <label class="chk full" for="t-activo">
+        <p-checkbox inputId="t-activo" name="activo" [binary]="true" [(ngModel)]="activo" /> Activo
+      </label>
+    }
+
+    @if (error(); as e) {
+      <p class="error"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
+    }
+
+    <div class="full lg-pie-dialogo">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="visible.set(false)">Cancelar</button>
+      <button type="submit" class="lg-cta" [disabled]="guardando()">
+        <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"></i> Guardar
+      </button>
+    </div>
+  </form>
+</p-dialog>

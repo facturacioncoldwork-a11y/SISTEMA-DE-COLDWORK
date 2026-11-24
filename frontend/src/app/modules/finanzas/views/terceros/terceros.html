@@ -1,0 +1,89 @@
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input
+      type="text"
+      placeholder="Buscar por nombre, RUC/DNI, rubro o contacto"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      aria-label="Buscar clientes y proveedores"
+    />
+  </label>
+  <div class="lg-seg" role="group" aria-label="Filtrar">
+    <button type="button" [class.on]="filtro() === 'todos'" (click)="filtro.set('todos')">Todos ({{ cuenta().todos }})</button>
+    <button type="button" [class.on]="filtro() === 'clientes'" (click)="filtro.set('clientes')">Clientes ({{ cuenta().clientes }})</button>
+    <button type="button" [class.on]="filtro() === 'proveedores'" (click)="filtro.set('proveedores')">
+      Proveedores ({{ cuenta().proveedores }})
+    </button>
+  </div>
+  <label class="chk">
+    <input type="checkbox" [ngModel]="verInactivos()" (ngModelChange)="verInactivos.set($event)" /> Ver inactivos
+  </label>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta" (click)="abrir(null)"><i class="pi pi-plus"></i> Nuevo</button>
+</div>
+
+<div class="grid">
+  @for (t of lista(); track t.id) {
+    <article class="lg-card ficha" [class.inactivo]="!t.activo">
+      <div class="cab">
+        <span class="lg-avatar" [style.--c]="color(t.razonSocial)">{{ iniciales(t.razonSocial) }}</span>
+        <div class="nom">
+          <strong>{{ t.razonSocial }}</strong>
+          <span class="lg-mono">{{ t.tipoDocumento }} {{ t.numeroDocumento }}</span>
+        </div>
+        <button type="button" class="editar" (click)="abrir(t)" aria-label="Editar"><i class="pi pi-pencil"></i></button>
+      </div>
+
+      <div class="roles">
+        @if (t.esCliente) {
+          <span class="lg-chip ok">Cliente</span>
+        }
+        @if (t.esProveedor) {
+          <span class="lg-chip sin-punto" style="--c: #6366f1">Proveedor</span>
+        }
+        @if (t.rubro) {
+          <span class="lg-chip sin-punto">{{ t.rubro }}</span>
+        }
+      </div>
+
+      <p class="credito">
+        <i class="pi pi-clock"></i> {{ t.diasCredito ? t.diasCredito + ' días de crédito' : 'Al contado' }}
+      </p>
+
+      <ul class="contacto">
+        @if (t.contacto) {
+          <li><i class="pi pi-user"></i> {{ t.contacto }}</li>
+        }
+        @if (t.telefono) {
+          <li><i class="pi pi-phone"></i> {{ t.telefono }}</li>
+        }
+        @if (t.correo) {
+          <li><i class="pi pi-envelope"></i> {{ t.correo }}</li>
+        }
+      </ul>
+
+      <div class="pie">
+        @if (t.telefono) {
+          <a class="lg-cta lg-cta--suave mini" [href]="whatsapp(t.telefono)" target="_blank" rel="noopener">
+            <i class="pi pi-whatsapp"></i> WhatsApp
+          </a>
+        }
+        @if (t.correo) {
+          <a class="lg-cta lg-cta--suave mini" [href]="'mailto:' + t.correo"><i class="pi pi-envelope"></i> Correo</a>
+        }
+      </div>
+    </article>
+  } @empty {
+    <div class="lg-card lg-vacio" style="grid-column: 1 / -1">
+      <i class="pi pi-users"></i>
+      <h4>{{ store.terceros().length ? 'Sin resultados' : 'Aún no hay clientes ni proveedores' }}</h4>
+      <p>Registra a quienes les vendes servicios y a quienes les compras repuestos y gases.</p>
+      @if (!store.terceros().length) {
+        <button type="button" class="lg-cta" (click)="abrir(null)"><i class="pi pi-plus"></i> Registrar el primero</button>
+      }
+    </div>
+  }
+</div>
+
+<app-tercero-dialogo [(visible)]="dialogo" [tercero]="editando()" (guardado)="guardado()" />

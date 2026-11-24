@@ -1,0 +1,62 @@
+.mes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--lg-muted);
+
+  input {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--lg-line);
+    border-radius: 0.6rem;
+    font: inherit;
+    color: var(--lg-ink);
+    background: #fff;
+  }
+}
+
+.espacio {
+  flex: 1;
+}
+
+.sub {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--lg-muted);
+}
+
+tr.anulado td {
+  opacity: 0.5;
+}
+
+.acciones {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.icono {
+  border: 0;
+  background: transparent;
+  color: var(--lg-muted);
+  cursor: pointer;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.5rem;
+
+  &:hover {
+    background: #fee2e2;
+    color: var(--lg-danger);
+  }
+}
+
+.nota {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--lg-muted);
+
+  a {
+    color: var(--lg-blue);
+    font-weight: 600;
+  }
+}

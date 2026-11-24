@@ -1,0 +1,183 @@
+@let t = totales();
+
+<!-- Totales -->
+<section class="lg-kpis">
+  <div class="lg-kpi">
+    <small><i class="pi pi-wallet"></i> Disponible en soles</small>
+    <strong>{{ dinero(t.soles) }}</strong>
+    <span class="pie">Cajas y bancos, sin detracciones</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-dollar"></i> Disponible en dólares</small>
+    <strong>{{ dinero(t.dolares, 'USD') }}</strong>
+    <span class="pie">Cuentas en US$</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-lock"></i> Detracciones (Banco de la Nación)</small>
+    <strong>{{ dinero(t.detracciones) }}</strong>
+    <span class="pie">Solo para pagar tributos</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-sync"></i> Movimientos del mes</small>
+    <strong>{{ lista().length }}</strong>
+    <span class="pie">{{ filtroCuenta() ? 'De la cuenta elegida' : 'De todas las cuentas' }}</span>
+  </div>
+</section>
+
+<!-- Cuentas -->
+<div class="cuentas">
+  @for (c of cuentas(); track c.id) {
+    <article
+      class="cuenta"
+      [class.on]="filtroCuenta() === c.id"
+      [class.inactiva]="!c.activa"
+      [class.detr]="c.tipo === 'detracciones'"
+      tabindex="0"
+      role="button"
+      [attr.aria-pressed]="filtroCuenta() === c.id"
+      (click)="elegirCuenta(c.id)"
+      (keydown.enter)="elegirCuenta(c.id)"
+    >
+      <header>
+        <span class="ico"><i [class]="icono(c)"></i></span>
+        <div class="crece">
+          <strong>{{ c.nombre }}</strong>
+          <small>{{ c.banco || 'Efectivo' }}{{ c.numero ? ' · ' + c.numero : '' }}</small>
+        </div>
+        <button type="button" class="icono" title="Editar cuenta" aria-label="Editar cuenta" (click)="editarCuenta(c, $event)">
+          <i class="pi pi-pencil"></i>
+        </button>
+      </header>
+      <span class="saldo" [class.lg-neg]="c.saldo < 0">{{ dinero(c.saldo, c.moneda) }}</span>
+      <footer>
+        <span class="lg-mono">Cta. {{ c.cuentaContable }}</span>
+        <span>{{ c.activa ? c.moneda : 'Inactiva' }}</span>
+      </footer>
+    </article>
+  }
+  <button type="button" class="cuenta nueva" (click)="nuevaCuenta()">
+    <i class="pi pi-plus"></i>
+    <span>Agregar caja o banco</span>
+  </button>
+</div>
+
+<!-- Herramientas -->
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input type="text" placeholder="Buscar por glosa, cliente, proveedor o n.° de operación" [ngModel]="texto()" (ngModelChange)="texto.set($event)" aria-label="Buscar movimientos" />
+  </label>
+  <label class="mes">
+    <span>Mes</span>
+    <input type="month" [ngModel]="mes()" (ngModelChange)="mes.set($event)" aria-label="Mes" />
+  </label>
+  @if (flujo(); as f) {
+    <span class="flujo">
+      <span class="lg-pos">+ {{ dinero(f.entra) }}</span>
+      <span class="lg-neg">− {{ dinero(f.sale) }}</span>
+    </span>
+  }
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="exportar()" [disabled]="!lista().length">
+    <i class="pi pi-download"></i> CSV
+  </button>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="nuevoMovimiento('transferencia')" [disabled]="store.cuentasActivas().length < 2">
+    <i class="pi pi-arrow-right-arrow-left"></i> Transferir
+  </button>
+  <button type="button" class="lg-cta" (click)="nuevoMovimiento('cobro')" [disabled]="!store.cuentasActivas().length">
+    <i class="pi pi-plus"></i> Registrar movimiento
+  </button>
+</div>
+
+<!-- Movimientos -->
+<section class="lg-card lg-scroll">
+  <table class="lg-tabla">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Movimiento</th>
+        <th>Cuenta</th>
+        <th>Medio</th>
+        <th class="num">Entrada</th>
+        <th class="num">Salida</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of visibles(); track m.id) {
+        @let entra = esEntrada(m, filtroCuenta());
+        <tr [class.anulado]="m.estado === 'anulado'">
+          <td>{{ m.fecha.slice(8) }}/{{ m.fecha.slice(5, 7) }}</td>
+          <td>
+            <span class="mov">
+              <i [class]="tiposMov[m.tipo].icono" [class.lg-pos]="entra" [class.lg-neg]="!entra"></i>
+              <span>
+                <strong>{{ m.glosa || tiposMov[m.tipo].nombre }}</strong>
+                <small class="sub">{{ tiposMov[m.tipo].nombre }}{{ detalle(m) ? ' · ' + detalle(m) : '' }}</small>
+              </span>
+            </span>
+          </td>
+          <td>{{ m.cuentaNombre }}</td>
+          <td>
+            {{ medio(m) }}
+            @if (m.referencia) {
+              <small class="sub lg-mono">{{ m.referencia }}</small>
+            }
+          </td>
+          <td class="num lg-pos">{{ entra ? dinero(m.monto, m.moneda) : '' }}</td>
+          <td class="num lg-neg">{{ entra ? '' : dinero(m.monto, m.moneda) }}</td>
+          <td class="acciones">
+            @if (m.estado === 'anulado') {
+              <span class="lg-chip agotado">Anulado</span>
+            } @else {
+              <button type="button" class="icono peligro" title="Anular" aria-label="Anular" (click)="anulando.set(m)">
+                <i class="pi pi-ban"></i>
+              </button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7">
+            <div class="lg-vacio">
+              <i class="pi pi-building-columns"></i>
+              @if (cargando()) {
+                <h4>Cargando…</h4>
+              } @else if (!cuentas().length) {
+                <h4>Primero agrega tus cajas y cuentas bancarias</h4>
+                <p>Luego registra el saldo inicial como "Otro ingreso" (cuenta 5011 o la que indique tu contador).</p>
+              } @else {
+                <h4>No hay movimientos en este mes</h4>
+                <p>Registra cobros, pagos, gastos y transferencias. Cada uno genera su asiento.</p>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</section>
+
+<p class="nota">
+  <i class="pi pi-info-circle"></i>
+  Los cobros y pagos rebajan las <a routerLink="/finanzas/cuentas-cobrar">cuentas por cobrar</a> y
+  <a routerLink="/finanzas/cuentas-pagar">por pagar</a>, y cada movimiento crea su asiento en
+  <a routerLink="/contabilidad/diario">Contabilidad · Libro Diario</a>.
+</p>
+
+<app-cuenta-dialogo [(visible)]="dialogoCuenta" [cuenta]="editando()" (guardado)="cuentaGuardada()" />
+<app-movimiento-dialogo
+  [(visible)]="dialogoMov"
+  [tipoInicial]="tipoNuevo()"
+  [cuentaInicial]="cuentaNueva()"
+  (guardado)="movimientoGuardado()"
+/>
+<app-motivo-dialogo
+  [visible]="!!anulando()"
+  (visibleChange)="!$event && anulando.set(null)"
+  titulo="Anular movimiento"
+  detalle="El movimiento y su asiento quedarán anulados (no se borran). El saldo de la cuenta y lo pendiente del comprobante se recalculan."
+  [ocupado]="ocupado()"
+  [error]="errorAnular()"
+  (confirmar)="anular($event)"
+/>

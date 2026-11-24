@@ -1,0 +1,165 @@
+@let t = totales();
+
+<section class="lg-kpis">
+  <div class="lg-kpi">
+    <small><i class="pi pi-clock"></i> {{ esCobro() ? 'Total por cobrar' : 'Total por pagar' }}</small>
+    <strong>{{ dinero(t.total) }}</strong>
+    <span class="pie">{{ t.cantidad }} comprobante{{ t.cantidad === 1 ? '' : 's' }} · {{ t.terceros }} {{ esCobro() ? 'cliente' : 'proveedor' }}{{ t.terceros === 1 ? '' : 's' }}</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-exclamation-triangle"></i> Vencido</small>
+    <strong [class.lg-neg]="t.vencido > 0">{{ dinero(t.vencido) }}</strong>
+    <span class="pie">{{ t.total ? ((t.vencido / t.total) * 100).toFixed(0) : 0 }} % del total</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-lock"></i> Detracciones por {{ esCobro() ? 'recibir' : 'depositar' }}</small>
+    <strong>{{ dinero(t.detraccion) }}</strong>
+    <span class="pie">{{ esCobro() ? 'El cliente deposita en tu cuenta BN' : 'Antes de pagar al proveedor' }}</span>
+  </div>
+  <a class="lg-kpi" [routerLink]="esCobro() ? '/finanzas/ventas' : '/finanzas/compras'">
+    <small><i class="pi pi-file"></i> {{ esCobro() ? 'Ventas' : 'Compras' }}</small>
+    <strong><i class="pi pi-arrow-right"></i></strong>
+    <span class="pie">Ver el registro del mes →</span>
+  </a>
+</section>
+
+<!-- Antigüedad de saldos -->
+<section class="lg-card antiguedad">
+  <header>
+    <h3>Antigüedad de saldos</h3>
+    <small>Toca un tramo para filtrar</small>
+  </header>
+  <div class="barra" aria-hidden="true">
+    @for (a of antiguedad(); track a.tramo) {
+      @if (a.monto > 0) {
+        <span [class]="'seg ' + a.clase" [style.width.%]="a.porcentaje"></span>
+      }
+    }
+  </div>
+  <div class="tramos">
+    @for (a of antiguedad(); track a.tramo) {
+      <button type="button" class="tramo" [class.on]="tramo() === a.tramo" [attr.aria-pressed]="tramo() === a.tramo" (click)="filtrarTramo(a.tramo)">
+        <span class="lg-chip" [class]="a.clase">{{ a.nombre }}</span>
+        <strong>{{ dinero(a.monto) }}</strong>
+        <small>{{ a.cantidad }} doc. · {{ a.porcentaje.toFixed(0) }} %</small>
+      </button>
+    }
+  </div>
+</section>
+
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input type="text" [placeholder]="esCobro() ? 'Buscar cliente, RUC o comprobante' : 'Buscar proveedor, RUC o comprobante'" [ngModel]="texto()" (ngModelChange)="texto.set($event)" aria-label="Buscar" />
+  </label>
+  <div class="lg-seg" role="group" aria-label="Vista">
+    <button type="button" [class.on]="!agrupar()" (click)="agrupar.set(false)">Por comprobante</button>
+    <button type="button" [class.on]="agrupar()" (click)="agrupar.set(true)">{{ esCobro() ? 'Por cliente' : 'Por proveedor' }}</button>
+  </div>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="exportar()" [disabled]="!lista().length">
+    <i class="pi pi-download"></i> CSV
+  </button>
+</div>
+
+<section class="lg-card lg-scroll">
+  @if (agrupar()) {
+    <table class="lg-tabla">
+      <thead>
+        <tr>
+          <th>{{ esCobro() ? 'Cliente' : 'Proveedor' }}</th>
+          <th class="num">Comprobantes</th>
+          <th class="num">Mayor atraso</th>
+          <th class="num">Vencido</th>
+          <th class="num">Total pendiente</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (g of grupos(); track g.id) {
+          <tr>
+            <td>
+              <strong>{{ g.nombre }}</strong>
+              <small class="sub lg-mono">{{ g.documento }}</small>
+            </td>
+            <td class="num">{{ g.cantidad }}</td>
+            <td class="num">{{ g.maxDias > 0 ? g.maxDias + ' días' : '—' }}</td>
+            <td class="num" [class.lg-neg]="g.vencido > 0">{{ g.vencido > 0 ? dinero(g.vencido) : '—' }}</td>
+            <td class="num"><strong>{{ dinero(g.monto) }}</strong></td>
+          </tr>
+        } @empty {
+          <ng-container *ngTemplateOutlet="vacio" />
+        }
+      </tbody>
+    </table>
+  } @else {
+    <table class="lg-tabla">
+      <thead>
+        <tr>
+          <th>Comprobante</th>
+          <th>{{ esCobro() ? 'Cliente' : 'Proveedor' }}</th>
+          <th>Vencimiento</th>
+          <th class="num">Total</th>
+          <th class="num">{{ esCobro() ? 'Cobrado' : 'Pagado' }}</th>
+          <th class="num">Pendiente</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of visibles(); track p.id) {
+          <tr>
+            <td>
+              <strong class="lg-mono">{{ p.serie }}-{{ p.numero }}</strong>
+              <small class="sub">{{ nombreTipoDoc(p.tipoDoc) }} · {{ p.fechaEmision.slice(8) }}/{{ p.fechaEmision.slice(5, 7) }}/{{ p.fechaEmision.slice(0, 4) }}</small>
+            </td>
+            <td>
+              {{ p.terceroNombre }}
+              <small class="sub lg-mono">{{ p.terceroTipoDocumento }} {{ p.terceroDocumento }}</small>
+            </td>
+            <td>
+              <span class="lg-chip" [class]="TRAMOS[p.tramo].clase">{{ atraso(p) }}</span>
+            </td>
+            <td class="num">{{ dinero(p.total, p.moneda) }}</td>
+            <td class="num">{{ p.pagado + p.notasCredito > 0 ? dinero(p.pagado + p.notasCredito, p.moneda) : '—' }}</td>
+            <td class="num"><strong>{{ dinero(p.pendiente, p.moneda) }}</strong></td>
+            <td class="acciones">
+              <button type="button" class="lg-cta lg-cta--suave chico" (click)="registrar(p)">
+                <i class="pi" [class]="esCobro() ? 'pi-arrow-down-left' : 'pi-arrow-up-right'"></i>
+                {{ esCobro() ? 'Cobrar' : 'Pagar' }}
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <ng-container *ngTemplateOutlet="vacio" />
+        }
+      </tbody>
+    </table>
+  }
+</section>
+
+<ng-template #vacio>
+  <tr>
+    <td colspan="7">
+      <div class="lg-vacio">
+        <i class="pi pi-check-circle"></i>
+        <h4>{{ cargando() ? 'Cargando…' : esCobro() ? 'No tienes nada por cobrar' : 'No tienes nada por pagar' }}</h4>
+        @if (!cargando()) {
+          <p>{{ esCobro() ? 'Cuando registres ventas al crédito aparecerán aquí.' : 'Cuando registres compras al crédito aparecerán aquí.' }}</p>
+        }
+      </div>
+    </td>
+  </tr>
+</ng-template>
+
+<p class="nota">
+  <i class="pi pi-info-circle"></i>
+  Al {{ esCobro() ? 'cobrar' : 'pagar' }} se registra el movimiento en
+  <a routerLink="/finanzas/caja-bancos">Caja y bancos</a> y su asiento en
+  <a routerLink="/contabilidad/diario">el Libro Diario</a>. Los montos en dólares se muestran en soles al tipo de cambio de emisión.
+</p>
+
+<app-movimiento-dialogo
+  [(visible)]="dialogo"
+  [tipoInicial]="esCobro() ? 'cobro' : 'pago'"
+  [comprobanteInicial]="elegido()"
+  (guardado)="registrado()"
+/>

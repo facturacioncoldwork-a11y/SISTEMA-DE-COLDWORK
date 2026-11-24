@@ -1,0 +1,100 @@
+.con-boton {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+}
+
+.crece {
+  flex: 1;
+  min-width: 0;
+}
+
+.dos-campos {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: 0.6rem;
+}
+
+.ayuda {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.76rem;
+  color: var(--lg-muted);
+}
+
+// ─── Importes ───────────────────────────────────────────────────
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.importes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  align-items: flex-end;
+
+  > div {
+    flex: 1;
+    min-width: 10rem;
+  }
+}
+
+.calculado {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.7rem;
+  background: var(--lg-soft);
+
+  strong {
+    font-size: 1.1rem;
+  }
+
+  &.total strong {
+    color: var(--lg-blue);
+    font-size: 1.25rem;
+  }
+}
+
+.chk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+.aviso {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  font-size: 0.84rem;
+  background: #fff7e6;
+  color: #7a4b00;
+}
+
+// ─── Vista previa del asiento ───────────────────────────────────
+
+.asiento {
+  padding: 0.75rem;
+  border: 1px dashed var(--lg-line);
+  border-radius: 0.8rem;
+
+  .lbl {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    margin-bottom: 0.4rem;
+  }
+
+  .vacio {
+    color: var(--lg-muted);
+    font-style: italic;
+    text-align: center;
+  }
+}

@@ -1,0 +1,90 @@
+@let s = sf();
+@let e = empresa.actual();
+
+<div class="filtros">
+  <label class="fecha">Al <input type="date" [ngModel]="al()" (ngModelChange)="cambiar($event)" aria-label="Fecha del balance" /></label>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="exportar()"><i class="pi pi-download"></i> CSV</button>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="imprimir()"><i class="pi pi-print"></i> Imprimir / PDF</button>
+</div>
+
+<section class="lg-kpis">
+  <div class="lg-kpi">
+    <small><i class="pi pi-building"></i> Total activo</small>
+    <strong>{{ dinero(s.totalActivo) }}</strong>
+    <span class="pie">Lo que tiene la empresa</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-credit-card"></i> Total pasivo</small>
+    <strong>{{ dinero(s.totalPasivo) }}</strong>
+    <span class="pie">Lo que debe a terceros</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-users"></i> Patrimonio</small>
+    <strong [class.lg-neg]="s.patrimonio.total < 0">{{ dinero(s.patrimonio.total) }}</strong>
+    <span class="pie">Lo que es de los socios</span>
+  </div>
+  <div class="lg-kpi">
+    <small><i class="pi pi-gauge"></i> Liquidez corriente</small>
+    <strong>{{ s.liquidez === null ? '—' : s.liquidez.toFixed(2) }}</strong>
+    <span class="pie">Activo corriente / pasivo corriente (ideal ≥ 1)</span>
+  </div>
+</section>
+
+@if (!cargando() && saldos().length) {
+  @if (s.diferencia === 0) {
+    <p class="alerta ok"><i class="pi pi-check-circle"></i> El balance cuadra: activo = pasivo + patrimonio.</p>
+  } @else {
+    <p class="alerta">
+      <i class="pi pi-exclamation-triangle"></i> Hay una diferencia de {{ dinero(s.diferencia) }}. Revisa el
+      <a routerLink="/contabilidad/balance">Balance de Comprobación</a>.
+    </p>
+  }
+}
+
+<section class="lg-card estado">
+  <header>
+    <h2>Estado de Situación Financiera</h2>
+    <p>{{ e?.razonSocial }}{{ e?.ruc ? ' · RUC ' + e?.ruc : '' }}</p>
+    <p>Al {{ fechaLarga(al()) }} · Expresado en soles</p>
+  </header>
+  <div class="columnas">
+    <table>
+      <tbody app-estado-seccion [seccion]="s.activoCorriente"></tbody>
+      <tbody app-estado-seccion [seccion]="s.activoNoCorriente"></tbody>
+      <tbody>
+        <tr class="resultado final">
+          <td>Total activo</td>
+          <td class="num">{{ dinero(s.totalActivo) }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <table>
+      <tbody app-estado-seccion [seccion]="s.pasivoCorriente"></tbody>
+      <tbody app-estado-seccion [seccion]="s.pasivoNoCorriente"></tbody>
+      <tbody>
+        <tr class="resultado">
+          <td>Total pasivo</td>
+          <td class="num">{{ dinero(s.totalPasivo) }}</td>
+        </tr>
+      </tbody>
+      <tbody app-estado-seccion [seccion]="s.patrimonio"></tbody>
+      <tbody>
+        <tr class="resultado final">
+          <td>Total pasivo y patrimonio</td>
+          <td class="num">{{ dinero(s.totalPasivoPatrimonio) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="firma"><span>Gerente general</span><span>Contador público colegiado</span></div>
+</section>
+
+<p class="nota">
+  <i class="pi pi-info-circle"></i>
+  <span>
+    {{ cargando() ? 'Actualizando… ' : '' }}Incluye todos los asientos registrados hasta la fecha. El "Resultado del ejercicio" es la utilidad o
+    pérdida aún no cerrada (ver <a routerLink="/reportes">Estado de Resultados</a>). El IGV va al activo si es crédito fiscal a favor y al
+    pasivo si es por pagar.
+  </span>
+</p>
