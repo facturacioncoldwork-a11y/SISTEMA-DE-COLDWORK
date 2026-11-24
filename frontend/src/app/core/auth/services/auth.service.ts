@@ -1,5 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { Session } from '@supabase/supabase-js';
+import { Session, type User } from '@supabase/supabase-js';
 import { SupabaseService } from '../../supabase/services/supabase.service';
 import { getConfig } from '../../config/runtime-config';
 
@@ -11,6 +11,8 @@ export class AuthService {
   readonly session = signal<Session | null | undefined>(undefined);
   readonly usuario = computed(() => this.session()?.user ?? null);
   readonly logueado = computed(() => !!this.session());
+  /** Nombre que la persona escribió al registrarse ('' si no hay). */
+  readonly nombre = computed(() => nombreDeUsuario(this.usuario()));
 
   private listo: Promise<void>;
 
@@ -94,4 +96,17 @@ function traducirError(msg: string): string {
   if (/fetch|network/i.test(msg)) return 'Sin conexión con el servidor.';
   if (/provider is not enabled|unsupported provider/i.test(msg)) return 'El inicio con Google aún no está activado.';
   return msg;
+}
+
+/**
+ * Nombre de la persona: el que escribió al crear su cuenta (metadato `nombre`)
+ * o, si entró con Google, el que trae Google (`full_name` / `name`).
+ */
+export function nombreDeUsuario(u: Pick<User, 'user_metadata'> | null | undefined): string {
+  const m = (u?.user_metadata ?? {}) as Record<string, unknown>;
+  for (const k of ['nombre', 'full_name', 'name']) {
+    const v = m[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return '';
 }

@@ -62,7 +62,7 @@ export class ContabilidadService {
   /** Dueño y admin aprueban; el resto trabaja como contador (envía a aprobación). */
   readonly persona = computed<Persona>(() => {
     const usuario = this.auth.usuario();
-    const nombre = (usuario?.user_metadata?.['nombre'] as string | undefined) || usuario?.email || 'Usuario';
+    const nombre = this.auth.nombre() || usuario?.email || 'Usuario';
     return { id: usuario?.id ?? 'sin-sesion', nombre, rol: veTodo(this.empresa.rol()) ? 'dueno' : 'contador' };
   });
 

@@ -194,9 +194,7 @@ export class ImportarCotizacion {
     this.cotizacionRef.set('');
     this.condiciones.set(DOCUMENTO_OC.condicionesPorDefecto);
     this.atencion.set('');
-    this.solicitado.set(
-      (this.auth.usuario()?.user_metadata?.['nombre'] as string | undefined) ?? '',
-    );
+    this.solicitado.set(this.auth.nombre());
     this.lugar.set(DOCUMENTO_OC.lugarEntregaPorDefecto);
     this.almacenId.set(
       this.store.almacenesActivos().find((a) => a.tipo === 'principal')?.id ?? null,

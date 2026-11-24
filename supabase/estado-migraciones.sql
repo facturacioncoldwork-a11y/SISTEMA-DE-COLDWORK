@@ -15,6 +15,7 @@ with e as (
     exists (select 1 from storage.buckets where id = 'comprobantes') as m8,
     exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'fin_comprobantes') as m9,
     exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'logistica_ajustes') as m11,
+    exists (select 1 from pg_proc where proname = 'crear_perfil_usuario' and prosrc like '%full_name%') as m12,
     -- restos de logística (tipos o tablas sueltas)
     (select count(*) from pg_type t join pg_namespace n on n.oid = t.typnamespace
        where n.nspname = 'public' and t.typname in ('tipo_producto', 'tipo_almacen', 'estado_oc', 'motivo_salida', 'tipo_movimiento')) as tipos,
@@ -32,6 +33,7 @@ select
   m8 as "0008_contabilidad_comprobantes",
   m9 as "0009_finanzas",
   m11 as "0011_logistica_antiguedad",
+  m12 as "0012_perfil_nombre_google",
   tipos || ' de 5' as tipos_logistica,
   tablas || ' de 9' as tablas_logistica,
   case
@@ -39,12 +41,13 @@ select
     when tipos = 0 and tablas = 0 then 'Ejecuta instalar-logistica.sql (una sola vez).'
     when not (m3 and m4 and m5 and m6 and tipos = 5 and tablas = 9) then
       'INSTALACIÓN A MEDIAS: ejecuta limpiar-logistica-incompleta.sql y después instalar-logistica.sql.'
-    when m7 and m8 and m9 and m11 then 'LISTO: todo está instalado. No vuelvas a ejecutar nada.'
+    when m7 and m8 and m9 and m11 and m12 then 'LISTO: todo está instalado. No vuelvas a ejecutar nada.'
     else 'Logística base LISTA (no vuelvas a ejecutar instalar-logistica.sql). Ejecuta, en este orden, solo lo que falta: '
       || concat_ws(' → ',
            case when not m7 then 'migrations/20261124000001_contabilidad.sql' end,
            case when not m8 then 'migrations/20261124000002_contabilidad_comprobantes.sql' end,
            case when not m9 then 'migrations/20261125000001_finanzas.sql y 20261125000002_finanzas_ajuste.sql' end,
-           case when not m11 then 'migrations/20261126000001_logistica_antiguedad.sql' end)
+           case when not m11 then 'migrations/20261126000001_logistica_antiguedad.sql' end,
+           case when not m12 then 'migrations/20261126000002_perfil_nombre_google.sql' end)
   end as que_hacer
 from e;

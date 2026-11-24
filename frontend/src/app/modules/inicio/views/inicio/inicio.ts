@@ -116,8 +116,7 @@ export class Inicio implements OnInit {
   protected readonly colorLlegada = colorLlegada;
 
   protected readonly nombre = computed(() => {
-    const n = (this.auth.usuario()?.user_metadata?.['nombre'] as string | undefined) ?? '';
-    return n.split(' ')[0];
+    return this.auth.nombre().split(' ')[0];
   });
 
   /** Mañana / tarde / noche: cambia saludo, color y sticker. */
