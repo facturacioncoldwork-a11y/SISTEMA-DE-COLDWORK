@@ -179,6 +179,51 @@
   }
 }
 
+.sin-gps {
+  border: 1px dashed #f59e0b;
+
+  .n {
+    background: #fffbeb;
+    color: #b45309;
+  }
+}
+
+.fila-sin {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+
+  input {
+    padding: 0.5rem;
+    border: 1px solid var(--lg-line);
+    border-radius: 0.6rem;
+    font: inherit;
+  }
+}
+
+.pista {
+  margin: 0;
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--lg-blue);
+
+  &.suave {
+    color: var(--lg-muted);
+  }
+}
+
+.enlace {
+  border: 0;
+  background: transparent;
+  color: var(--lg-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .lado {
   display: flex;
   flex-direction: column;

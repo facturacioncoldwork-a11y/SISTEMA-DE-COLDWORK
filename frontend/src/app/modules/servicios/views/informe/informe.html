@@ -51,7 +51,10 @@
           <button type="button" class="lg-cta" (click)="cerrar()"><i class="pi pi-check"></i> Cerrar con firma</button>
         }
       }
-      <button type="button" class="lg-cta lg-cta--suave" (click)="imprimir()"><i class="pi pi-print"></i> Imprimir / PDF</button>
+      <button type="button" class="lg-cta lg-cta--suave" (click)="descargarPdf()" [disabled]="generando()">
+        <i [class]="generando() ? 'pi pi-spin pi-spinner' : 'pi pi-file-pdf'"></i> Descargar informe (PDF)
+      </button>
+      <button type="button" class="lg-cta lg-cta--suave" (click)="imprimir()" title="Imprimir esta pantalla"><i class="pi pi-print"></i></button>
     </div>
   </section>
 
@@ -61,6 +64,9 @@
       <div class="lg-card__head">
         <div>
           <h3>1 · Análisis de Trabajo Seguro (ATS)</h3>
+          @if (editando('ats'); as quien) {
+            <span class="vivo"><span class="punto"></span> {{ quien }} está editando…</span>
+          }
           <p>Antes de empezar · Ley 29783 de Seguridad y Salud en el Trabajo</p>
         </div>
         <span class="lg-chip" [class]="atsCompleto() ? 'ok' : 'bajo'">{{ atsCompleto() ? 'Completo' : 'Pendiente' }}</span>
@@ -82,6 +88,9 @@
       <div class="lg-card__head">
         <div>
           <h3>2 · Diagnóstico y mediciones</h3>
+          @if (editando('mediciones'); as quien) {
+            <span class="vivo"><span class="punto"></span> {{ quien }} está editando…</span>
+          }
           <p>Lo que encontró el técnico al llegar</p>
         </div>
       </div>
@@ -108,6 +117,9 @@
       <div class="lg-card__head">
         <div>
           <h3>3 · Trabajo realizado</h3>
+          @if (editando('trabajos'); as quien) {
+            <span class="vivo"><span class="punto"></span> {{ quien }} está editando…</span>
+          }
           <p>Qué se hizo, repuestos usados y refrigerante</p>
         </div>
       </div>
@@ -163,6 +175,9 @@
       <div class="lg-card__head">
         <div>
           <h3>4 · Fotos del servicio</h3>
+          @if (editando('fotos'); as quien) {
+            <span class="vivo"><span class="punto"></span> {{ quien }} está editando…</span>
+          }
           <p>Antes, durante y después · desde la cámara del celular</p>
         </div>
       </div>
@@ -197,6 +212,9 @@
       <div class="lg-card__head">
         <div>
           <h3>5 · Resultado y conformidad del cliente</h3>
+          @if (editando('conformidad'); as quien) {
+            <span class="vivo"><span class="punto"></span> {{ quien }} está editando…</span>
+          }
           <p>Tiempo de servicio: {{ horas(i) }}</p>
         </div>
       </div>
@@ -225,6 +243,35 @@
       </div>
     </section>
   </div>
+  <!-- Mensajes del equipo (en tiempo real) -->
+  <section class="lg-card chat no-imprimir">
+    <div class="lg-card__head">
+      <div>
+        <h3>Mensajes del equipo</h3>
+        <p>Solo para esta orden · llegan al instante a los técnicos asignados</p>
+      </div>
+      <span class="en-linea">
+        @for (p of presentes(); track p.tecnicoId) {
+          <span class="lg-avatar" [title]="sim.tecnico(p.tecnicoId)?.nombre + ' está en línea'">{{ iniciales(p.tecnicoId) }}</span>
+        }
+        <small>{{ presentes().length ? presentes().length + ' en línea' : 'Nadie más en línea' }}</small>
+      </span>
+    </div>
+    <ul class="mensajes">
+      @for (m of o.mensajes; track $index) {
+        <li [class.mio]="m.autorId === 'yo'">
+          <span class="autor">{{ m.autor }} · {{ m.hora }}</span>
+          <span class="burbuja">{{ m.texto }}</span>
+        </li>
+      } @empty {
+        <li class="vacio">Aún no hay mensajes. Escribe para coordinar con tus compañeros.</li>
+      }
+    </ul>
+    <form class="escribir" (ngSubmit)="enviar()">
+      <input type="text" name="msg" maxlength="500" placeholder="Escribe al equipo (ej. ¿alguien trae nitrógeno?)" [(ngModel)]="texto" aria-label="Mensaje" />
+      <button type="submit" class="lg-cta" [disabled]="!texto.trim()"><i class="pi pi-send"></i></button>
+    </form>
+  </section>
 } @else {
   <div class="lg-vacio">
     <i class="pi pi-search"></i>

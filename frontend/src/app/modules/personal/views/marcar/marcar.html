@@ -66,9 +66,34 @@
               </div>
             </div>
           }
-          <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya'" (click)="marcarGps()">
-            {{ accion() === 'ya' ? 'Jornada completa' : accion() === 'salida' ? 'Marcar salida' : 'Marcar entrada' }}
-          </button>
+          @if (sinGps()) {
+            <div class="paso sin-gps">
+              <span class="n">!</span>
+              <div class="crece">
+                <strong>Registrar sin GPS</strong>
+                <small>Para cuando el celular falla o no hay señal en la planta. Lo revisa y aprueba tu supervisor.</small>
+                <div class="fila-sin">
+                  <input type="time" [(ngModel)]="horaDeclarada" aria-label="Hora" />
+                  <input type="text" placeholder="¿Qué pasó? (ej. sin señal en planta)" [(ngModel)]="motivoDeclarado" aria-label="Motivo" />
+                </div>
+                <div class="botones">
+                  <button type="button" class="lg-cta chico" (click)="marcarSinGps()">Enviar {{ accion() === 'salida' ? 'salida' : 'entrada' }}</button>
+                  <button type="button" class="lg-cta lg-cta--suave chico" (click)="sinGps.set(false)">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          } @else {
+            @if (accion() === 'salida' && trabajador()?.campo) {
+              <p class="pista"><i class="pi pi-info-circle"></i> ¿Terminaste en la planta o vas directo a tu casa? Marca tu salida desde donde estés: queda como "salida en campo".</p>
+            }
+            <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya'" (click)="marcarGps()">
+              {{ accion() === 'ya' ? 'Jornada completa' : accion() === 'salida' ? 'Marcar salida' : 'Marcar entrada' }}
+            </button>
+            @if (accion() !== 'ya') {
+              <button type="button" class="enlace" (click)="abrirSinGps()">¿Tu celular falla o no tiene GPS?</button>
+            }
+          }
+          <p class="pista suave"><i class="pi pi-clock"></i> Refrigerio de {{ h.refrigerioInicio }} ({{ h.refrigerio }} min): se descuenta solo, no hace falta marcar.</p>
         }
         @case ('qr') {
           <div class="paso">
@@ -116,6 +141,9 @@
         <li><i class="pi pi-map-marker"></i><span><b>Celular + GPS + selfie:</b> ideal para técnicos que empiezan el día en la obra del cliente. Sin aparatos extra. La selfie evita que un compañero marque por otro.</span></li>
         <li><i class="pi pi-qrcode"></i><span><b>Código de oficina:</b> una tablet barata en la entrada. Como el número cambia cada 30 s, no sirve mandarlo por WhatsApp para marcar desde la casa.</span></li>
         <li><i class="pi pi-user-edit"></i><span><b>Manual:</b> respaldo para casos excepcionales; siempre con motivo y nombre del supervisor.</span></li>
+        <li><i class="pi pi-mobile"></i><span><b>Sin GPS:</b> si el celular falla, el trabajador indica la hora y el motivo; queda "por aprobar" hasta que el supervisor lo confirme.</span></li>
+        <li><i class="pi pi-wifi"></i><span><b>Datos móviles:</b> cada marca pesa menos de 2 KB (la selfie se comprime a ~40 KB). Un mes entero gasta menos que mandar una foto por WhatsApp.</span></li>
+        <li><i class="pi pi-bolt"></i><span><b>Detección automática al llegar:</b> en la web, al abrir la app ya sabe si estás en la oficina y marcas con un toque. Que se marque sola sin abrirla necesita la app instalada en el celular (Android), que se puede hacer después.</span></li>
       </ul>
     </section>
     <section class="lg-card legal">

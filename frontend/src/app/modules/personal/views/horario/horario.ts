@@ -16,7 +16,9 @@ import { AsistenciaSim } from '../../services/asistencia-sim.service';
         <form class="lg-form" (ngSubmit)="guardar()">
           <div><label for="h-ent">Hora de entrada</label><input id="h-ent" name="ent" type="time" [(ngModel)]="h.entrada" /></div>
           <div><label for="h-sal">Hora de salida</label><input id="h-sal" name="sal" type="time" [(ngModel)]="h.salida" /></div>
+          <div><label for="h-refi">Refrigerio desde</label><input id="h-refi" name="refi" type="time" [(ngModel)]="h.refrigerioInicio" /></div>
           <div><label for="h-ref">Refrigerio (min)</label><input id="h-ref" name="ref" type="number" min="45" [(ngModel)]="h.refrigerio" /></div>
+          <p class="full nota-ref">El refrigerio se descuenta solo de las horas: nadie tiene que marcar salida ni regreso del almuerzo.</p>
           <div><label for="h-tol">Tolerancia (min)</label><input id="h-tol" name="tol" type="number" min="0" max="30" [(ngModel)]="h.tolerancia" /></div>
           @if (error(); as e) {
             <p class="error full"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
@@ -49,6 +51,7 @@ import { AsistenciaSim } from '../../services/asistencia-sim.service';
     .opciones b { display: block; font-size: 0.9rem; }
     .opciones small { color: var(--lg-muted); font-size: 0.78rem; }
     .opciones input { width: 1.1rem; height: 1.1rem; accent-color: var(--lg-blue); }
+    .nota-ref { margin: 0; font-size: 0.8rem; color: var(--lg-muted); }
     .radio { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.86rem; color: var(--lg-muted); }
   `,
 })

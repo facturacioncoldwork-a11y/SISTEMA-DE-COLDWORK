@@ -6,6 +6,7 @@ const H: Horario = {
   entrada: '08:00',
   salida: '17:00',
   refrigerio: 60,
+  refrigerioInicio: '12:00',
   tolerancia: 10,
   jornada: 480,
   metodos: { gps: true, qr: true, manual: true },

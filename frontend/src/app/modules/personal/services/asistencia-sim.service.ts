@@ -15,6 +15,7 @@ export class AsistenciaSim {
     entrada: '08:00',
     salida: '17:00',
     refrigerio: 60,
+    refrigerioInicio: '12:00',
     tolerancia: 10,
     jornada: 480,
     metodos: { gps: true, qr: true, manual: true },
@@ -49,19 +50,40 @@ export class AsistenciaSim {
     return this.marcas().find((m) => m.trabajadorId === trabajadorId && m.fecha === fecha);
   }
 
-  /** Marca entrada (si no hay) o salida (si ya marcó entrada). Devuelve qué marcó. */
-  marcar(trabajadorId: string, datos: Pick<Marca, 'metodo' | 'lugar' | 'dentroDeZona' | 'motivoManual'>): 'entrada' | 'salida' | 'ya' {
+  /**
+   * Marca entrada (si no hay) o salida (si ya marcó entrada). Devuelve qué marcó.
+   * `hora` solo para el registro sin GPS (el trabajador indica la hora; el supervisor la aprueba).
+   */
+  marcar(
+    trabajadorId: string,
+    datos: Pick<Marca, 'metodo' | 'lugar' | 'dentroDeZona' | 'motivoManual' | 'pendiente'>,
+    hora?: string,
+  ): 'entrada' | 'salida' | 'ya' {
     const ahora = new Date();
-    const hhmm = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+    const hhmm = hora ?? `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
     const actual = this.marcaDe(trabajadorId);
     if (actual?.salida) return 'ya';
     if (actual) {
-      this.marcas.update((l) => l.map((m) => (m === actual ? { ...m, salida: hhmm } : m)));
+      const salidaEnCampo = !datos.dentroDeZona || datos.lugar !== OFICINA.nombre;
+      this.marcas.update((l) =>
+        l.map((m) =>
+          m === actual
+            ? { ...m, salida: hhmm, salidaEnCampo, pendiente: m.pendiente || datos.pendiente, motivoManual: datos.motivoManual ?? m.motivoManual }
+            : m,
+        ),
+      );
       return 'salida';
     }
     this.marcas.update((l) => [...l, { trabajadorId, fecha: hoy(), entrada: hhmm, ...datos }]);
     return 'entrada';
   }
+
+  /** El supervisor aprueba una marca hecha sin GPS. */
+  aprobar(trabajadorId: string, fecha = hoy()) {
+    this.marcas.update((l) => l.map((m) => (m.trabajadorId === trabajadorId && m.fecha === fecha ? { ...m, pendiente: false } : m)));
+  }
+
+  readonly porAprobar = computed(() => this.marcas().filter((m) => m.pendiente));
 
   guardarHorario(h: Horario) {
     this.horario.set(h);

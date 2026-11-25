@@ -37,6 +37,22 @@ const AUSENCIAS: Record<string, string> = {
       <a class="lg-cta" routerLink="/personal/marcar"><i class="pi pi-mobile"></i> Probar cómo marca un trabajador</a>
     </div>
 
+    @if (sim.porAprobar().length) {
+      <section class="lg-card pendientes">
+        <div class="lg-card__head"><div><h3>Marcas por aprobar</h3><p>Registradas sin GPS por el propio trabajador</p></div></div>
+        @for (p of sim.porAprobar(); track p.trabajadorId + p.fecha) {
+          <div class="pend">
+            <span class="lg-avatar">{{ iniciales(sim.trabajador(p.trabajadorId)?.nombre ?? '') }}</span>
+            <div class="crece">
+              <strong>{{ sim.trabajador(p.trabajadorId)?.nombre }}</strong>
+              <small>{{ p.fecha.slice(8) }}/{{ p.fecha.slice(5, 7) }} · entrada {{ p.entrada ?? '—' }} · salida {{ p.salida ?? '—' }} · "{{ p.motivoManual }}"</small>
+            </div>
+            <button type="button" class="lg-cta" (click)="sim.aprobar(p.trabajadorId, p.fecha)"><i class="pi pi-check"></i> Aprobar</button>
+          </div>
+        }
+      </section>
+    }
+
     <section class="lg-card lg-scroll">
       <table class="lg-tabla">
         <thead><tr><th>Trabajador</th><th>Estado</th><th>Entrada</th><th>Salida</th><th>Cómo marcó</th><th>Dónde</th></tr></thead>
@@ -63,6 +79,11 @@ const AUSENCIAS: Record<string, string> = {
     .persona { display: flex; gap: 0.6rem; align-items: center; }
     .persona strong { display: block; font-size: 0.88rem; }
     .persona small, td small { color: var(--lg-muted); font-size: 0.76rem; }
+    .pendientes { margin-bottom: 1rem; border-color: #fde68a; background: #fffdf5; }
+    .pend { display: flex; gap: 0.7rem; align-items: center; padding: 0.55rem 0; border-top: 1px solid var(--lg-line); }
+    .pend strong { display: block; font-size: 0.88rem; }
+    .pend small { color: var(--lg-muted); font-size: 0.78rem; }
+    .crece { flex: 1; min-width: 0; }
   `,
 })
 export class AsistenciaHoy {
@@ -83,8 +104,16 @@ export class AsistenciaHoy {
         clase = 'sin-punto';
       } else if (m) {
         const r = resumenDia(m, h);
-        estado = m.salida ? `Salió · ${aHoras(r.trabajados)} h` : r.tardanza ? `Tarde (${r.tardanza} min)` : 'Presente';
+        estado = m.salida
+          ? `Salió${m.salidaEnCampo ? ' en campo' : ''} · ${aHoras(r.trabajados)} h`
+          : r.tardanza
+            ? `Tarde (${r.tardanza} min)`
+            : 'Presente';
         clase = r.tardanza && !m.salida ? 'bajo' : 'ok';
+        if (m.pendiente) {
+          estado = 'Por aprobar (sin GPS)';
+          clase = 'critico';
+        }
       }
       return { t, m, estado, clase };
     });

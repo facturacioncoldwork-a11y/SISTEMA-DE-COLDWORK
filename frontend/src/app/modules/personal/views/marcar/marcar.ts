@@ -54,6 +54,11 @@ export class Marcar {
   // ── Manual ────────────────────────────────────────────────────
   protected motivoManual = '';
 
+  // ── Sin GPS (celular que falla): lo registra el trabajador y lo aprueba el supervisor ──
+  protected readonly sinGps = signal(false);
+  protected horaDeclarada = '';
+  protected motivoDeclarado = '';
+
   protected readonly opciones = computed(() => this.sim.trabajadores().map((t) => ({ id: t.id, etiqueta: `${t.nombre} · ${t.cargo}` })));
   protected readonly oficina = OFICINA;
 
@@ -121,14 +126,29 @@ export class Marcar {
     this.motivoManual = '';
   }
 
-  private registrar(metodo: MetodoMarca, lugar: string, dentroDeZona: boolean, motivoManual?: string) {
-    const r = this.sim.marcar(this.trabajadorId(), { metodo, lugar, dentroDeZona, motivoManual });
+  protected abrirSinGps() {
+    const a = new Date();
+    this.horaDeclarada = `${String(a.getHours()).padStart(2, '0')}:${String(a.getMinutes()).padStart(2, '0')}`;
+    this.motivoDeclarado = '';
+    this.sinGps.set(true);
+  }
+
+  /** Para el que no pudo marcar con GPS: indica la hora y el motivo; queda "por aprobar". */
+  protected marcarSinGps() {
+    if (!/^\d{2}:\d{2}$/.test(this.horaDeclarada)) return this.error('Indica la hora.');
+    if (this.motivoDeclarado.trim().length < 5) return this.error('Cuenta brevemente qué pasó (ej. celular sin señal en la planta).');
+    this.registrar('manual', 'Declarado por el trabajador (sin GPS)', false, this.motivoDeclarado.trim(), true, this.horaDeclarada);
+    this.sinGps.set(false);
+  }
+
+  private registrar(metodo: MetodoMarca, lugar: string, dentroDeZona: boolean, motivoManual?: string, pendiente?: boolean, hora?: string) {
+    const r = this.sim.marcar(this.trabajadorId(), { metodo, lugar, dentroDeZona, motivoManual, pendiente }, hora);
     if (r === 'ya') return this.error('Ya marcó entrada y salida hoy.');
     const m = this.sim.marcaDe(this.trabajadorId());
     this.avisos.add({
       severity: 'success',
       summary: r === 'entrada' ? `Entrada registrada · ${m?.entrada}` : `Salida registrada · ${m?.salida}`,
-      detail: `${this.trabajador()?.nombre} · ${lugar}`,
+      detail: pendiente ? 'Queda por aprobar: el supervisor lo revisa en "Hoy".' : `${this.trabajador()?.nombre} · ${lugar}`,
       life: 4000,
     });
     this.selfie.set(null);

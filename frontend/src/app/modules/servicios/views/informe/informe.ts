@@ -7,7 +7,7 @@ import { map } from 'rxjs';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { Firma } from '../../components/firma/firma';
 import { ATS, ESTADOS_ORDEN, MEDICIONES, PRIORIDADES, TIPOS_SERVICIO } from '../../data/catalogos';
-import type { Foto, Informe } from '../../models/servicios.model';
+import type { Foto, Informe, SeccionInforme } from '../../models/servicios.model';
 import { ServiciosSim } from '../../services/servicios-sim.service';
 
 /**
@@ -42,6 +42,23 @@ export class InformeTecnico {
   protected readonly cerrada = computed(() => this.orden()?.estado === 'cerrada');
 
   protected readonly atsCompleto = computed(() => ATS.every((a) => this.inf()?.ats[a.clave]));
+
+  // ── Tiempo real: quién está en la orden y qué edita; mensajes del equipo ──
+  protected readonly presentes = computed(() => this.sim.presencia()[this.id()] ?? []);
+  protected texto = '';
+
+  protected editando(seccion: SeccionInforme): string | null {
+    const p = this.presentes().filter((x) => x.seccion === seccion);
+    return p.length ? p.map((x) => this.sim.tecnico(x.tecnicoId)?.nombre.split(' ')[0]).join(' y ') : null;
+  }
+
+  protected enviar() {
+    const o = this.orden();
+    const t = this.texto.trim();
+    if (!o || !t) return;
+    this.sim.enviarMensaje(o.id, { autorId: 'yo', autor: 'Tú', texto: t.slice(0, 500) });
+    this.texto = '';
+  }
   protected readonly nuevoRepuesto = signal({ descripcion: '', cantidad: 1, unidad: 'UND' });
 
   /** Avance del informe (para la barra): qué secciones ya tienen datos. */
@@ -144,6 +161,30 @@ export class InformeTecnico {
 
   protected imprimir() {
     window.print();
+  }
+
+  protected readonly generando = signal(false);
+
+  /** PDF formal con fotos y firma, listo para enviar al cliente. */
+  protected async descargarPdf() {
+    const o = this.orden();
+    if (!o) return;
+    this.generando.set(true);
+    try {
+      const { descargarInformePdf } = await import('../../services/informe-pdf');
+      const e = this.empresa.actual();
+      await descargarInformePdf({
+        orden: o,
+        cliente: this.cliente(),
+        equipo: this.equipo(),
+        tecnicos: o.tecnicos.flatMap((t) => this.sim.tecnico(t) ?? []),
+        empresa: { razonSocial: e?.razonSocial ?? 'COLD WORK S.A.C.', ruc: e?.ruc ?? null },
+      });
+    } catch {
+      this.avisos.add({ severity: 'error', summary: 'No se pudo generar el PDF', life: 4000 });
+    } finally {
+      this.generando.set(false);
+    }
   }
 
   protected volver() {

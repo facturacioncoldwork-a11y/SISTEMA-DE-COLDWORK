@@ -28,6 +28,10 @@ export interface Marca {
   /** Dentro de la oficina o de una obra con orden de trabajo asignada. */
   dentroDeZona: boolean;
   motivoManual?: string;
+  /** Marcada por el propio trabajador sin GPS (celular que falla): espera la aprobación del supervisor. */
+  pendiente?: boolean;
+  /** La salida se marcó fuera de la oficina (planta del cliente, de camino a casa). */
+  salidaEnCampo?: boolean;
 }
 
 export type Justificacion = 'descanso_medico' | 'vacaciones' | 'permiso' | 'licencia';
@@ -41,8 +45,10 @@ export interface Ausencia {
 export interface Horario {
   entrada: string;
   salida: string;
-  /** Minutos de refrigerio (mínimo 45, no forma parte de la jornada). */
+  /** Minutos de refrigerio (mínimo 45, no forma parte de la jornada). Se descuenta solo: no se marca. */
   refrigerio: number;
+  /** Hora en que empieza el refrigerio (ej. 12:00). */
+  refrigerioInicio: string;
   /** Minutos de tolerancia antes de contar tardanza. */
   tolerancia: number;
   /** Jornada ordinaria diaria en minutos (máximo 8 h). */

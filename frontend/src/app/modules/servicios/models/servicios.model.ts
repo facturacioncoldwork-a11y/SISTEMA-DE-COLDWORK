@@ -84,4 +84,16 @@ export interface OrdenTrabajo {
   descripcion: string;
   estado: EstadoOrden;
   informe: Informe;
+  /** Mensajes del equipo dentro de la orden (se ven al instante en todos los celulares). */
+  mensajes: Mensaje[];
 }
+
+export interface Mensaje {
+  autorId: string;
+  autor: string;
+  texto: string;
+  hora: string;
+}
+
+/** Sección del informe que alguien está editando ahora (presencia en tiempo real). */
+export type SeccionInforme = 'ats' | 'mediciones' | 'trabajos' | 'fotos' | 'conformidad';

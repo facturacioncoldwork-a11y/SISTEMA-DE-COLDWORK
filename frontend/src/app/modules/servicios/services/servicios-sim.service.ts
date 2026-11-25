@@ -1,7 +1,7 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { hoy } from '../../finanzas/utils/calculos';
 import { ATS, MEDICIONES } from '../data/catalogos';
-import type { Cliente, Equipo, EstadoOrden, Informe, OrdenTrabajo, Tecnico } from '../models/servicios.model';
+import type { Cliente, Equipo, EstadoOrden, Informe, Mensaje, OrdenTrabajo, SeccionInforme, Tecnico } from '../models/servicios.model';
 
 /**
  * SIMULACIÓN del área técnica: datos de ejemplo solo en memoria (no se guardan en la base).
@@ -49,7 +49,7 @@ export class ServiciosSim {
     return this.ordenes().find((o) => o.id === id);
   }
 
-  crear(o: Omit<OrdenTrabajo, 'id' | 'numero' | 'estado' | 'informe'>): OrdenTrabajo {
+  crear(o: Omit<OrdenTrabajo, 'id' | 'numero' | 'estado' | 'informe' | 'mensajes'>): OrdenTrabajo {
     const n = this.ordenes().length + 1;
     const nueva: OrdenTrabajo = {
       ...o,
@@ -57,6 +57,7 @@ export class ServiciosSim {
       numero: `OT-${String(240 + n).padStart(6, '0')}`,
       estado: 'programada',
       informe: informeVacio(),
+      mensajes: [],
     };
     this.ordenes.update((l) => [nueva, ...l]);
     return nueva;
@@ -68,6 +69,31 @@ export class ServiciosSim {
 
   actualizarInforme(id: string, cambios: Partial<Informe>) {
     this.ordenes.update((l) => l.map((o) => (o.id === id ? { ...o, informe: { ...o.informe, ...cambios } } : o)));
+  }
+
+  enviarMensaje(id: string, m: Omit<Mensaje, 'hora'>) {
+    const a = new Date();
+    const hora = `${String(a.getHours()).padStart(2, '0')}:${String(a.getMinutes()).padStart(2, '0')}`;
+    this.ordenes.update((l) => l.map((o) => (o.id === id ? { ...o, mensajes: [...o.mensajes, { ...m, hora }] } : o)));
+  }
+
+  // ── Presencia en tiempo real (simulada) ───────────────────────
+  // En la versión real: Supabase Realtime "presence" (cada celular avisa qué sección tiene abierta).
+  private readonly pulso = signal(0);
+  private readonly recorrido: SeccionInforme[] = ['mediciones', 'mediciones', 'trabajos', 'trabajos', 'fotos', 'ats'];
+
+  /** Quién está viendo o editando cada orden ahora, y en qué sección. */
+  readonly presencia = computed<Record<string, { tecnicoId: string; seccion: SeccionInforme }[]>>(() => {
+    const p = this.pulso();
+    return {
+      ot2: [{ tecnicoId: 't1', seccion: this.recorrido[p % this.recorrido.length] }],
+      ot1: [{ tecnicoId: 't2', seccion: 'conformidad' }],
+    };
+  });
+
+  constructor() {
+    const id = setInterval(() => this.pulso.update((n) => n + 1), 7000);
+    inject(DestroyRef).onDestroy(() => clearInterval(id));
   }
 
   private ejemplo(): OrdenTrabajo[] {
@@ -97,11 +123,17 @@ export class ServiciosSim {
       fin: `${h}T12:15`,
     });
     return [
-      { id: 'ot1', numero: 'OT-000241', clienteId: 'c1', equipoId: 'e1', tipo: 'correctivo', prioridad: 'urgente', tecnicos: ['t1', 't2'], fecha: h, hora: '08:30', descripcion: 'La cámara no baja de -10 °C. Producto en riesgo.', estado: 'por_firmar', informe: lleno() },
-      { id: 'ot2', numero: 'OT-000242', clienteId: 'c2', equipoId: 'e3', tipo: 'preventivo', prioridad: 'media', tecnicos: ['t1'], fecha: h, hora: '14:00', descripcion: 'Mantenimiento trimestral del chiller.', estado: 'en_curso', informe: { ...informeVacio(), ats: { epp: true, sctr: true, loto: true }, inicio: `${h}T14:05` } },
-      { id: 'ot3', numero: 'OT-000243', clienteId: 'c3', equipoId: 'e4', tipo: 'inspeccion', prioridad: 'alta', tecnicos: ['t3'], fecha: h, hora: '16:30', descripcion: 'Vitrina con escarcha excesiva.', estado: 'programada', informe: informeVacio() },
-      { id: 'ot4', numero: 'OT-000244', clienteId: 'c1', equipoId: 'e2', tipo: 'preventivo', prioridad: 'baja', tecnicos: ['t2'], fecha: h, hora: '10:00', descripcion: 'Limpieza de evaporadores del túnel.', estado: 'programada', informe: informeVacio() },
-      { id: 'ot5', numero: 'OT-000240', clienteId: 'c2', equipoId: 'e3', tipo: 'correctivo', prioridad: 'alta', tecnicos: ['t1', 't3'], fecha: h, hora: '07:00', descripcion: 'Cambio de contactor del compresor 2.', estado: 'cerrada', informe: { ...lleno(), firmaNombre: 'Miguel Torres', firmaDni: '40000000' } },
+      { id: 'ot1', numero: 'OT-000241', clienteId: 'c1', equipoId: 'e1', tipo: 'correctivo', prioridad: 'urgente', tecnicos: ['t1', 't2'], fecha: h, hora: '08:30', descripcion: 'La cámara no baja de -10 °C. Producto en riesgo.', estado: 'por_firmar', informe: lleno(), mensajes: [
+        { autorId: 't2', autor: 'Luis Quispe', texto: 'Ya desenergicé el tablero, pueden empezar.', hora: '08:42' },
+        { autorId: 't1', autor: 'Carlos Huamán', texto: 'Encontré el filtro secador saturado, lo cambio. ¿Alguien trae núcleos de válvula?', hora: '09:15' },
+        { autorId: 't2', autor: 'Luis Quispe', texto: 'Sí, tengo dos en la camioneta.', hora: '09:17' },
+      ] },
+      { id: 'ot2', numero: 'OT-000242', clienteId: 'c2', equipoId: 'e3', tipo: 'preventivo', prioridad: 'media', tecnicos: ['t1'], fecha: h, hora: '14:00', descripcion: 'Mantenimiento trimestral del chiller.', estado: 'en_curso', informe: { ...informeVacio(), ats: { epp: true, sctr: true, loto: true }, inicio: `${h}T14:05` }, mensajes: [
+        { autorId: 't1', autor: 'Carlos Huamán', texto: 'Llegué a la planta, empiezo con el ATS.', hora: '14:03' },
+      ] },
+      { id: 'ot3', numero: 'OT-000243', clienteId: 'c3', equipoId: 'e4', tipo: 'inspeccion', prioridad: 'alta', tecnicos: ['t3'], fecha: h, hora: '16:30', descripcion: 'Vitrina con escarcha excesiva.', estado: 'programada', informe: informeVacio(), mensajes: [] },
+      { id: 'ot4', numero: 'OT-000244', clienteId: 'c1', equipoId: 'e2', tipo: 'preventivo', prioridad: 'baja', tecnicos: ['t2'], fecha: h, hora: '10:00', descripcion: 'Limpieza de evaporadores del túnel.', estado: 'programada', informe: informeVacio(), mensajes: [] },
+      { id: 'ot5', numero: 'OT-000240', clienteId: 'c2', equipoId: 'e3', tipo: 'correctivo', prioridad: 'alta', tecnicos: ['t1', 't3'], fecha: h, hora: '07:00', descripcion: 'Cambio de contactor del compresor 2.', estado: 'cerrada', informe: { ...lleno(), firmaNombre: 'Miguel Torres', firmaDni: '40000000' }, mensajes: [] },
     ];
   }
 }
