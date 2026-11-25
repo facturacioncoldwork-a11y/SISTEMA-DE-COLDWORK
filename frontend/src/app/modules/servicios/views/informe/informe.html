@@ -210,10 +210,11 @@
       </label>
 
       <div class="conformidad">
-        @if (i.firmaCliente) {
-          <img class="firma-img" [src]="i.firmaCliente" alt="Firma del cliente" />
-        } @else if (o.estado === 'por_firmar') {
+        @if (o.estado === 'por_firmar') {
+          <!-- El recuadro sigue activo (se puede seguir firmando o borrar) hasta cerrar la orden -->
           <app-firma (firmada)="cambiar({ firmaCliente: $event ?? undefined })" />
+        } @else if (i.firmaCliente) {
+          <img class="firma-img" [src]="i.firmaCliente" alt="Firma del cliente" />
         } @else {
           <p class="vacio">La firma se pide al terminar el servicio.</p>
         }

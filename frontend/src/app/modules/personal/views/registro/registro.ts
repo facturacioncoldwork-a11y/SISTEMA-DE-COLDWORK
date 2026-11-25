@@ -16,7 +16,7 @@ import { aHoras, resumenDia } from '../../utils/horas';
     </section>
 
     <div class="lg-toolbar">
-      <strong class="mes">{{ nombreMes }}</strong>
+      <strong class="mes" style="display: inline-block">{{ nombreMes }}</strong>
       <span class="espacio"></span>
       <button type="button" class="lg-cta lg-cta--suave" (click)="exportar()"><i class="pi pi-download"></i> Registro del mes (CSV)</button>
     </div>
@@ -70,9 +70,9 @@ import { aHoras, resumenDia } from '../../utils/horas';
     <p class="nota"><i class="pi pi-info-circle"></i> Este registro alimenta la planilla (PLAME). Las horas extra solo se pagan si fueron autorizadas; el sistema las calcula desde los 10 minutos.</p>
   `,
   styles: `
-    .mes { text-transform: capitalize; }
+    .mes::first-letter { text-transform: uppercase; }
     .rejilla { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem; align-items: start; }
-    @media (max-width: 1100px) { .rejilla { grid-template-columns: 1fr; } }
+    @media (max-width: 1400px) { .rejilla { grid-template-columns: 1fr; } }
     .sub { display: block; font-size: 0.75rem; color: var(--lg-muted); }
     .clic { cursor: pointer; }
     .sel td { background: #eff6ff; }
