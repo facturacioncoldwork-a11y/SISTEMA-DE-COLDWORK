@@ -1,0 +1,265 @@
+@if (exp(); as e) {
+  @let i = indice();
+  @let c = cliente();
+
+  <!-- Cabecera -->
+  <section class="lg-card cabecera">
+    <div class="fila">
+      <div>
+        <span class="lg-mono cod">{{ e.codigo }}{{ e.ordenCliente ? ' · Orden del cliente ' + e.ordenCliente.numero : '' }}</span>
+        <h2>{{ e.titulo }}</h2>
+        <p>{{ c?.razonSocial }} · {{ c?.contacto }}</p>
+      </div>
+      <div class="der">
+        @if (e.cotizacion) {
+          <span class="monto">{{ dineroExp(e.cotizacion.monto) }} <small>+ IGV · {{ e.cotizacion.numero }}</small></span>
+        }
+        <span class="resp"><span class="lg-avatar">{{ iniciales(sim.persona(e.responsableId)?.nombre) }}</span> {{ sim.persona(e.responsableId)?.nombre }}</span>
+      </div>
+    </div>
+
+    <ol class="etapas">
+      @for (p of etapas; track p.clave; let j = $index) {
+        <li [class.hecho]="j < i" [class.actual]="j === i">
+          <span class="bola"><i [class]="j < i ? 'pi pi-check' : p.icono"></i></span>
+          <span class="nombre">{{ p.nombre }}</span>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <div class="rejilla">
+    <!-- Columna principal: etapa actual -->
+    <div class="principal">
+      <section class="lg-card actual">
+        <div class="lg-card__head">
+          <div>
+            <h3><i [class]="etapas[i].icono"></i> {{ etapas[i].nombre }}</h3>
+            <p>{{ etapas[i].espera }}</p>
+          </div>
+        </div>
+
+        @switch (e.etapa) {
+          @case ('solicitud') {
+            <blockquote>{{ e.solicitud || 'Sin detalle' }}</blockquote>
+            <form class="lg-form" (ngSubmit)="registrarCotizacion()">
+              <div><label for="f-cot">N.° de cotización</label><input id="f-cot" name="cot" placeholder="COT-2026-092" [(ngModel)]="f.cotNumero" /></div>
+              <div><label for="f-monto">Monto sin IGV (S/)</label><input id="f-monto" name="monto" type="number" min="0" step="0.01" [(ngModel)]="f.cotMonto" /></div>
+              <div class="full acciones"><button type="submit" class="lg-cta"><i class="pi pi-send"></i> Cotización enviada</button></div>
+            </form>
+          }
+          @case ('cotizacion') {
+            <p class="dato">Cotización <b>{{ e.cotizacion?.numero }}</b> por <b>{{ dineroExp(e.cotizacion?.monto ?? 0) }}</b> + IGV, enviada el {{ e.cotizacion?.fecha?.split('-')?.reverse()?.join('/') }}.</p>
+            <form class="lg-form" (ngSubmit)="registrarOrdenCliente()">
+              <div class="full"><label for="f-oc">N.° de orden de compra / servicio del cliente</label><input id="f-oc" name="oc" placeholder="OS-4500022010" [(ngModel)]="f.ocNumero" /></div>
+              <p class="full nota">Sin el número de orden del cliente, las empresas grandes no aceptan la factura.</p>
+              <div class="full acciones"><button type="submit" class="lg-cta"><i class="pi pi-verified"></i> El cliente aprobó</button></div>
+            </form>
+          }
+          @case ('orden_cliente') {
+            @if (!adelantoListo()) {
+              <p class="alerta"><i class="pi pi-lock"></i><span>Puedes ir coordinando, pero el ingreso se confirma cuando el cliente pague <b>{{ e.hitos?.[0]?.descripcion }}</b> ({{ dineroExp(e.hitos?.[0]?.monto ?? 0) }}).</span></p>
+            }
+            <span class="lbl">¿Quiénes ingresan a la planta?</span>
+            <div class="personal">
+              @for (t of tecnicosIngreso(); track t.id) {
+                <button type="button" class="per" [class.on]="t.elegido" [disabled]="t.vencido" (click)="alternarPersonal(t.id)">
+                  <span class="lg-avatar">{{ iniciales(t.nombre) }}</span>
+                  <span><strong>{{ t.nombre }}</strong><small [class.mal]="t.vencido">{{ t.vencido ? 'SCTR vencido: no puede ingresar' : t.sctrHasta ? 'SCTR al ' + t.sctrHasta.split('-').reverse().join('/') : 'SCTR aún no registrado' }}</small></span>
+                </button>
+              }
+            </div>
+            @for (v of sctrVencidos(); track v.id) {
+              <p class="alerta">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span><b>{{ v.nombre }}</b> estaba asignado, pero su SCTR venció el {{ v.sctrHasta?.split('-')?.reverse()?.join('/') }}: no puede ingresar a la planta.</span>
+                <button type="button" class="lg-cta lg-cta--suave chico" (click)="alternarPersonal(v.id)">Quitarlo</button>
+              </p>
+            }
+            <div class="checks">
+              <label><input type="checkbox" [checked]="e.ingreso.sctrEnviado" (change)="marcarIngreso('sctrEnviado', $any($event.target).checked)" /> SCTR enviados a seguridad de la planta</label>
+              <label><input type="checkbox" [checked]="e.ingreso.induccion" (change)="marcarIngreso('induccion', $any($event.target).checked)" /> Inducción de seguridad hecha</label>
+              <label><input type="checkbox" [checked]="e.ingreso.guiaRemision" (change)="marcarIngreso('guiaRemision', $any($event.target).checked)" /> Guía de remisión de materiales (si llevan)</label>
+            </div>
+            <div class="fila-acc">
+              <label class="fecha">Ingreso el <input type="date" [(ngModel)]="f.fechaIngreso" /></label>
+              <button type="button" class="lg-cta lg-cta--suave" (click)="abrirCorreo()"><i class="pi pi-envelope"></i> Preparar correo de ingreso</button>
+              <button type="button" class="lg-cta" (click)="confirmarIngreso()"><i class="pi pi-check"></i> Ingreso confirmado</button>
+            </div>
+            @if (e.ingreso.correoEnviado) {
+              <p class="ok"><i class="pi pi-check-circle"></i> Correo de ingreso preparado.</p>
+            }
+          }
+          @case ('ingreso') {
+            <p class="dato">Ingreso confirmado para el <b>{{ e.ingreso.fecha?.split('-')?.reverse()?.join('/') }}</b> con {{ e.ingreso.personal.length }} técnico(s).</p>
+            <button type="button" class="lg-cta" (click)="crearOrden()"><i class="pi pi-wrench"></i> Crear la orden de trabajo para los técnicos</button>
+          }
+          @case ('ejecucion') {
+            <ul class="ots">
+              @for (o of ordenes(); track o.id) {
+                <li>
+                  <a [routerLink]="['/servicios/ordenes', o.id]">
+                    <span class="lg-mono">{{ o.numero }}</span>
+                    <span class="lg-chip" [class]="estadosOrden[o.estado].clase">{{ estadosOrden[o.estado].nombre }}</span>
+                    <span class="ver">Ver informe técnico →</span>
+                  </a>
+                </li>
+              }
+            </ul>
+            <form class="lg-form" (ngSubmit)="registrarConformidad()">
+              <div class="full"><label for="f-hes">HES del cliente (si la emite)</label><input id="f-hes" name="hes" placeholder="Hoja de entrada de servicio" [(ngModel)]="f.hes" /></div>
+              <div class="full acciones">
+                <button type="submit" class="lg-cta" [disabled]="!ordenesCerradas()"><i class="pi pi-check-square"></i> Conformidad recibida</button>
+                @if (!ordenesCerradas()) {
+                  <small class="nota">Se habilita cuando el informe técnico está firmado por el cliente.</small>
+                }
+              </div>
+            </form>
+          }
+          @case ('conformidad') {
+            <p class="dato">Conformidad del {{ e.conformidad?.fecha?.split('-')?.reverse()?.join('/') }}{{ e.conformidad?.hes ? ' · HES ' + e.conformidad?.hes : '' }}.</p>
+            <form class="lg-form" (ngSubmit)="registrarFactura()">
+              <div class="full"><label for="f-fac">Factura</label><input id="f-fac" name="fac" placeholder="F001-126" [(ngModel)]="f.factura" /></div>
+              <p class="full nota">En la versión real se registra en Ventas (con detracción del 12 % y su asiento contable) citando la orden {{ e.ordenCliente?.numero }}.</p>
+              <div class="full acciones"><button type="submit" class="lg-cta"><i class="pi pi-receipt"></i> Factura emitida</button></div>
+            </form>
+          }
+          @case ('facturado') {
+            <p class="dato">Factura <b>{{ e.factura?.numero }}</b> del {{ e.factura?.fecha?.split('-')?.reverse()?.join('/') }} por {{ dineroExp((e.cotizacion?.monto ?? 0) * 1.18) }} (con IGV).</p>
+            <button type="button" class="lg-cta" (click)="registrarCobro()"><i class="pi pi-wallet"></i> Cobro recibido</button>
+          }
+          @case ('cobrado') {
+            <div class="lg-vacio"><i class="pi pi-check-circle"></i><h4>Servicio terminado y cobrado</h4><p>Todo quedó registrado en el historial.</p></div>
+          }
+        }
+      </section>
+
+      <!-- Historial -->
+      <section class="lg-card">
+        <div class="lg-card__head"><div><h3>Historial</h3><p>Todo lo que pasó, con quién y cuándo</p></div></div>
+        <ol class="historial">
+          @for (h of e.historial; track $index) {
+            <li><span class="cuando">{{ h.fecha.slice(8, 10) }}/{{ h.fecha.slice(5, 7) }} {{ h.fecha.slice(11) }}</span><span><b>{{ h.autor }}:</b> {{ h.texto }}</span></li>
+          }
+        </ol>
+      </section>
+    </div>
+
+    <!-- Columna lateral -->
+    <div class="lateral">
+      @if (e.hitos?.length) {
+        <section class="lg-card pagos">
+          <div class="lg-card__head">
+            <div><h3>Forma de pago</h3><p>De la cotización {{ e.cotizacion?.numero }}</p></div>
+            @if (!adelantoListo()) {
+              <span class="lg-chip critico">Falta el adelanto</span>
+            }
+          </div>
+          <ul class="hitos">
+            @for (h of e.hitos; track h.id) {
+              <li>
+                <div class="crece">
+                  <span>{{ h.descripcion }} · <b>{{ h.porcentaje }} %</b></span>
+                  <small>{{ dineroExp(h.monto) }}{{ h.factura ? ' · ' + h.factura : '' }}</small>
+                </div>
+                @switch (h.estado) {
+                  @case ('pendiente') {
+                    <span class="facturar">
+                      <input type="text" placeholder="N.° factura" [(ngModel)]="facturaHito[h.id]" [attr.aria-label]="'Factura de ' + h.descripcion" />
+                      <button type="button" class="lg-cta lg-cta--suave chico" (click)="facturarHito(h.id)">Facturar</button>
+                    </span>
+                  }
+                  @case ('facturado') {
+                    <button type="button" class="lg-chip bajo boton" (click)="cobrarHito(h.id)" title="Marcar como cobrado">Facturado · ¿cobrado?</button>
+                  }
+                  @case ('cobrado') {
+                    <span class="lg-chip ok">Cobrado</span>
+                  }
+                }
+              </li>
+            }
+          </ul>
+          @if (e.exigirAdelanto) {
+            <p class="nota"><i class="pi pi-lock"></i> No se programa el trabajo hasta cobrar el primer adelanto.</p>
+          }
+          <p class="nota">Cada adelanto se factura al recibirlo (con IGV y detracción si pasa S/ 700); la factura final descuenta los adelantos.</p>
+        </section>
+      }
+
+      <section class="lg-card">
+        <div class="lg-card__head"><div><h3>Tareas</h3><p>Lo que cada uno tiene que hacer</p></div></div>
+        <ul class="tareas">
+          @for (t of e.tareas; track t.id) {
+            <li [class.hecha]="t.hecha">
+              <input type="checkbox" [checked]="t.hecha" (change)="sim.alternarTarea(e.id, t.id)" [attr.aria-label]="t.texto" />
+              <div class="crece">
+                <span>{{ t.texto }}</span>
+                <small>
+                  <span class="lg-avatar mini">{{ iniciales(sim.persona(t.asignadoA)?.nombre) }}</span>
+                  {{ sim.persona(t.asignadoA)?.nombre }} ·
+                  <span [class.mal]="!t.hecha && t.vence < hoy">{{ t.vence < hoy && !t.hecha ? 'venció' : 'vence' }} {{ t.vence.slice(8) }}/{{ t.vence.slice(5, 7) }}</span>
+                </small>
+              </div>
+            </li>
+          } @empty {
+            <li class="vacio">Sin tareas</li>
+          }
+        </ul>
+        <form class="agregar" (ngSubmit)="agregarTarea()">
+          <input type="text" name="tt" placeholder="Ej. Comprar 2 filtros secadores" [(ngModel)]="nuevaTarea.texto" aria-label="Nueva tarea" />
+          <div class="fila2">
+            <select name="ta" [(ngModel)]="nuevaTarea.asignadoA" aria-label="Para quién">
+              @for (p of sim.asignables(); track p.id) {
+                <option [value]="p.id">{{ p.nombre }}</option>
+              }
+            </select>
+            <input type="date" name="tv" [(ngModel)]="nuevaTarea.vence" aria-label="Vence" />
+            <button type="submit" class="lg-cta"><i class="pi pi-plus"></i></button>
+          </div>
+        </form>
+      </section>
+
+      <section class="lg-card">
+        <div class="lg-card__head"><div><h3>Materiales y compras</h3><p>Toca el estado para avanzarlo</p></div></div>
+        <ul class="compras">
+          @for (k of e.compras; track k.id) {
+            <li>
+              <div class="crece"><span>{{ k.descripcion }}</span><small>{{ k.proveedor }}</small></div>
+              <button type="button" class="lg-chip" [class]="estadosCompra[k.estado].clase" [disabled]="!estadosCompra[k.estado].siguiente" (click)="avanzarCompra(e, k)">
+                {{ estadosCompra[k.estado].nombre }}
+              </button>
+            </li>
+          } @empty {
+            <li class="vacio">Sin materiales por comprar</li>
+          }
+        </ul>
+        <form class="agregar" (ngSubmit)="agregarCompra()">
+          <input type="text" name="cd" placeholder="Material o equipo" [(ngModel)]="nuevaCompra.descripcion" aria-label="Material" />
+          <div class="fila2">
+            <input type="text" name="cp" placeholder="Proveedor" [(ngModel)]="nuevaCompra.proveedor" aria-label="Proveedor" />
+            <button type="submit" class="lg-cta"><i class="pi pi-plus"></i></button>
+          </div>
+        </form>
+        <p class="nota">En la versión real, "Pedido al proveedor" crea la orden de compra en Logística.</p>
+      </section>
+    </div>
+  </div>
+
+  <!-- Correo de ingreso a planta -->
+  <p-dialog [(visible)]="correo" [modal]="true" [draggable]="false" [style]="{ width: 'min(44rem, 96vw)' }" header="Correo de ingreso a planta">
+    @let t = textoCorreo();
+    <div class="correo">
+      <span class="lbl">Asunto</span>
+      <p class="asunto">{{ t.asunto }}</p>
+      <span class="lbl">Mensaje</span>
+      <pre>{{ t.cuerpo }}</pre>
+      <p class="nota">Adjunta las constancias de SCTR de cada técnico. En la versión real se adjuntan solas y se envía desde la app.</p>
+      <div class="lg-pie-dialogo">
+        <button type="button" class="lg-cta lg-cta--suave" (click)="correo.set(false)">Cerrar</button>
+        <button type="button" class="lg-cta" (click)="copiarCorreo()"><i class="pi pi-copy"></i> Copiar correo</button>
+      </div>
+    </div>
+  </p-dialog>
+} @else {
+  <div class="lg-vacio"><i class="pi pi-search"></i><h4>No encontramos ese expediente</h4><p><a routerLink="/proyectos">Volver</a></p></div>
+}

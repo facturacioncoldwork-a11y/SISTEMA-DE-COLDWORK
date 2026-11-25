@@ -1,5 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { mensajeError } from '../../../core/api/errores';
 import { MessageService } from 'primeng/api';
 import {
   antiguedadDe,
@@ -136,11 +136,5 @@ export class LogisticaStore {
   }
 }
 
-export function mensajeError(e: unknown): string | undefined {
-  if (e instanceof HttpErrorResponse) {
-    if (e.status === 0) return 'La API no responde. Revisa que el backend esté encendido.';
-    const m = (e.error as { message?: string | string[] } | null)?.message;
-    return Array.isArray(m) ? m.join(' · ') : m;
-  }
-  return e instanceof Error ? e.message : undefined;
-}
+/** Una sola versión para toda la app (core/api/errores). */
+export { mensajeError };

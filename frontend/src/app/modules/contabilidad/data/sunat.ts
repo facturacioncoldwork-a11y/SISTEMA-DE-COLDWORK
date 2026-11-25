@@ -39,8 +39,8 @@ export function nombreOrigen(origen: OrigenAsiento): string {
 
 // ─── Impuestos ──────────────────────────────────────────────────
 
-/** IGV 16 % + IPM 2 %. */
-export const TASA_IGV = 0.18;
+/** IGV 16 % + IPM 2 % (valor único en core/utils/montos). */
+export { TASA_IGV } from '../../../core/utils/montos';
 
 // ─── Libros electrónicos ────────────────────────────────────────
 

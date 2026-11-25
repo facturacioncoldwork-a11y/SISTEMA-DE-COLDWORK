@@ -1,19 +1,18 @@
+import { redondear, TASA_IGV } from '../../../core/utils/montos';
 import { UMBRAL_DETRACCION } from '../data/finanzas';
+
+/** IGV y redondeo compartidos (core/utils/montos). */
+export { redondear, TASA_IGV };
 
 /**
  * Cálculos tributarios de Perú usados en los formularios.
  * La base de datos vuelve a validarlos antes de guardar.
  */
 
-export const TASA_IGV = 0.18;
 /** Retención de 4.ª categoría en recibos por honorarios. */
 export const TASA_RETENCION_4TA = 0.08;
 /** Se retiene si el recibo supera S/ 1 500. */
 export const UMBRAL_RETENCION_4TA = 1500;
-
-export function redondear(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100;
-}
 
 export function igvDe(baseGravada: number): number {
   return redondear(baseGravada * TASA_IGV);

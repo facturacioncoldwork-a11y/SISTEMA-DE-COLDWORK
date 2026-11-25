@@ -13,10 +13,10 @@ import type {
  * Funciones puras: no dependen de Angular y tienen pruebas en partida-doble.spec.ts.
  */
 
-/** Redondea a céntimos para evitar errores de coma flotante. */
-export function redondear(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100;
-}
+import { redondear } from '../../../core/utils/montos';
+
+/** Redondeo a céntimos compartido (core/utils/montos). */
+export { redondear };
 
 // ─── Validación de asientos ─────────────────────────────────────
 

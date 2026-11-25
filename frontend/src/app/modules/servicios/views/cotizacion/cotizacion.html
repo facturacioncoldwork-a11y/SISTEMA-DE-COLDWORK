@@ -1,0 +1,234 @@
+@if (c(); as q) {
+  @let t = totales()!;
+
+  <!-- Barra de acciones -->
+  <div class="lg-toolbar">
+    <a class="lg-cta lg-cta--suave" routerLink="/proyectos/cotizaciones"><i class="pi pi-arrow-left"></i> Cotizaciones</a>
+    <span class="lg-mono numero">{{ q.numero }}</span>
+    @switch (q.estado) {
+      @case ('borrador') { <span class="lg-chip sin-punto">Borrador</span> }
+      @case ('enviada') { <span class="lg-chip" [class]="vencida() ? 'critico' : 'bajo'">{{ vencida() ? 'Vencida el ' + fechaPe(vence()) : 'Enviada · vence ' + fechaPe(vence()) }}</span> }
+      @case ('aprobada') { <span class="lg-chip ok">Aprobada</span> }
+      @case ('rechazada') { <span class="lg-chip agotado">Rechazada: {{ q.motivoRechazo }}</span> }
+    }
+    <span class="espacio"></span>
+    <label class="interno"><input type="checkbox" [checked]="verCostos()" (change)="verCostos.set(!verCostos())" /> Ver costos y margen (interno)</label>
+    <button type="button" class="lg-cta lg-cta--suave" (click)="descargarPdf()" [disabled]="generando()">
+      <i [class]="generando() ? 'pi pi-spin pi-spinner' : 'pi pi-file-pdf'"></i> PDF
+    </button>
+    @switch (q.estado) {
+      @case ('borrador') {
+        <button type="button" class="lg-cta lg-cta--suave" (click)="guardar()" [disabled]="!cambios()"><i class="pi pi-save"></i> Guardar</button>
+        <button type="button" class="lg-cta" (click)="enviar()"><i class="pi pi-send"></i> Enviar al cliente</button>
+      }
+      @case ('enviada') {
+        <button type="button" class="lg-cta lg-cta--suave" (click)="volverABorrador()"><i class="pi pi-pencil"></i> Corregir</button>
+        <button type="button" class="lg-cta lg-cta--suave" (click)="dialogoRechazo.set(true)"><i class="pi pi-times"></i> Rechazó</button>
+        <button type="button" class="lg-cta" (click)="ocNumero = ''; dialogoAprobar.set(true)"><i class="pi pi-verified"></i> El cliente aprobó</button>
+      }
+      @case ('aprobada') {
+        @if (q.expedienteId) {
+          <a class="lg-cta" [routerLink]="['/proyectos/servicios', q.expedienteId]"><i class="pi pi-folder-open"></i> Ver el servicio</a>
+        }
+      }
+    }
+  </div>
+
+  <div class="rejilla">
+    <div class="hoja">
+      <!-- Datos del cliente -->
+      <section class="lg-card">
+        <div class="lg-card__head"><div><h3>Datos de la cotización</h3><p>{{ q.serie === 'PROY' ? 'Proyecto' : 'Servicio' }} · se envía a nombre del RUC del cliente</p></div></div>
+        <div class="campos">
+          <label class="ancho">Cliente
+            <select [ngModel]="q.clienteId" (ngModelChange)="campo('clienteId', $event)" [disabled]="!editable()">
+              <option value="">Elige el cliente</option>
+              @for (cl of servicios.clientes(); track cl.id) {
+                <option [value]="cl.id">{{ cl.razonSocial }} · RUC {{ cl.ruc }}</option>
+              }
+            </select>
+          </label>
+          <label>Atención<input [ngModel]="q.atencion" (ngModelChange)="campo('atencion', $event)" [disabled]="!editable()" /></label>
+          <label>Celular<input [ngModel]="q.celular" (ngModelChange)="campo('celular', $event)" [disabled]="!editable()" inputmode="tel" /></label>
+          <label class="ancho">Proyecto / servicio<input [ngModel]="q.proyecto" (ngModelChange)="campo('proyecto', $event)" [disabled]="!editable()" /></label>
+          <label>Ubicación<input [ngModel]="q.ubicacion" (ngModelChange)="campo('ubicacion', $event)" [disabled]="!editable()" /></label>
+          <label>Fecha<input type="date" [ngModel]="q.fecha" (ngModelChange)="campo('fecha', $event)" [disabled]="!editable()" /></label>
+          <label>Validez de la oferta (días)<input type="number" min="1" [ngModel]="q.validezDias" (ngModelChange)="campo('validezDias', +$event)" [disabled]="!editable()" /></label>
+          <label>Moneda
+            <select [ngModel]="q.moneda" (ngModelChange)="campo('moneda', $event)" [disabled]="!editable()">
+              <option value="USD">Dólares (US$)</option>
+              <option value="PEN">Soles (S/)</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <!-- Secciones -->
+      @for (s of q.secciones; track s.id; let si = $index) {
+        <section class="lg-card seccion">
+          <div class="titulo-sec">
+            <span class="item">{{ si + 1 }}</span>
+            <input class="titulo" [ngModel]="s.titulo" (ngModelChange)="tituloSeccion(si, $event)" [disabled]="!editable()" aria-label="Título de la sección" />
+            @if (editable()) {
+              <button type="button" class="icono" (click)="quitarSeccion(si)" title="Quitar sección" aria-label="Quitar sección"><i class="pi pi-trash"></i></button>
+            }
+          </div>
+          <table class="lineas">
+            <thead>
+              <tr>
+                <th>Descripción</th><th class="u">Unidad</th><th class="n">Cant.</th><th class="p">P. unitario</th>
+                @if (verCostos()) { <th class="p interno-col">Costo unit.</th> }
+                <th class="p">Total</th><th class="acc"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of s.lineas; track l.id; let li = $index) {
+                <tr>
+                  @if (editable()) {
+                    <td><input [ngModel]="l.descripcion" (ngModelChange)="linea(si, li, { descripcion: $event })" placeholder="Descripción" [title]="l.descripcion" /></td>
+                    <td class="u">
+                      <select [ngModel]="l.unidad" (ngModelChange)="linea(si, li, { unidad: $event })">
+                        @for (u of unidades; track u) { <option [value]="u">{{ u }}</option> }
+                      </select>
+                    </td>
+                    <td class="n"><input type="number" min="0" step="1" [ngModel]="l.cantidad" (ngModelChange)="linea(si, li, { cantidad: +$event })" /></td>
+                    <td class="p"><input type="number" min="0" step="0.01" [ngModel]="l.precio" (ngModelChange)="linea(si, li, { precio: +$event })" /></td>
+                    @if (verCostos()) {
+                      <td class="p interno-col"><input type="number" min="0" step="0.01" [ngModel]="l.costo" (ngModelChange)="linea(si, li, { costo: $event === '' ? null : +$event })" /></td>
+                    }
+                  } @else {
+                    <!-- Enviada o aprobada: se lee completo, sin cortar -->
+                    <td class="texto">{{ l.descripcion }}</td>
+                    <td class="u">{{ l.unidad }}</td>
+                    <td class="n">{{ l.cantidad }}</td>
+                    <td class="p">{{ dinero(l.precio) }}</td>
+                    @if (verCostos()) {
+                      <td class="p interno-col">{{ l.costo === null || l.costo === undefined ? '—' : dinero(l.costo) }}</td>
+                    }
+                  }
+                  <td class="p total">{{ dinero(totalLinea(l)) }}</td>
+                  <td class="acc">
+                    @if (editable()) {
+                      <button type="button" class="icono" (click)="quitarLinea(si, li)" aria-label="Quitar línea"><i class="pi pi-times"></i></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2">
+                  @if (editable()) {
+                    <button type="button" class="enlace" (click)="agregarLinea(si)"><i class="pi pi-plus"></i> Agregar línea</button>
+                  }
+                </td>
+                <td [attr.colspan]="verCostos() ? 3 : 2" class="sub-et">Subtotal</td>
+                <td class="p total">{{ dinero(subtotalSeccion(s)) }}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
+      }
+      @if (editable()) {
+        <button type="button" class="lg-cta lg-cta--suave agregar-sec" (click)="agregarSeccion()"><i class="pi pi-plus"></i> Agregar sección (ej. Pasillo, Paneles y puertas, Viáticos)</button>
+      }
+
+      <!-- Condiciones -->
+      <section class="lg-card">
+        <div class="lg-card__head"><div><h3>Condiciones</h3><p>Tiempo de entrega, notas y detracción</p></div></div>
+        <div class="campos">
+          <label class="ancho">Tiempo de entrega<input [ngModel]="q.tiempoEntrega" (ngModelChange)="campo('tiempoEntrega', $event)" [disabled]="!editable()" placeholder="Ej. 2 a 3 meses" /></label>
+          <label>Detracción que aplica
+            <select [ngModel]="q.detraccion" (ngModelChange)="campo('detraccion', +$event)" [disabled]="!editable()">
+              <option [ngValue]="0">No aplica</option>
+              <option [ngValue]="12">12 % · Servicios / mantenimiento</option>
+              <option [ngValue]="4">4 % · Contratos de construcción</option>
+              <option [ngValue]="10">10 % · Arrendamiento</option>
+            </select>
+          </label>
+          <label class="todo">Notas (lo que no incluye, plazos de ensamblado…)
+            <textarea rows="3" [ngModel]="q.notas" (ngModelChange)="campo('notas', $event)" [disabled]="!editable()"></textarea>
+          </label>
+        </div>
+      </section>
+    </div>
+
+    <!-- Resumen lateral -->
+    <aside class="resumen">
+      <section class="lg-card">
+        <div class="lg-card__head"><div><h3>Inversión</h3><p>{{ q.moneda === 'USD' ? 'En dólares' : 'En soles' }}</p></div></div>
+        <dl class="totales">
+          <dt>Valor de venta</dt><dd>{{ dinero(t.valorVenta) }}</dd>
+          <dt>IGV 18 %</dt><dd>{{ dinero(t.igv) }}</dd>
+          <dt class="grande">Total</dt><dd class="grande">{{ dinero(t.total) }}</dd>
+        </dl>
+        @if (verCostos()) {
+          <div class="margen">
+            <span>Costo (líneas con costo): <b>{{ dinero(t.costo) }}</b></span>
+            <span>Margen: <b [class.lg-neg]="(t.margen ?? 0) < 10">{{ t.margen === null ? '—' : t.margen + ' %' }}</b></span>
+            <small>Solo lo ves tú y el coordinador: no sale en el PDF.</small>
+          </div>
+        }
+      </section>
+
+      <section class="lg-card">
+        <div class="lg-card__head">
+          <div><h3>Forma de pago</h3><p>Adelantos y saldos</p></div>
+          <span class="lg-chip" [class]="suma() === 100 ? 'ok' : 'critico'">{{ suma() }} %</span>
+        </div>
+        <ul class="hitos">
+          @for (h of q.hitos; track h.id; let i = $index) {
+            <li>
+              <input class="desc" [ngModel]="h.descripcion" (ngModelChange)="hito(i, { descripcion: $event })" [disabled]="!editable()" aria-label="Descripción del pago" />
+              <span class="pct"><input type="number" min="0" max="100" [ngModel]="h.porcentaje" (ngModelChange)="hito(i, { porcentaje: +$event })" [disabled]="!editable()" aria-label="Porcentaje" />%</span>
+              <span class="monto">{{ dinero(hitos()[i]?.monto ?? 0) }}</span>
+              @if (editable()) {
+                <button type="button" class="icono" (click)="quitarHito(i)" aria-label="Quitar pago"><i class="pi pi-times"></i></button>
+              } @else {
+                <span></span>
+              }
+            </li>
+          }
+        </ul>
+        @if (editable()) {
+          <button type="button" class="enlace" (click)="agregarHito()"><i class="pi pi-plus"></i> Agregar pago</button>
+        }
+        @if (suma() !== 100) {
+          <p class="alerta"><i class="pi pi-exclamation-triangle"></i> Debe sumar 100 % para enviarla.</p>
+        }
+        <p class="nota">Cuando el cliente apruebe, cada pago pasa al servicio. Cada adelanto se factura al recibirlo (con IGV y detracción) y la factura final los descuenta.</p>
+      </section>
+    </aside>
+  </div>
+
+  <!-- Aprobación -->
+  <p-dialog [(visible)]="dialogoAprobar" [modal]="true" [draggable]="false" [style]="{ width: 'min(30rem, 94vw)' }" header="El cliente aprobó la cotización">
+    <form class="lg-form" (ngSubmit)="aprobar()">
+      <div class="full">
+        <label for="oc-num">N.° de orden de compra / servicio del cliente</label>
+        <input id="oc-num" name="oc" class="campo-oc" placeholder="Ej. OS-4500022010" [(ngModel)]="ocNumero" />
+      </div>
+      <p class="full nota">Se abre el servicio en "Servicios en curso" con la forma de pago ({{ q.hitos.length }} pagos) y queda listo para coordinar el ingreso a planta.</p>
+      <div class="full lg-pie-dialogo">
+        <button type="button" class="lg-cta lg-cta--suave" (click)="dialogoAprobar.set(false)">Cancelar</button>
+        <button type="submit" class="lg-cta" [disabled]="!ocNumero.trim()"><i class="pi pi-check"></i> Abrir el servicio</button>
+      </div>
+    </form>
+  </p-dialog>
+
+  <p-dialog [(visible)]="dialogoRechazo" [modal]="true" [draggable]="false" [style]="{ width: 'min(30rem, 94vw)' }" header="El cliente no aprobó">
+    <form class="lg-form" (ngSubmit)="rechazar()">
+      <div class="full">
+        <label for="mot">¿Por qué? (sirve para mejorar las próximas)</label>
+        <input id="mot" name="mot" class="campo-oc" placeholder="Ej. Precio alto, eligió otro proveedor" [(ngModel)]="motivo" />
+      </div>
+      <div class="full lg-pie-dialogo">
+        <button type="button" class="lg-cta lg-cta--suave" (click)="dialogoRechazo.set(false)">Cancelar</button>
+        <button type="submit" class="lg-cta lg-peligro">Marcar como rechazada</button>
+      </div>
+    </form>
+  </p-dialog>
+} @else {
+  <div class="lg-vacio"><i class="pi pi-search"></i><h4>No encontramos esa cotización</h4><p><a routerLink="/proyectos/cotizaciones">Volver</a></p></div>
+}

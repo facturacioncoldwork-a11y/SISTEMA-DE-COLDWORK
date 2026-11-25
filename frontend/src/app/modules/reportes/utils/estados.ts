@@ -1,3 +1,5 @@
+import { redondear } from '../../../core/utils/montos';
+
 /**
  * Estados financieros a partir de los saldos del PCGE (Debe/Haber por cuenta).
  *
@@ -28,9 +30,7 @@ export interface Seccion {
   total: number;
 }
 
-export function redondear(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100;
-}
+export { redondear };
 
 /** Saldo deudor (positivo) o acreedor (negativo) agrupado por los primeros `digitos`. */
 export function agrupar(saldos: SaldoCuenta[], digitos = 2): Map<string, number> {

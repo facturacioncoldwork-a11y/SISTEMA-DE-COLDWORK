@@ -1,0 +1,298 @@
+.como {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--lg-muted);
+  min-width: 18rem;
+}
+
+.escenario {
+  display: grid;
+  grid-template-columns: 22rem minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.celular {
+  border-radius: 2.4rem;
+  padding: 0.7rem;
+  background: #0b1b2b;
+  box-shadow: 0 30px 60px -30px rgb(15 23 42 / 0.6);
+}
+
+.pantalla {
+  border-radius: 1.9rem;
+  background: var(--lg-soft);
+  padding: 1.2rem 1rem;
+  min-height: 34rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.saludo {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+
+  strong {
+    display: block;
+  }
+
+  small {
+    color: var(--lg-muted);
+    font-size: 0.78rem;
+  }
+}
+
+.estado-hoy {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.8rem;
+  background: #fff;
+  font-size: 0.82rem;
+  color: var(--lg-muted);
+
+  b {
+    color: var(--lg-ink);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.paso {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-radius: 0.9rem;
+  background: #fff;
+
+  .n {
+    flex: none;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #eff6ff;
+    color: var(--lg-blue);
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+
+  strong {
+    display: block;
+    font-size: 0.88rem;
+  }
+
+  small {
+    display: block;
+    color: var(--lg-muted);
+    font-size: 0.76rem;
+    margin: 0.15rem 0 0.45rem;
+
+    &.mal {
+      color: var(--lg-danger);
+    }
+  }
+
+  textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--lg-line);
+    border-radius: 0.6rem;
+    font: inherit;
+  }
+}
+
+.crece {
+  flex: 1;
+  min-width: 0;
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chico {
+  padding: 0.38rem 0.65rem;
+  font-size: 0.76rem;
+}
+
+.selfie {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  img {
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  input {
+    display: none;
+  }
+}
+
+.codigo-in {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--lg-line);
+  border-radius: 0.7rem;
+  font: inherit;
+  font-size: 1.5rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.marcar {
+  margin-top: auto;
+  border: 0;
+  border-radius: 1.2rem;
+  padding: 1.15rem;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 750;
+  color: #fff;
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 14px 30px -14px #059669;
+  cursor: pointer;
+
+  &.salida {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    box-shadow: 0 14px 30px -14px #4f46e5;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.sin-gps {
+  border: 1px dashed #f59e0b;
+
+  .n {
+    background: #fffbeb;
+    color: #b45309;
+  }
+}
+
+.fila-sin {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+
+  input {
+    padding: 0.5rem;
+    border: 1px solid var(--lg-line);
+    border-radius: 0.6rem;
+    font: inherit;
+  }
+}
+
+.pista {
+  margin: 0;
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--lg-blue);
+
+  &.suave {
+    color: var(--lg-muted);
+  }
+}
+
+.enlace {
+  border: 0;
+  background: transparent;
+  color: var(--lg-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.lado {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tablet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.6rem;
+  border-radius: 1.4rem;
+  background: #061423;
+  color: #e6f6ff;
+
+  small {
+    color: #7dd3fc;
+    font-size: 0.78rem;
+  }
+
+  .codigo {
+    font-size: 3.4rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .cuenta {
+    font-size: 0.82rem;
+    color: #a9c4dc;
+  }
+
+  .anillo {
+    width: 60%;
+    height: 0.3rem;
+    border-radius: 1rem;
+    background: rgb(255 255 255 / 0.12);
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      background: var(--lg-grad);
+      transition: width 1s linear;
+    }
+  }
+}
+
+.puntos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+
+  li {
+    display: flex;
+    gap: 0.6rem;
+    font-size: 0.86rem;
+    line-height: 1.45;
+  }
+
+  i {
+    color: var(--lg-blue);
+    margin-top: 0.2rem;
+  }
+}
+
+.legal i {
+  color: var(--lg-ok);
+}

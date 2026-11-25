@@ -1,0 +1,155 @@
+@let h = sim.horario();
+
+<div class="lg-toolbar">
+  <div class="como">
+    <label for="sim-trab">Marcar como</label>
+    <p-select inputId="sim-trab" [options]="opciones()" optionLabel="etiqueta" optionValue="id" appendTo="body" [ngModel]="trabajadorId()" (ngModelChange)="elegirTrabajador($event)" />
+  </div>
+  <div class="lg-seg" role="group" aria-label="Forma de marcar">
+    <button type="button" [class.on]="metodo() === 'gps'" [disabled]="!h.metodos.gps" (click)="metodo.set('gps')"><i class="pi pi-map-marker"></i> Celular + GPS</button>
+    <button type="button" [class.on]="metodo() === 'qr'" [disabled]="!h.metodos.qr" (click)="metodo.set('qr')"><i class="pi pi-qrcode"></i> Código de oficina</button>
+    <button type="button" [class.on]="metodo() === 'manual'" [disabled]="!h.metodos.manual" (click)="metodo.set('manual')"><i class="pi pi-user-edit"></i> Manual</button>
+  </div>
+</div>
+
+<div class="escenario">
+  <!-- Celular del trabajador -->
+  <div class="celular">
+    <div class="pantalla">
+      <div class="saludo">
+        <span class="lg-avatar">{{ iniciales() }}</span>
+        <div>
+          <strong>{{ trabajador()?.nombre }}</strong>
+          <small>{{ trabajador()?.cargo }}</small>
+        </div>
+      </div>
+      <div class="estado-hoy">
+        <span>Entrada <b>{{ marcaHoy()?.entrada ?? '—' }}</b></span>
+        <span>Salida <b>{{ marcaHoy()?.salida ?? '—' }}</b></span>
+      </div>
+
+      @switch (metodo()) {
+        @case ('gps') {
+          <div class="paso">
+            <span class="n">1</span>
+            <div class="crece">
+              <strong>Tu ubicación</strong>
+              @if (zona(); as z) {
+                <small [class.mal]="!z.ok"><i [class]="z.ok ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i> {{ z.texto }}</small>
+              } @else {
+                <small>Se pide solo al marcar. No se rastrea al trabajador.</small>
+              }
+              <div class="botones">
+                <button type="button" class="lg-cta lg-cta--suave chico" (click)="obtenerUbicacion()" [disabled]="buscando()">
+                  <i [class]="buscando() ? 'pi pi-spin pi-spinner' : 'pi pi-compass'"></i> Usar mi GPS
+                </button>              </div>
+            </div>
+          </div>
+          @if (h.selfie) {
+            <div class="paso">
+              <span class="n">2</span>
+              <div class="crece">
+                <strong>Selfie</strong>
+                <small>Confirma que eres tú (evita que otro marque por ti).</small>
+                <div class="selfie">
+                  @if (selfie(); as s) {
+                    <img [src]="s" alt="Selfie" />
+                  }
+                  <label class="lg-cta lg-cta--suave chico">
+                    <i class="pi pi-camera"></i> {{ selfie() ? 'Repetir' : 'Tomar selfie' }}
+                    <input type="file" accept="image/*" capture="user" (change)="tomarSelfie($event)" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          }
+          @if (sinGps()) {
+            <div class="paso sin-gps">
+              <span class="n">!</span>
+              <div class="crece">
+                <strong>Registrar sin GPS</strong>
+                <small>Para cuando el celular falla o no hay señal en la planta. Lo revisa y aprueba tu supervisor.</small>
+                <div class="fila-sin">
+                  <input type="time" [(ngModel)]="horaDeclarada" aria-label="Hora" />
+                  <input type="text" placeholder="¿Qué pasó? (ej. sin señal en planta)" [(ngModel)]="motivoDeclarado" aria-label="Motivo" />
+                </div>
+                <div class="botones">
+                  <button type="button" class="lg-cta chico" (click)="marcarSinGps()">Enviar {{ accion() === 'salida' ? 'salida' : 'entrada' }}</button>
+                  <button type="button" class="lg-cta lg-cta--suave chico" (click)="sinGps.set(false)">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          } @else {
+            @if (accion() === 'salida' && trabajador()?.campo) {
+              <p class="pista"><i class="pi pi-info-circle"></i> ¿Terminaste en la planta o vas directo a tu casa? Marca tu salida desde donde estés: queda como "salida en campo".</p>
+            }
+            <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya'" (click)="marcarGps()">
+              {{ accion() === 'ya' ? 'Jornada completa' : accion() === 'salida' ? 'Marcar salida' : 'Marcar entrada' }}
+            </button>
+            @if (accion() !== 'ya') {
+              <button type="button" class="enlace" (click)="abrirSinGps()">¿Tu celular falla o no tiene GPS?</button>
+            }
+          }
+          <p class="pista suave"><i class="pi pi-clock"></i> Refrigerio de {{ h.refrigerio }} min, a la hora que te toque (entre {{ h.refrigerioDesde }} y {{ h.refrigerioHasta }}): se descuenta solo, no hace falta marcar.</p>
+        }
+        @case ('qr') {
+          <div class="paso">
+            <span class="n">1</span>
+            <div class="crece">
+              <strong>Escribe el código de la tablet</strong>
+              <small>Solo se ve dentro de la oficina y cambia cada 30 segundos.</small>
+              <input class="codigo-in" type="text" inputmode="numeric" maxlength="6" placeholder="000000" [(ngModel)]="codigoEscrito" />
+            </div>
+          </div>
+          <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya'" (click)="marcarCodigo()">
+            {{ accion() === 'ya' ? 'Jornada completa' : accion() === 'salida' ? 'Marcar salida' : 'Marcar entrada' }}
+          </button>
+        }
+        @case ('manual') {
+          <div class="paso">
+            <span class="n">!</span>
+            <div class="crece">
+              <strong>Registro por el supervisor</strong>
+              <small>Para cuando el trabajador no tiene celular o se le acabó la batería. Queda en el historial con el motivo y quién lo registró.</small>
+              <textarea rows="3" placeholder="Motivo (ej. celular sin batería)" [(ngModel)]="motivoManual"></textarea>
+            </div>
+          </div>
+          <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya'" (click)="marcarManual()">
+            {{ accion() === 'ya' ? 'Jornada completa' : accion() === 'salida' ? 'Registrar salida' : 'Registrar entrada' }}
+          </button>
+        }
+      }
+    </div>
+  </div>
+
+  <!-- Explicación / tablet -->
+  <div class="lado">
+    @if (metodo() === 'qr') {
+      <div class="tablet">
+        <small>Pantalla para la tablet de la oficina</small>
+        <span class="codigo lg-mono">{{ codigo().slice(0, 3) }} {{ codigo().slice(3) }}</span>
+        <span class="cuenta">Cambia en {{ segundos() }} s</span>
+        <div class="anillo"><span [style.width.%]="(segundos() / 30) * 100"></span></div>
+      </div>
+    }
+    <section class="lg-card">
+      <div class="lg-card__head"><div><h3>Por qué así</h3><p>Ventajas y cuándo usar cada forma</p></div></div>
+      <ul class="puntos">
+        <li><i class="pi pi-map-marker"></i><span><b>Celular + GPS + selfie:</b> ideal para técnicos que empiezan el día en la obra del cliente. Sin aparatos extra. La selfie evita que un compañero marque por otro.</span></li>
+        <li><i class="pi pi-qrcode"></i><span><b>Código de oficina:</b> una tablet barata en la entrada. Como el número cambia cada 30 s, no sirve mandarlo por WhatsApp para marcar desde la casa.</span></li>
+        <li><i class="pi pi-user-edit"></i><span><b>Manual:</b> respaldo para casos excepcionales; siempre con motivo y nombre del supervisor.</span></li>
+        <li><i class="pi pi-mobile"></i><span><b>Sin GPS:</b> si el celular falla, el trabajador indica la hora y el motivo; queda "por aprobar" hasta que el supervisor lo confirme.</span></li>
+        <li><i class="pi pi-wifi"></i><span><b>Datos móviles:</b> cada marca pesa menos de 2 KB (la selfie se comprime a ~40 KB). Un mes entero gasta menos que mandar una foto por WhatsApp.</span></li>
+        <li><i class="pi pi-bolt"></i><span><b>Detección automática al llegar:</b> en la web, al abrir la app ya sabe si estás en la oficina y marcas con un toque. Que se marque sola sin abrirla necesita la app instalada en el celular (Android), que se puede hacer después.</span></li>
+      </ul>
+    </section>
+    <section class="lg-card legal">
+      <div class="lg-card__head"><div><h3>Lo que pide la ley en Perú</h3></div></div>
+      <ul class="puntos">
+        <li><i class="pi pi-check"></i><span>Registro de control de asistencia obligatorio, con hora de ingreso y salida, marcado por el propio trabajador (DS 004-2006-TR). Puede ser digital.</span></li>
+        <li><i class="pi pi-check"></i><span>Se conserva 5 años y se muestra a SUNAFIL si lo pide; las marcas no se pueden borrar ni editar, solo corregir con justificación.</span></li>
+        <li><i class="pi pi-check"></i><span>Ubicación y foto son datos personales (Ley 29733): se avisa al trabajador, se piden solo al marcar y no se rastrea su posición.</span></li>
+      </ul>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,76 @@
+@let k = kpis();
+
+<section class="lg-kpis">
+  <div class="lg-kpi" style="--c: #3b82f6">
+    <span class="icono"><i class="pi pi-list"></i></span>
+    <small>Órdenes de hoy</small>
+    <strong>{{ k.total }}</strong>
+    <span class="pie">Programadas, en curso y cerradas</span>
+  </div>
+  <div class="lg-kpi" style="--c: #f59e0b">
+    <span class="icono"><i class="pi pi-play"></i></span>
+    <small>En curso</small>
+    <strong>{{ k.enCurso }}</strong>
+    <span class="pie">Técnicos trabajando ahora</span>
+  </div>
+  <div class="lg-kpi" style="--c: #f97316">
+    <span class="icono"><i class="pi pi-pencil"></i></span>
+    <small>Por firmar</small>
+    <strong>{{ k.porFirmar }}</strong>
+    <span class="pie">Falta la conformidad del cliente</span>
+  </div>
+  <div class="lg-kpi" style="--c: #ef4444">
+    <span class="icono"><i class="pi pi-bolt"></i></span>
+    <small>Urgentes abiertas</small>
+    <strong>{{ k.urgentes }}</strong>
+    <span class="pie">Atender primero</span>
+  </div>
+</section>
+
+<div class="lg-toolbar">
+  <div class="lg-seg" role="group" aria-label="Filtrar por técnico">
+    <button type="button" [class.on]="!tecnico()" (click)="tecnico.set(null)">Todos</button>
+    @for (t of sim.tecnicos(); track t.id) {
+      <button type="button" [class.on]="tecnico() === t.id" (click)="tecnico.set(t.id)">{{ t.nombre.split(' ')[0] }}</button>
+    }
+  </div>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta" (click)="dialogo.set(true)"><i class="pi pi-plus"></i> Nueva orden de trabajo</button>
+</div>
+
+<div class="columnas">
+  @for (col of columnas; track col) {
+    @let lista = filtradas()[col];
+    <section class="columna">
+      <header>
+        <i [class]="estados[col].icono"></i>
+        <h3>{{ estados[col].nombre }}</h3>
+        <span class="n">{{ lista.length }}</span>
+      </header>
+      @for (o of lista; track o.id) {
+        @let eq = sim.equipo(o.equipoId);
+        <a class="ot" [routerLink]="['/servicios/ordenes', o.id]" [class.urgente]="o.prioridad === 'urgente'">
+          <div class="fila">
+            <span class="lg-mono num">{{ o.numero }}</span>
+            <span class="lg-chip" [class]="prioridades[o.prioridad].clase">{{ prioridades[o.prioridad].nombre }}</span>
+          </div>
+          <strong>{{ sim.cliente(o.clienteId)?.razonSocial }}</strong>
+          <small><i [class]="tipos[o.tipo].icono"></i> {{ tipos[o.tipo].nombre }} · {{ eq?.tipo }} {{ eq?.codigo }}</small>
+          <p>{{ o.descripcion }}</p>
+          <div class="fila pie">
+            <span class="hora"><i class="pi pi-clock"></i> {{ o.hora }}</span>
+            <span class="avatares">
+              @for (t of o.tecnicos; track t) {
+                <span class="lg-avatar" [title]="sim.tecnico(t)?.nombre">{{ iniciales(t) }}</span>
+              }
+            </span>
+          </div>
+        </a>
+      } @empty {
+        <p class="vacia">Sin órdenes</p>
+      }
+    </section>
+  }
+</div>
+
+<app-orden-dialogo [(visible)]="dialogo" (creada)="creada($event)" />

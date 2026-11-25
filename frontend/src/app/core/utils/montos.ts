@@ -4,6 +4,11 @@
  */
 export const TASA_IGV = 0.18;
 
+/** Redondea a céntimos sin errores de coma flotante (una sola versión para toda la app). */
+export function redondear(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
 export const aCentimos = (soles: number) => Math.round(soles * 100);
 export const aSoles = (centimos: number) => centimos / 100;
 
