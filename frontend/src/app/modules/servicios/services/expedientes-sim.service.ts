@@ -1,7 +1,9 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { hoy, sumarDias } from '../../finanzas/utils/calculos';
 import { ETAPAS, indiceEtapa } from '../data/etapas';
+import type { HitoPago } from '../models/cotizacion.model';
 import type { Compra, Expediente, Persona, Tarea } from '../models/expediente.model';
+import { hitosConMonto } from '../utils/cotizacion';
 import { ServiciosSim } from './servicios-sim.service';
 
 /**
@@ -88,6 +90,20 @@ export class ExpedientesSim {
     );
   }
 
+  /** Avanza un hito de pago: pendiente → facturado (factura de anticipo) → cobrado. */
+  cambiarHito(id: string, hitoId: string, estado: HitoPago['estado'], factura?: string) {
+    const e = this.expediente(id);
+    const h = e?.hitos?.find((x) => x.id === hitoId);
+    if (!e || !h) return;
+    const texto = estado === 'facturado' ? `Factura ${factura} emitida por "${h.descripcion}" (${h.porcentaje} %).` : `Cobrado: "${h.descripcion}" (${h.porcentaje} %).`;
+    this.actualizar(id, { hitos: e.hitos!.map((x) => (x.id === hitoId ? { ...x, estado, factura: factura ?? x.factura } : x)) }, texto);
+  }
+
+  /** ¿Ya se puede programar el trabajo? (si exige adelanto, el primer hito debe estar cobrado). */
+  adelantoListo(e: Expediente): boolean {
+    return !e.exigirAdelanto || !e.hitos?.length || e.hitos[0].estado === 'cobrado';
+  }
+
   agregarCompra(id: string, c: Omit<Compra, 'id' | 'estado'>) {
     const e = this.expediente(id);
     if (!e) return;
@@ -115,6 +131,9 @@ export class ExpedientesSim {
         solicitud: 'Correo de la Ing. Rosa Pérez: la cámara de producto terminado no llega a temperatura. Urgente por exportación.',
         responsableId: 'p1',
         etapa: 'ejecucion',
+        moneda: 'PEN',
+        exigirAdelanto: true,
+        hitos: hitos(2850, [50, 50], ['cobrado', 'pendiente']),
         creado: sumarDias(h, -3),
         cotizacion: { numero: 'COT-2026-088', monto: 2850, fecha: sumarDias(h, -3) },
         ordenCliente: { numero: 'OS-4500021987', fecha: sumarDias(h, -2) },
@@ -159,6 +178,9 @@ export class ExpedientesSim {
         solicitud: 'WhatsApp de la Sra. Ana Rojas: quiere cambiar la vitrina de lácteos antes de diciembre.',
         responsableId: 'p1',
         etapa: 'orden_cliente',
+        moneda: 'PEN',
+        exigirAdelanto: true,
+        hitos: hitos(12400, [40, 50, 10], ['pendiente', 'pendiente', 'pendiente']),
         creado: sumarDias(h, -6),
         cotizacion: { numero: 'COT-2026-079', monto: 12400, fecha: sumarDias(h, -6) },
         ordenCliente: { numero: 'OC-000318', fecha: sumarDias(h, -1) },
@@ -176,6 +198,8 @@ export class ExpedientesSim {
         solicitud: 'Emergencia: compresor 2 del chiller no arranca.',
         responsableId: 'p1',
         etapa: 'facturado',
+        moneda: 'PEN',
+        hitos: hitos(980, [100], ['facturado']),
         creado: sumarDias(h, -10),
         cotizacion: { numero: 'COT-2026-070', monto: 980, fecha: sumarDias(h, -10) },
         ordenCliente: { numero: 'OS-4500021550', fecha: sumarDias(h, -10) },
@@ -187,6 +211,21 @@ export class ExpedientesSim {
       },
     ];
   }
+}
+
+/** Hitos de ejemplo sobre un valor de venta (se les suma IGV), con su estado. */
+function hitos(valorVenta: number, porcentajes: number[], estados: HitoPago['estado'][]): HitoPago[] {
+  const nombres: Record<number, string[]> = {
+    1: ['Pago con la conformidad'],
+    2: ['Adelanto con la orden', 'Saldo con la conformidad'],
+    3: ['1.er adelanto con la orden', '2.º adelanto según valorización', 'Saldo con la entrega'],
+  };
+  const lista = porcentajes.map((porcentaje, i) => ({ id: crypto.randomUUID(), descripcion: nombres[porcentajes.length][i], porcentaje }));
+  return hitosConMonto(lista, Math.round(valorVenta * 118) / 100).map((h, i) => ({
+    ...h,
+    estado: estados[i],
+    factura: estados[i] !== 'pendiente' ? `F001-${110 + i}` : undefined,
+  }));
 }
 
 function ahora(): string {

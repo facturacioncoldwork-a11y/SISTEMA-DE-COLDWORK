@@ -1,3 +1,5 @@
+import type { HitoPago } from './cotizacion.model';
+
 /**
  * Expediente de servicio: TODO lo de un trabajo para un cliente, de principio a fin
  * (solicitud → cotización → orden del cliente → ingreso a planta → ejecución →
@@ -69,4 +71,10 @@ export interface Expediente {
   tareas: Tarea[];
   compras: Compra[];
   historial: EventoHistorial[];
+  /** Moneda de la cotización aprobada. */
+  moneda?: 'USD' | 'PEN';
+  /** Forma de pago de la cotización, con su monto: adelantos, valorizaciones y saldo. */
+  hitos?: HitoPago[];
+  /** No se programa el trabajo hasta cobrar el primer adelanto. */
+  exigirAdelanto?: boolean;
 }

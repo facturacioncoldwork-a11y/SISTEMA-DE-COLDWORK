@@ -328,6 +328,57 @@ blockquote {
   }
 }
 
+.pagos {
+  border-color: #bfdbfe;
+}
+
+.hitos {
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
+
+  li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--lg-line);
+    font-size: 0.86rem;
+  }
+
+  small {
+    color: var(--lg-muted);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .facturar {
+    display: flex;
+    gap: 0.3rem;
+
+    input {
+      width: 6.5rem;
+      padding: 0.35rem 0.45rem;
+      border: 1px solid var(--lg-line);
+      border-radius: 0.5rem;
+      font: inherit;
+      font-size: 0.8rem;
+    }
+  }
+
+  .chico {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.78rem;
+  }
+
+  .boton {
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.74rem;
+  }
+}
+
 .historial {
   list-style: none;
   margin: 0;

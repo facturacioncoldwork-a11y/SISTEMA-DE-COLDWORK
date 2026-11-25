@@ -4,6 +4,13 @@ button.lg-kpi {
   cursor: pointer;
 }
 
+.usd {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .lista {
   display: grid;
   gap: 0.8rem;

@@ -82,6 +82,33 @@ export class ExpedienteView {
     this.servicios.tecnicos().map((t) => ({ ...t, vencido: t.sctrHasta < this.hoy, elegido: this.exp()?.ingreso.personal.includes(t.id) ?? false })),
   );
 
+  // ── Forma de pago (adelantos) ──────────────────────────────────
+  protected readonly adelantoListo = computed(() => (this.exp() ? this.sim.adelantoListo(this.exp()!) : true));
+  protected facturaHito: Record<string, string> = {};
+
+  protected dineroExp(n: number) {
+    return dinero(n, this.exp()?.moneda ?? 'PEN');
+  }
+
+  /** Factura de anticipo (con IGV y, si pasa S/ 700, detracción). En la versión real va a Ventas. */
+  protected facturarHito(hitoId: string) {
+    const e = this.exp();
+    const numero = (this.facturaHito[hitoId] ?? '').trim().toUpperCase();
+    if (!e || !/^[A-Z0-9]{4}-\d{1,8}$/.test(numero)) return this.aviso('Indica la factura del adelanto (ej. F001-130).');
+    this.sim.cambiarHito(e.id, hitoId, 'facturado', numero);
+  }
+
+  protected cobrarHito(hitoId: string) {
+    const e = this.exp();
+    if (e) this.sim.cambiarHito(e.id, hitoId, 'cobrado');
+  }
+
+  private exigirAdelanto(): boolean {
+    if (this.adelantoListo()) return true;
+    this.aviso(`Falta cobrar "${this.exp()?.hitos?.[0]?.descripcion}" antes de mandar técnicos.`);
+    return false;
+  }
+
   // ── Acciones por etapa ─────────────────────────────────────────
   protected registrarCotizacion() {
     const e = this.exp();
@@ -126,7 +153,7 @@ export class ExpedienteView {
 
   protected confirmarIngreso() {
     const e = this.exp();
-    if (!e) return;
+    if (!e || !this.exigirAdelanto()) return;
     if (this.sctrVencidos().length) return this.aviso(`${this.sctrVencidos().map((t) => t.nombre).join(', ')} tiene el SCTR vencido: quítalo o renueva su seguro.`);
     if (!e.ingreso.personal.length || !e.ingreso.sctrEnviado) return this.aviso('Falta elegir el personal y enviar los SCTR.');
     this.sim.avanzar(e.id, { ingreso: { ...e.ingreso, fecha: this.f.fechaIngreso } }, `Ingreso a planta confirmado para el ${this.f.fechaIngreso.split('-').reverse().join('/')}.`);
@@ -135,7 +162,7 @@ export class ExpedienteView {
   /** Crea la orden de trabajo del técnico con los datos del expediente. */
   protected crearOrden() {
     const e = this.exp();
-    if (!e) return;
+    if (!e || !this.exigirAdelanto()) return;
     const equipo = this.servicios.equipos().find((x) => x.clienteId === e.clienteId);
     if (!equipo) return this.aviso('El cliente no tiene equipos registrados.');
     const ot = this.servicios.crear({

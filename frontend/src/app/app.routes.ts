@@ -11,6 +11,7 @@ import { FINANZAS_ROUTES } from './modules/finanzas/finanzas.routes';
 import { LOGISTICA_ROUTES } from './modules/logistica/logistica.routes';
 import { PERSONAL_ROUTES } from './modules/personal/personal.routes';
 import { REPORTES_ROUTES } from './modules/reportes/reportes.routes';
+import { PROYECTOS_ROUTES } from './modules/servicios/proyectos.routes';
 import { SERVICIOS_ROUTES } from './modules/servicios/servicios.routes';
 
 /**
@@ -52,6 +53,7 @@ export const routes: Routes = [
       ...REPORTES_ROUTES,
 
       // Operaciones (simulación en revisión)
+      ...PROYECTOS_ROUTES,
       ...SERVICIOS_ROUTES,
       ...PERSONAL_ROUTES,
 

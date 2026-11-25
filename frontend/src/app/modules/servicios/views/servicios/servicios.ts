@@ -19,7 +19,6 @@ import { AvisoSimulacion } from '../../../../shared/components/aviso-simulacion/
           </div>
         </div>
         <nav class="lg-nav no-imprimir" aria-label="Servicios técnicos">
-          <a routerLink="/servicios/expedientes" routerLinkActive="activo"><i class="pi pi-folder-open"></i> Coordinación</a>
           <a routerLink="/servicios" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }"><i class="pi pi-th-large"></i> Órdenes de trabajo</a>
           <a routerLink="/servicios/equipos" routerLinkActive="activo"><i class="pi pi-server"></i> Equipos de clientes</a>
         </nav>

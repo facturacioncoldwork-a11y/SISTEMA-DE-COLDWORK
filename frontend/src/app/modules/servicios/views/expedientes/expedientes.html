@@ -22,8 +22,11 @@
   <button type="button" class="lg-kpi" style="--c: #10b981" (click)="filtro.set(k.facturar ? 'facturar' : 'cobrar')">
     <span class="icono"><i class="pi pi-wallet"></i></span>
     <small>Por cobrar</small>
-    <strong>{{ dinero(k.cobrar) }}</strong>
-    <span class="pie">{{ k.facturar }} por facturar · incluye IGV</span>
+    <strong>{{ dinero(k.cobrarPen) }}</strong>
+    @if (k.cobrarUsd) {
+      <span class="usd">+ {{ dinero(k.cobrarUsd, 'USD') }}</span>
+    }
+    <span class="pie">{{ k.adelantos }} esperan su adelanto · {{ k.facturar }} por facturar</span>
   </button>
 </section>
 
@@ -46,7 +49,7 @@
 <div class="lista">
   @for (e of visibles(); track e.id) {
     @let i = indice(e);
-    <a class="exp lg-card" [routerLink]="['/servicios/expedientes', e.id]">
+    <a class="exp lg-card" [routerLink]="['/proyectos/servicios', e.id]">
       <div class="cabeza">
         <div>
           <span class="lg-mono cod">{{ e.codigo }}{{ e.ordenCliente ? ' · ' + e.ordenCliente.numero : '' }}</span>
@@ -55,7 +58,7 @@
         </div>
         <div class="der">
           @if (e.cotizacion) {
-            <span class="monto">{{ dinero(e.cotizacion.monto) }} <small>+ IGV</small></span>
+            <span class="monto">{{ dinero(e.cotizacion.monto, e.moneda ?? 'PEN') }} <small>+ IGV</small></span>
           }
           <span class="lg-chip" [class]="e.etapa === 'cobrado' ? 'ok' : 'sin-punto'"><i [class]="etapas[i].icono"></i> {{ etapas[i].nombre }}</span>
         </div>

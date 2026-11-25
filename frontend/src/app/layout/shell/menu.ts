@@ -59,9 +59,16 @@ export const MENU: GrupoMenu[] = [
     ],
   },
   {
+    titulo: 'Servicios y proyectos',
+    items: [
+      { etiqueta: 'Panel de coordinación', icono: 'pi pi-briefcase', ruta: '/proyectos', area: 'ventas', exacta: true },
+      { etiqueta: 'Cotizaciones', icono: 'pi pi-file-edit', ruta: '/proyectos/cotizaciones', area: 'ventas' },
+    ],
+  },
+  {
     titulo: 'Operaciones',
     items: [
-      { etiqueta: 'Servicios técnicos', icono: 'pi pi-wrench', ruta: '/servicios', area: 'tecnica' },
+      { etiqueta: 'Área técnica', icono: 'pi pi-wrench', ruta: '/servicios', area: 'tecnica' },
       { etiqueta: 'Asistencia', icono: 'pi pi-id-card', ruta: '/personal', area: 'personal' },
     ],
   },

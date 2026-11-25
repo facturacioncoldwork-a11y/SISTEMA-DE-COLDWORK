@@ -12,7 +12,7 @@
       </div>
       <div class="der">
         @if (e.cotizacion) {
-          <span class="monto">{{ dinero(e.cotizacion.monto) }} <small>+ IGV · {{ e.cotizacion.numero }}</small></span>
+          <span class="monto">{{ dineroExp(e.cotizacion.monto) }} <small>+ IGV · {{ e.cotizacion.numero }}</small></span>
         }
         <span class="resp"><span class="lg-avatar">{{ iniciales(sim.persona(e.responsableId)?.nombre) }}</span> {{ sim.persona(e.responsableId)?.nombre }}</span>
       </div>
@@ -49,7 +49,7 @@
             </form>
           }
           @case ('cotizacion') {
-            <p class="dato">Cotización <b>{{ e.cotizacion?.numero }}</b> por <b>{{ dinero(e.cotizacion?.monto ?? 0) }}</b> + IGV, enviada el {{ e.cotizacion?.fecha?.split('-')?.reverse()?.join('/') }}.</p>
+            <p class="dato">Cotización <b>{{ e.cotizacion?.numero }}</b> por <b>{{ dineroExp(e.cotizacion?.monto ?? 0) }}</b> + IGV, enviada el {{ e.cotizacion?.fecha?.split('-')?.reverse()?.join('/') }}.</p>
             <form class="lg-form" (ngSubmit)="registrarOrdenCliente()">
               <div class="full"><label for="f-oc">N.° de orden de compra / servicio del cliente</label><input id="f-oc" name="oc" placeholder="OS-4500022010" [(ngModel)]="f.ocNumero" /></div>
               <p class="full nota">Sin el número de orden del cliente, las empresas grandes no aceptan la factura.</p>
@@ -57,6 +57,9 @@
             </form>
           }
           @case ('orden_cliente') {
+            @if (!adelantoListo()) {
+              <p class="alerta"><i class="pi pi-lock"></i><span>Puedes ir coordinando, pero el ingreso se confirma cuando el cliente pague <b>{{ e.hitos?.[0]?.descripcion }}</b> ({{ dineroExp(e.hitos?.[0]?.monto ?? 0) }}).</span></p>
+            }
             <span class="lbl">¿Quiénes ingresan a la planta?</span>
             <div class="personal">
               @for (t of tecnicosIngreso(); track t.id) {
@@ -122,7 +125,7 @@
             </form>
           }
           @case ('facturado') {
-            <p class="dato">Factura <b>{{ e.factura?.numero }}</b> del {{ e.factura?.fecha?.split('-')?.reverse()?.join('/') }} por {{ dinero((e.cotizacion?.monto ?? 0) * 1.18) }} (con IGV).</p>
+            <p class="dato">Factura <b>{{ e.factura?.numero }}</b> del {{ e.factura?.fecha?.split('-')?.reverse()?.join('/') }} por {{ dineroExp((e.cotizacion?.monto ?? 0) * 1.18) }} (con IGV).</p>
             <button type="button" class="lg-cta" (click)="registrarCobro()"><i class="pi pi-wallet"></i> Cobro recibido</button>
           }
           @case ('cobrado') {
@@ -144,6 +147,45 @@
 
     <!-- Columna lateral -->
     <div class="lateral">
+      @if (e.hitos?.length) {
+        <section class="lg-card pagos">
+          <div class="lg-card__head">
+            <div><h3>Forma de pago</h3><p>De la cotización {{ e.cotizacion?.numero }}</p></div>
+            @if (!adelantoListo()) {
+              <span class="lg-chip critico">Falta el adelanto</span>
+            }
+          </div>
+          <ul class="hitos">
+            @for (h of e.hitos; track h.id) {
+              <li>
+                <div class="crece">
+                  <span>{{ h.descripcion }} · <b>{{ h.porcentaje }} %</b></span>
+                  <small>{{ dineroExp(h.monto) }}{{ h.factura ? ' · ' + h.factura : '' }}</small>
+                </div>
+                @switch (h.estado) {
+                  @case ('pendiente') {
+                    <span class="facturar">
+                      <input type="text" placeholder="N.° factura" [(ngModel)]="facturaHito[h.id]" [attr.aria-label]="'Factura de ' + h.descripcion" />
+                      <button type="button" class="lg-cta lg-cta--suave chico" (click)="facturarHito(h.id)">Facturar</button>
+                    </span>
+                  }
+                  @case ('facturado') {
+                    <button type="button" class="lg-chip bajo boton" (click)="cobrarHito(h.id)" title="Marcar como cobrado">Facturado · ¿cobrado?</button>
+                  }
+                  @case ('cobrado') {
+                    <span class="lg-chip ok">Cobrado</span>
+                  }
+                }
+              </li>
+            }
+          </ul>
+          @if (e.exigirAdelanto) {
+            <p class="nota"><i class="pi pi-lock"></i> No se programa el trabajo hasta cobrar el primer adelanto.</p>
+          }
+          <p class="nota">Cada adelanto se factura al recibirlo (con IGV y detracción si pasa S/ 700); la factura final descuenta los adelantos.</p>
+        </section>
+      }
+
       <section class="lg-card">
         <div class="lg-card__head"><div><h3>Tareas</h3><p>Lo que cada uno tiene que hacer</p></div></div>
         <ul class="tareas">
@@ -219,5 +261,5 @@
     </div>
   </p-dialog>
 } @else {
-  <div class="lg-vacio"><i class="pi pi-search"></i><h4>No encontramos ese expediente</h4><p><a routerLink="/servicios/expedientes">Volver</a></p></div>
+  <div class="lg-vacio"><i class="pi pi-search"></i><h4>No encontramos ese expediente</h4><p><a routerLink="/proyectos">Volver</a></p></div>
 }

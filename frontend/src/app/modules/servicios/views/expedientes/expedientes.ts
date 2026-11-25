@@ -45,7 +45,10 @@ export class Expedientes {
       cliente: l.filter((e) => e.etapa === 'cotizacion').length,
       materiales: activos.filter(this.esperaMateriales).length,
       facturar: l.filter((e) => e.etapa === 'conformidad').length,
-      cobrar: l.filter((e) => e.etapa === 'facturado').reduce((s, e) => s + (e.cotizacion?.monto ?? 0) * 1.18, 0),
+      // Adelantos, valorizaciones y saldos aún no cobrados, por moneda (nunca se suman soles con dólares)
+      cobrarPen: this.porCobrar(l, 'PEN'),
+      cobrarUsd: this.porCobrar(l, 'USD'),
+      adelantos: l.filter((e) => e.etapa !== 'cobrado' && !this.sim.adelantoListo(e)).length,
       tareas: l.flatMap((e) => e.tareas).filter((t) => !t.hecha).length,
       vencidas: l.flatMap((e) => e.tareas).filter((t) => !t.hecha && t.vence < hoy()).length,
     };
@@ -66,6 +69,14 @@ export class Expedientes {
       .filter((e) => !t || `${e.codigo} ${e.titulo} ${this.servicios.cliente(e.clienteId)?.razonSocial} ${e.ordenCliente?.numero ?? ''}`.toLowerCase().includes(t));
   });
 
+  private porCobrar(l: Expediente[], moneda: 'PEN' | 'USD'): number {
+    return l
+      .filter((e) => (e.moneda ?? 'PEN') === moneda)
+      .flatMap((e) => e.hitos ?? [])
+      .filter((h) => h.estado !== 'cobrado')
+      .reduce((s, h) => s + h.monto, 0);
+  }
+
   protected indice(e: Expediente) {
     return indiceEtapa(e.etapa);
   }
@@ -84,6 +95,6 @@ export class Expedientes {
     if (!this.nuevo.clienteId || this.nuevo.titulo.trim().length < 4) return this.error.set('Elige el cliente y describe el trabajo.');
     const e = this.sim.crear({ ...this.nuevo, titulo: this.nuevo.titulo.trim(), solicitud: this.nuevo.solicitud.trim() });
     this.dialogo.set(false);
-    void this.router.navigate(['/servicios/expedientes', e.id]);
+    void this.router.navigate(['/proyectos/servicios', e.id]);
   }
 }
