@@ -24,6 +24,15 @@ export interface Antiguedad {
 }
 
 /** Meses completos entre dos fechas (como se cuentan en el calendario). */
+/**
+ * Fecha de la base de datos como fecha LOCAL. `new Date('2024-11-25')` la toma como medianoche UTC,
+ * que en Perú (UTC-5) todavía es el 24: la antigüedad salía un día (y a veces un mes) corrida.
+ */
+export function aFecha(valor: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(valor);
+}
+
 export function mesesEntre(desde: Date, hasta: Date): number {
   let m = (hasta.getFullYear() - desde.getFullYear()) * 12 + hasta.getMonth() - desde.getMonth();
   if (hasta.getDate() < desde.getDate()) m--;
@@ -32,7 +41,7 @@ export function mesesEntre(desde: Date, hasta: Date): number {
 
 /** "2 años y 3 meses", "8 meses", "12 días", "hoy". */
 export function textoAntiguedad(desde: string | Date, hoy = new Date()): string {
-  const d = typeof desde === 'string' ? new Date(desde) : desde;
+  const d = typeof desde === 'string' ? aFecha(desde) : desde;
   const meses = mesesEntre(d, hoy);
   if (meses === 0) {
     const dias = Math.max(0, Math.floor((hoy.getTime() - d.getTime()) / 86_400_000));
@@ -47,7 +56,7 @@ export function textoAntiguedad(desde: string | Date, hoy = new Date()): string 
 
 /** Corto para tablas: "2a 3m", "8m", "12d". */
 export function textoCorto(desde: string | Date, hoy = new Date()): string {
-  const d = typeof desde === 'string' ? new Date(desde) : desde;
+  const d = typeof desde === 'string' ? aFecha(desde) : desde;
   const meses = mesesEntre(d, hoy);
   if (meses === 0) return `${Math.max(0, Math.floor((hoy.getTime() - d.getTime()) / 86_400_000))}d`;
   const a = Math.floor(meses / 12);
@@ -72,11 +81,11 @@ export function antiguedadDe(lotes: readonly Lote[], limite: number, hoy = new D
     return { nivel: 'reciente', meses: 0, desde: null, cantidadAntigua: 0, valorAntiguo: 0 };
   }
   const masAntiguo = conStock.reduce((a, b) => (b.fecha < a.fecha ? b : a));
-  const meses = mesesEntre(new Date(masAntiguo.fecha), hoy);
+  const meses = mesesEntre(aFecha(masAntiguo.fecha), hoy);
   let cantidadAntigua = 0;
   let valorAntiguo = 0;
   for (const l of conStock) {
-    if (mesesEntre(new Date(l.fecha), hoy) >= limite) {
+    if (mesesEntre(aFecha(l.fecha), hoy) >= limite) {
       cantidadAntigua += l.cantidad;
       valorAntiguo += l.cantidad * l.costoUnitario;
     }

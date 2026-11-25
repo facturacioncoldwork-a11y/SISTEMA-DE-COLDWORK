@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { mensajeError } from '../../../core/api/errores';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import type { CuentaFinanciera, ResumenFinanzas, Tercero } from '../models/finanzas.model';
@@ -63,11 +63,5 @@ export class FinanzasStore {
   }
 }
 
-export function mensajeError(e: unknown): string | undefined {
-  if (e instanceof HttpErrorResponse) {
-    if (e.status === 0) return 'El servidor no responde. Intenta de nuevo en unos segundos.';
-    const m = (e.error as { message?: string | string[] } | null)?.message;
-    return Array.isArray(m) ? m.join(' · ') : m;
-  }
-  return e instanceof Error ? e.message : undefined;
-}
+/** Una sola versión para toda la app (core/api/errores). */
+export { mensajeError };

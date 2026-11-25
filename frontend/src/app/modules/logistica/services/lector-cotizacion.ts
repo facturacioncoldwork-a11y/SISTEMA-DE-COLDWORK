@@ -1,3 +1,5 @@
+import { redondear } from '../../../core/utils/montos';
+
 /**
  * Lector de cotizaciones de proveedores (PDF digital o texto pegado de WhatsApp).
  *
@@ -71,7 +73,6 @@ export function leerNumero(texto: string | undefined | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-const redondear = (n: number) => Math.round(n * 100) / 100;
 
 // ---------------------------------------------------------------------
 // Líneas de texto a partir de las posiciones

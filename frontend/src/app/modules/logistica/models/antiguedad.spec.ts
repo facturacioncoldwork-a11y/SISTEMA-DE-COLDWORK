@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  aFecha,
   antiguedadDe,
   mesesAviso,
   mesesEntre,
@@ -20,9 +21,14 @@ const lote = (fecha: string, cantidad: number, costoUnitario = 10): Lote => ({
 
 describe('antigüedad del inventario', () => {
   it('cuenta meses completos', () => {
-    expect(mesesEntre(new Date('2024-11-24'), hoy)).toBe(24);
-    expect(mesesEntre(new Date('2024-11-25'), hoy)).toBe(23);
-    expect(mesesEntre(new Date('2026-11-30'), hoy)).toBe(0);
+    expect(mesesEntre(aFecha('2024-11-24'), hoy)).toBe(24);
+    expect(mesesEntre(aFecha('2024-11-25'), hoy)).toBe(23);
+    expect(mesesEntre(aFecha('2026-11-30'), hoy)).toBe(0);
+  });
+
+  it('lee las fechas de la base como fecha local (no UTC: en Perú no se corre un día)', () => {
+    const d = aFecha('2024-11-25');
+    expect([d.getFullYear(), d.getMonth() + 1, d.getDate()]).toEqual([2024, 11, 25]);
   });
 
   it('textos legibles', () => {
