@@ -1,0 +1,111 @@
+@let k = kpis();
+
+<section class="lg-kpis">
+  <button type="button" class="lg-kpi" style="--c: #3b82f6" (click)="filtro.set('todos')">
+    <span class="icono"><i class="pi pi-folder-open"></i></span>
+    <small>Servicios en curso</small>
+    <strong>{{ k.activos }}</strong>
+    <span class="pie">{{ k.tareas }} tareas pendientes{{ k.vencidas ? ' · ' + k.vencidas + ' vencidas' : '' }}</span>
+  </button>
+  <button type="button" class="lg-kpi" style="--c: #f59e0b" (click)="filtro.set('cliente')">
+    <span class="icono"><i class="pi pi-hourglass"></i></span>
+    <small>Esperan al cliente</small>
+    <strong>{{ k.cliente }}</strong>
+    <span class="pie">Cotizaciones sin aprobar</span>
+  </button>
+  <button type="button" class="lg-kpi" style="--c: #ef4444" (click)="filtro.set('materiales')">
+    <span class="icono"><i class="pi pi-truck"></i></span>
+    <small>Esperan materiales</small>
+    <strong>{{ k.materiales }}</strong>
+    <span class="pie">Compras que aún no llegan</span>
+  </button>
+  <button type="button" class="lg-kpi" style="--c: #10b981" (click)="filtro.set(k.facturar ? 'facturar' : 'cobrar')">
+    <span class="icono"><i class="pi pi-wallet"></i></span>
+    <small>Por cobrar</small>
+    <strong>{{ dinero(k.cobrar) }}</strong>
+    <span class="pie">{{ k.facturar }} por facturar · incluye IGV</span>
+  </button>
+</section>
+
+<div class="lg-toolbar">
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input type="text" placeholder="Buscar por código, cliente u orden del cliente" [ngModel]="texto()" (ngModelChange)="texto.set($event)" aria-label="Buscar expedientes" />
+  </label>
+  <div class="lg-seg" role="group" aria-label="Filtrar">
+    <button type="button" [class.on]="filtro() === 'todos'" (click)="filtro.set('todos')">Todos</button>
+    <button type="button" [class.on]="filtro() === 'cliente'" (click)="filtro.set('cliente')">Esperan cliente</button>
+    <button type="button" [class.on]="filtro() === 'materiales'" (click)="filtro.set('materiales')">Esperan materiales</button>
+    <button type="button" [class.on]="filtro() === 'facturar'" (click)="filtro.set('facturar')">Por facturar</button>
+    <button type="button" [class.on]="filtro() === 'cobrar'" (click)="filtro.set('cobrar')">Por cobrar</button>
+  </div>
+  <span class="espacio"></span>
+  <button type="button" class="lg-cta" (click)="abrirNuevo()"><i class="pi pi-plus"></i> Nuevo servicio</button>
+</div>
+
+<div class="lista">
+  @for (e of visibles(); track e.id) {
+    @let i = indice(e);
+    <a class="exp lg-card" [routerLink]="['/servicios/expedientes', e.id]">
+      <div class="cabeza">
+        <div>
+          <span class="lg-mono cod">{{ e.codigo }}{{ e.ordenCliente ? ' · ' + e.ordenCliente.numero : '' }}</span>
+          <strong>{{ e.titulo }}</strong>
+          <small>{{ servicios.cliente(e.clienteId)?.razonSocial }}</small>
+        </div>
+        <div class="der">
+          @if (e.cotizacion) {
+            <span class="monto">{{ dinero(e.cotizacion.monto) }} <small>+ IGV</small></span>
+          }
+          <span class="lg-chip" [class]="e.etapa === 'cobrado' ? 'ok' : 'sin-punto'"><i [class]="etapas[i].icono"></i> {{ etapas[i].nombre }}</span>
+        </div>
+      </div>
+
+      <ol class="pasos" [attr.aria-label]="'Etapa ' + (i + 1) + ' de ' + etapas.length">
+        @for (p of etapas; track p.clave; let j = $index) {
+          <li [class.hecho]="j < i" [class.actual]="j === i" [title]="p.nombre"></li>
+        }
+      </ol>
+
+      <div class="pie">
+        <span class="siguiente"><i class="pi pi-arrow-right"></i> {{ etapas[i].espera }}</span>
+        <span class="meta">
+          @if (pendientes(e); as n) {
+            <span class="lg-chip bajo">{{ n }} tarea{{ n === 1 ? '' : 's' }}</span>
+          }
+          <span><i class="pi pi-user"></i> {{ sim.persona(e.responsableId)?.nombre }}</span>
+        </span>
+      </div>
+    </a>
+  } @empty {
+    <div class="lg-vacio"><i class="pi pi-folder"></i><h4>Nada por aquí</h4><p>No hay servicios con ese filtro.</p></div>
+  }
+</div>
+
+<p-dialog [(visible)]="dialogo" [modal]="true" [draggable]="false" [style]="{ width: 'min(38rem, 96vw)' }" header="Nuevo servicio (expediente)">
+  <form class="lg-form" (ngSubmit)="crear()">
+    <div class="full">
+      <label for="ne-cli">Cliente</label>
+      <p-select inputId="ne-cli" name="cli" [options]="servicios.clientes()" optionLabel="razonSocial" optionValue="id" appendTo="body" placeholder="Elige el cliente" [(ngModel)]="nuevo.clienteId" />
+    </div>
+    <div class="full">
+      <label for="ne-tit">Trabajo</label>
+      <input pInputText id="ne-tit" name="tit" placeholder="Ej. Cámara 2 no enfría" [(ngModel)]="nuevo.titulo" />
+    </div>
+    <div class="full">
+      <label for="ne-sol">Qué pidió el cliente</label>
+      <textarea pTextarea id="ne-sol" name="sol" rows="3" placeholder="Pega aquí el correo o el WhatsApp del cliente" [(ngModel)]="nuevo.solicitud"></textarea>
+    </div>
+    <div class="full">
+      <label for="ne-resp">Responsable</label>
+      <p-select inputId="ne-resp" name="resp" [options]="sim.personas()" optionLabel="nombre" optionValue="id" appendTo="body" [(ngModel)]="nuevo.responsableId" />
+    </div>
+    @if (error(); as e) {
+      <p class="error full"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
+    }
+    <div class="full lg-pie-dialogo">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="dialogo.set(false)">Cancelar</button>
+      <button type="submit" class="lg-cta"><i class="pi pi-check"></i> Abrir expediente</button>
+    </div>
+  </form>
+</p-dialog>

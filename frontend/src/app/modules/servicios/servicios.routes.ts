@@ -20,6 +20,16 @@ export const SERVICIOS_ROUTES: Routes = [
         loadComponent: () => import('./views/informe/informe').then((m) => m.InformeTecnico),
       },
       {
+        path: 'expedientes',
+        data: { titulo: 'Coordinación de servicios', sub: 'Cada servicio de principio a fin: cotización, orden del cliente, ingreso a planta, compras, factura y cobro.' },
+        loadComponent: () => import('./views/expedientes/expedientes').then((m) => m.Expedientes),
+      },
+      {
+        path: 'expedientes/:id',
+        data: { titulo: 'Expediente del servicio', sub: 'Qué falta, quién lo hace y todo lo que pasó, en un solo lugar.' },
+        loadComponent: () => import('./views/expediente/expediente').then((m) => m.ExpedienteView),
+      },
+      {
         path: 'equipos',
         data: { titulo: 'Equipos de clientes', sub: 'Hoja de vida de cada equipo: todos sus servicios e informes.' },
         loadComponent: () => import('./views/equipos/equipos').then((m) => m.Equipos),
