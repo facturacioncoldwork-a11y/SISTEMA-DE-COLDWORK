@@ -9,7 +9,9 @@ import { ELEGIR_EMPRESA_ROUTES, EMPRESAS_ROUTES } from './modules/empresas/empre
 import { EQUIPO_ROUTES } from './modules/equipo/equipo.routes';
 import { FINANZAS_ROUTES } from './modules/finanzas/finanzas.routes';
 import { LOGISTICA_ROUTES } from './modules/logistica/logistica.routes';
+import { PERSONAL_ROUTES } from './modules/personal/personal.routes';
 import { REPORTES_ROUTES } from './modules/reportes/reportes.routes';
+import { SERVICIOS_ROUTES } from './modules/servicios/servicios.routes';
 
 /**
  * Rutas raíz. Cada módulo tiene su propio `<modulo>.routes.ts` y aquí solo se juntan.
@@ -49,9 +51,11 @@ export const routes: Routes = [
       ...FINANZAS_ROUTES,
       ...REPORTES_ROUTES,
 
+      // Operaciones (simulación en revisión)
+      ...SERVICIOS_ROUTES,
+      ...PERSONAL_ROUTES,
+
       // Etapas siguientes
-      enConstruccion('servicios', 'Servicios técnicos', 'tecnica'),
-      enConstruccion('personal', 'Asistencia y planilla', 'personal'),
       enConstruccion('configuracion', 'Configuración', 'admin'),
     ],
   },

@@ -1,0 +1,233 @@
+@if (orden(); as o) {
+  @let i = o.informe;
+  @let eq = equipo();
+  @let cli = cliente();
+
+  <!-- Cabecera de la orden + acciones según el estado -->
+  <section class="lg-card cabecera">
+    <div class="impreso">
+      <strong>{{ empresa.actual()?.razonSocial }}</strong>
+      <span>INFORME TÉCNICO DE SERVICIO · {{ o.numero }}</span>
+    </div>
+    <div class="titulo">
+      <div>
+        <span class="lg-mono num">{{ o.numero }}</span>
+        <h2>{{ cli?.razonSocial }}</h2>
+        <p>{{ tipos[o.tipo].nombre }} · {{ o.fecha.slice(8) }}/{{ o.fecha.slice(5, 7) }} {{ o.hora }} · {{ cli?.direccion }}</p>
+      </div>
+      <div class="estado">
+        <span class="lg-chip" [class]="estados[o.estado].clase"><i [class]="estados[o.estado].icono"></i> {{ estados[o.estado].nombre }}</span>
+        <span class="lg-chip" [class]="prioridades[o.prioridad].clase">{{ prioridades[o.prioridad].nombre }}</span>
+      </div>
+    </div>
+
+    <div class="datos">
+      <div><small>Equipo</small><strong>{{ eq?.tipo }} · {{ eq?.codigo }}</strong><span>{{ eq?.marca }} {{ eq?.modelo }} · serie {{ eq?.serie }}</span></div>
+      <div><small>Refrigerante / capacidad</small><strong>{{ eq?.refrigerante }}</strong><span>{{ eq?.capacidad }} · {{ eq?.ubicacion }}</span></div>
+      <div>
+        <small>Técnicos</small>
+        <span class="tecnicos">
+          @for (t of o.tecnicos; track t) {
+            <span class="tec"><span class="lg-avatar">{{ iniciales(t) }}</span> {{ sim.tecnico(t)?.nombre }}</span>
+          }
+        </span>
+      </div>
+      <div><small>Reporte del cliente</small><span>{{ o.descripcion || '—' }}</span></div>
+    </div>
+
+    <div class="barra no-imprimir"><span [style.width.%]="avance()"></span></div>
+    <div class="acciones no-imprimir">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="volver()"><i class="pi pi-arrow-left"></i> Tablero</button>
+      <span class="espacio"></span>
+      <span class="avance">Informe {{ avance() }} %</span>
+      @switch (o.estado) {
+        @case ('programada') {
+          <button type="button" class="lg-cta" (click)="empezar()"><i class="pi pi-play"></i> Empezar servicio</button>
+        }
+        @case ('en_curso') {
+          <button type="button" class="lg-cta" (click)="terminar()"><i class="pi pi-flag"></i> Terminar y pedir firma</button>
+        }
+        @case ('por_firmar') {
+          <button type="button" class="lg-cta" (click)="cerrar()"><i class="pi pi-check"></i> Cerrar con firma</button>
+        }
+      }
+      <button type="button" class="lg-cta lg-cta--suave" (click)="imprimir()"><i class="pi pi-print"></i> Imprimir / PDF</button>
+    </div>
+  </section>
+
+  <div class="secciones">
+    <!-- 1. Seguridad -->
+    <section class="lg-card">
+      <div class="lg-card__head">
+        <div>
+          <h3>1 · Análisis de Trabajo Seguro (ATS)</h3>
+          <p>Antes de empezar · Ley 29783 de Seguridad y Salud en el Trabajo</p>
+        </div>
+        <span class="lg-chip" [class]="atsCompleto() ? 'ok' : 'bajo'">{{ atsCompleto() ? 'Completo' : 'Pendiente' }}</span>
+      </div>
+      <ul class="checks">
+        @for (a of ats; track a.clave) {
+          <li>
+            <label>
+              <input type="checkbox" [checked]="!!i.ats[a.clave]" [disabled]="cerrada()" (change)="marcarAts(a.clave, $any($event.target).checked)" />
+              {{ a.texto }}
+            </label>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <!-- 2. Diagnóstico y mediciones -->
+    <section class="lg-card">
+      <div class="lg-card__head">
+        <div>
+          <h3>2 · Diagnóstico y mediciones</h3>
+          <p>Lo que encontró el técnico al llegar</p>
+        </div>
+      </div>
+      <div class="medidas">
+        @for (m of i.mediciones; track m.clave) {
+          <label class="medida">
+            <span>{{ nombreMedicion(m.clave) }}</span>
+            <span class="valor">
+              <input type="number" step="0.1" [ngModel]="m.valor" (ngModelChange)="medir(m.clave, $event === '' ? null : $event)" [disabled]="cerrada()" />
+              <em>{{ unidad(m.clave) }}</em>
+            </span>
+          </label>
+        }
+      </div>
+      <label class="campo">
+        <span>Diagnóstico</span>
+        <textarea rows="3" [ngModel]="i.diagnostico" (ngModelChange)="cambiar({ diagnostico: $event })" [disabled]="cerrada()"
+          placeholder="Ej. Baja presión de succión por fuga en válvula de servicio"></textarea>
+      </label>
+    </section>
+
+    <!-- 3. Trabajo realizado -->
+    <section class="lg-card">
+      <div class="lg-card__head">
+        <div>
+          <h3>3 · Trabajo realizado</h3>
+          <p>Qué se hizo, repuestos usados y refrigerante</p>
+        </div>
+      </div>
+      <label class="campo">
+        <span>Trabajos realizados</span>
+        <textarea rows="4" [ngModel]="i.trabajos" (ngModelChange)="cambiar({ trabajos: $event })" [disabled]="cerrada()"
+          placeholder="Paso a paso de lo que se hizo"></textarea>
+      </label>
+
+      <span class="lbl">Repuestos y materiales</span>
+      <table class="lg-tabla repuestos">
+        <tbody>
+          @for (r of i.repuestos; track $index) {
+            <tr>
+              <td>{{ r.descripcion }}</td>
+              <td class="num">{{ r.cantidad }} {{ r.unidad }}</td>
+              <td class="acc no-imprimir">
+                @if (!cerrada()) {
+                  <button type="button" class="icono" (click)="quitarRepuesto($index)" aria-label="Quitar"><i class="pi pi-times"></i></button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="vacio">Sin repuestos</td></tr>
+          }
+        </tbody>
+      </table>
+      @if (!cerrada()) {
+        @let nr = nuevoRepuesto();
+        <div class="agregar no-imprimir">
+          <input type="text" placeholder="Repuesto (en la versión real se elige del inventario)" [ngModel]="nr.descripcion"
+            (ngModelChange)="nuevoRepuesto.set({ descripcion: $event, cantidad: nr.cantidad, unidad: nr.unidad })" />
+          <input type="number" min="1" class="cant" [ngModel]="nr.cantidad"
+            (ngModelChange)="nuevoRepuesto.set({ descripcion: nr.descripcion, cantidad: +$event, unidad: nr.unidad })" />
+          <button type="button" class="lg-cta lg-cta--suave" (click)="agregarRepuesto()"><i class="pi pi-plus"></i></button>
+        </div>
+      }
+
+      <div class="gas">
+        <label class="medida">
+          <span>Refrigerante cargado ({{ eq?.refrigerante }})</span>
+          <span class="valor"><input type="number" step="0.1" [ngModel]="i.gasCargadoKg" (ngModelChange)="cambiar({ gasCargadoKg: $event })" [disabled]="cerrada()" /><em>kg</em></span>
+        </label>
+        <label class="medida">
+          <span>Refrigerante recuperado</span>
+          <span class="valor"><input type="number" step="0.1" [ngModel]="i.gasRecuperadoKg" (ngModelChange)="cambiar({ gasRecuperadoKg: $event })" [disabled]="cerrada()" /><em>kg</em></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- 4. Fotos -->
+    <section class="lg-card">
+      <div class="lg-card__head">
+        <div>
+          <h3>4 · Fotos del servicio</h3>
+          <p>Antes, durante y después · desde la cámara del celular</p>
+        </div>
+      </div>
+      <div class="etapas">
+        @for (etapa of ['antes', 'durante', 'despues']; track etapa) {
+          <div class="etapa">
+            <span class="lbl">{{ etapa === 'despues' ? 'Después' : etapa === 'antes' ? 'Antes' : 'Durante' }}</span>
+            <div class="fotos">
+              @for (f of fotosDe($any(etapa)); track f.id) {
+                <figure>
+                  <img [src]="f.url" alt="Foto del servicio" />
+                  @if (!cerrada()) {
+                    <button type="button" class="quitar no-imprimir" (click)="quitarFoto(f.id)" aria-label="Quitar foto"><i class="pi pi-times"></i></button>
+                  }
+                </figure>
+              }
+              @if (!cerrada()) {
+                <label class="subir no-imprimir">
+                  <i class="pi pi-camera"></i>
+                  <span>Tomar o subir</span>
+                  <input type="file" accept="image/*" capture="environment" multiple (change)="subirFotos($event, $any(etapa))" />
+                </label>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- 5. Conformidad -->
+    <section class="lg-card">
+      <div class="lg-card__head">
+        <div>
+          <h3>5 · Resultado y conformidad del cliente</h3>
+          <p>Tiempo de servicio: {{ horas(i) }}</p>
+        </div>
+      </div>
+      <div class="lg-seg operativo" role="group" aria-label="Estado del equipo">
+        <button type="button" [class.on]="i.equipoOperativo === true" [disabled]="cerrada()" (click)="cambiar({ equipoOperativo: true })"><i class="pi pi-check-circle"></i> Equipo operativo</button>
+        <button type="button" [class.on]="i.equipoOperativo === false" [disabled]="cerrada()" (click)="cambiar({ equipoOperativo: false })"><i class="pi pi-times-circle"></i> Queda inoperativo</button>
+      </div>
+      <label class="campo">
+        <span>Recomendaciones al cliente</span>
+        <textarea rows="2" [ngModel]="i.recomendaciones" (ngModelChange)="cambiar({ recomendaciones: $event })" [disabled]="cerrada()"></textarea>
+      </label>
+
+      <div class="conformidad">
+        @if (i.firmaCliente) {
+          <img class="firma-img" [src]="i.firmaCliente" alt="Firma del cliente" />
+        } @else if (o.estado === 'por_firmar') {
+          <app-firma (firmada)="cambiar({ firmaCliente: $event ?? undefined })" />
+        } @else {
+          <p class="vacio">La firma se pide al terminar el servicio.</p>
+        }
+        <div class="firma-datos">
+          <label class="campo"><span>Nombre de quien recibe</span><input type="text" [ngModel]="i.firmaNombre" (ngModelChange)="cambiar({ firmaNombre: $event })" [disabled]="cerrada()" /></label>
+          <label class="campo"><span>DNI</span><input type="text" maxlength="8" inputmode="numeric" [ngModel]="i.firmaDni" (ngModelChange)="cambiar({ firmaDni: $event })" [disabled]="cerrada()" /></label>
+        </div>
+      </div>
+    </section>
+  </div>
+} @else {
+  <div class="lg-vacio">
+    <i class="pi pi-search"></i>
+    <h4>No encontramos esa orden</h4>
+    <p><a routerLink="/servicios">Volver al tablero</a></p>
+  </div>
+}
