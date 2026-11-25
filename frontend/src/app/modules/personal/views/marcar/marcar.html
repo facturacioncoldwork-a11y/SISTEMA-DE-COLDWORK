@@ -93,7 +93,7 @@
               <button type="button" class="enlace" (click)="abrirSinGps()">¿Tu celular falla o no tiene GPS?</button>
             }
           }
-          <p class="pista suave"><i class="pi pi-clock"></i> Refrigerio de {{ h.refrigerioInicio }} ({{ h.refrigerio }} min): se descuenta solo, no hace falta marcar.</p>
+          <p class="pista suave"><i class="pi pi-clock"></i> Refrigerio de {{ h.refrigerio }} min, a la hora que te toque (entre {{ h.refrigerioDesde }} y {{ h.refrigerioHasta }}): se descuenta solo, no hace falta marcar.</p>
         }
         @case ('qr') {
           <div class="paso">

@@ -47,8 +47,12 @@ export interface Horario {
   salida: string;
   /** Minutos de refrigerio (mínimo 45, no forma parte de la jornada). Se descuenta solo: no se marca. */
   refrigerio: number;
-  /** Hora en que empieza el refrigerio (ej. 12:00). */
-  refrigerioInicio: string;
+  /**
+   * Rango en que normalmente almuerzan (ej. 12:00 a 15:00). Es solo una guía: el refrigerio
+   * se descuenta por DURACIÓN, sea a la hora que sea (a las 12, a la 1 o a las 2).
+   */
+  refrigerioDesde: string;
+  refrigerioHasta: string;
   /** Minutos de tolerancia antes de contar tardanza. */
   tolerancia: number;
   /** Jornada ordinaria diaria en minutos (máximo 8 h). */

@@ -6,7 +6,8 @@ const H: Horario = {
   entrada: '08:00',
   salida: '17:00',
   refrigerio: 60,
-  refrigerioInicio: '12:00',
+  refrigerioDesde: '12:00',
+  refrigerioHasta: '15:00',
   tolerancia: 10,
   jornada: 480,
   metodos: { gps: true, qr: true, manual: true },
@@ -33,6 +34,13 @@ describe('horas · normas de Perú', () => {
 
   it('menos de 10 min después de la salida no son horas extra', () => {
     expect(resumenDia({ entrada: '08:00', salida: '17:08' }, H).extra25).toBe(0);
+  });
+
+  it('el refrigerio se descuenta por duración: da igual si almuerzan a las 12, a la 1 o a las 2', () => {
+    // Las marcas son solo de entrada y salida: la hora del almuerzo no cambia el resultado
+    const r = resumenDia({ entrada: '08:00', salida: '17:00' }, { ...H, refrigerioDesde: '12:00', refrigerioHasta: '15:00' });
+    expect(r.trabajados).toBe(480);
+    expect(resumenDia({ entrada: '08:00', salida: '17:00' }, { ...H, refrigerioDesde: '14:00', refrigerioHasta: '15:00' }).trabajados).toBe(480);
   });
 
   it('media jornada de 4 h no descuenta refrigerio', () => {
