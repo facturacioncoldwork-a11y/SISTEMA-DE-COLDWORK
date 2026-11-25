@@ -44,7 +44,7 @@ export class ExpedienteView {
   protected f = { cotNumero: '', cotMonto: null as number | null, ocNumero: '', fechaIngreso: hoy(), hes: '', factura: '' };
 
   // Tareas y compras
-  protected nuevaTarea = { texto: '', asignadoA: 'p2', vence: hoy() };
+  protected nuevaTarea = { texto: '', asignadoA: '', vence: hoy() };
   protected nuevaCompra = { descripcion: '', proveedor: '' };
 
   // Correo de ingreso
@@ -57,8 +57,8 @@ export class ExpedienteView {
     // Quien tiene el SCTR vencido no puede ingresar: no va en el correo
     const personal = e.ingreso.personal
       .flatMap((id) => this.servicios.tecnico(id) ?? [])
-      .filter((t) => t.sctrHasta >= this.hoy)
-      .map((t, n) => `${n + 1}. ${t.nombre} · ${t.especialidad} · SCTR vigente hasta ${t.sctrHasta.split('-').reverse().join('/')}`);
+      .filter((t) => !t.sctrHasta || t.sctrHasta >= this.hoy)
+      .map((t, n) => `${n + 1}. ${t.nombre}${t.sctrHasta ? ` · SCTR vigente hasta ${t.sctrHasta.split('-').reverse().join('/')}` : ''}`);
     const fecha = (e.ingreso.fecha ?? hoy()).split('-').reverse().join('/');
     const empresa = this.empresa.actual()?.razonSocial ?? 'COLD WORK S.A.C.';
     return {
@@ -75,11 +75,11 @@ export class ExpedienteView {
 
   /** Asignados al ingreso cuyo SCTR ya venció (hay que reemplazarlos o renovar el seguro). */
   protected readonly sctrVencidos = computed(() =>
-    (this.exp()?.ingreso.personal ?? []).flatMap((id) => this.servicios.tecnico(id) ?? []).filter((t) => t.sctrHasta < this.hoy),
+    (this.exp()?.ingreso.personal ?? []).flatMap((id) => this.servicios.tecnico(id) ?? []).filter((t) => !!t.sctrHasta && t.sctrHasta < this.hoy),
   );
 
   protected readonly tecnicosIngreso = computed(() =>
-    this.servicios.tecnicos().map((t) => ({ ...t, vencido: t.sctrHasta < this.hoy, elegido: this.exp()?.ingreso.personal.includes(t.id) ?? false })),
+    this.servicios.tecnicos().map((t) => ({ ...t, vencido: !!t.sctrHasta && t.sctrHasta < this.hoy, elegido: this.exp()?.ingreso.personal.includes(t.id) ?? false })),
   );
 
   // ── Forma de pago (adelantos) ──────────────────────────────────
@@ -199,7 +199,8 @@ export class ExpedienteView {
   protected agregarTarea() {
     const e = this.exp();
     if (!e || this.nuevaTarea.texto.trim().length < 3) return;
-    this.sim.agregarTarea(e.id, { ...this.nuevaTarea, texto: this.nuevaTarea.texto.trim() });
+    const asignadoA = this.nuevaTarea.asignadoA || this.sim.personas()[0]?.id || '';
+    this.sim.agregarTarea(e.id, { ...this.nuevaTarea, asignadoA, texto: this.nuevaTarea.texto.trim() });
     this.nuevaTarea = { texto: '', asignadoA: this.nuevaTarea.asignadoA, vence: hoy() };
   }
 

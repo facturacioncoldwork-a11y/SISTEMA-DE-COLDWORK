@@ -1,33 +1,34 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { hoy, sumarDias } from '../../finanzas/utils/calculos';
+import { NOMBRE_ROL } from '../../../core/permisos/areas';
+import { hoy } from '../../finanzas/utils/calculos';
 import { ETAPAS, indiceEtapa } from '../data/etapas';
 import type { HitoPago } from '../models/cotizacion.model';
 import type { Compra, Expediente, Persona, Tarea } from '../models/expediente.model';
-import { hitosConMonto } from '../utils/cotizacion';
-import { ServiciosSim } from './servicios-sim.service';
+import { DatosEmpresa } from './datos-empresa.service';
 
 /**
- * SIMULACIÓN de expedientes de servicio (coordinación): solo en memoria.
+ * VISTA PREVIA de la coordinación de servicios (expedientes): en memoria, aún no se guarda.
+ * Las personas son el personal REAL de la empresa; los servicios empiezan vacíos.
  * Al conectarlo: tablas propias, cada cambio queda en el historial y se ve en tiempo real.
  */
 @Injectable({ providedIn: 'root' })
 export class ExpedientesSim {
-  private readonly servicios = inject(ServiciosSim);
+  private readonly datos = inject(DatosEmpresa);
 
-  /** Quién coordina y quién compra (además de los técnicos). */
-  readonly personas = signal<Persona[]>([
-    { id: 'yo', nombre: 'Tú', cargo: 'Dueño' },
-    { id: 'p1', nombre: 'Ing. Ricardo Flores', cargo: 'Coordinador de servicios' },
-    { id: 'p2', nombre: 'José Sánchez', cargo: 'Compras y almacén' },
-  ]);
+  /** Quien usa la app + su personal (Equipo y accesos). */
+  readonly personas = computed<Persona[]>(() => {
+    const yo = this.datos.yo();
+    const otros = this.datos
+      .activos()
+      .filter((m) => m.usuarioId !== yo.id)
+      .map((m) => ({ id: m.usuarioId, nombre: m.nombre || m.correo, cargo: NOMBRE_ROL[m.rol] }));
+    return [{ id: yo.id, nombre: `${yo.nombre} (tú)`, cargo: 'Tú' }, ...otros];
+  });
 
-  /** Todos los que pueden recibir una tarea: coordinación + técnicos. */
-  readonly asignables = computed(() => [
-    ...this.personas(),
-    ...this.servicios.tecnicos().map((t) => ({ id: t.id, nombre: t.nombre, cargo: 'Técnico' })),
-  ]);
+  /** Todos los que pueden recibir una tarea. */
+  readonly asignables = this.personas;
 
-  readonly expedientes = signal<Expediente[]>(this.ejemplo());
+  readonly expedientes = signal<Expediente[]>([]);
 
   persona(id: string) {
     return this.asignables().find((p) => p.id === id);
@@ -37,11 +38,15 @@ export class ExpedientesSim {
     return this.expedientes().find((e) => e.id === id);
   }
 
+  private autor(): string {
+    return this.datos.yo().nombre;
+  }
+
   crear(datos: Pick<Expediente, 'clienteId' | 'titulo' | 'solicitud' | 'responsableId'>): Expediente {
     const n = this.expedientes().length + 1;
     const e: Expediente = {
       ...datos,
-      id: `ex${Date.now()}`,
+      id: crypto.randomUUID(),
       codigo: `EXP-${hoy().slice(0, 4)}-${String(n).padStart(3, '0')}`,
       etapa: 'solicitud',
       creado: hoy(),
@@ -49,7 +54,7 @@ export class ExpedientesSim {
       ordenesTrabajo: [],
       tareas: [],
       compras: [],
-      historial: [{ fecha: ahora(), autor: 'Tú', texto: 'Se abrió el expediente con la solicitud del cliente.' }],
+      historial: [{ fecha: ahora(), autor: this.autor(), texto: 'Se abrió el expediente con la solicitud del cliente.' }],
     };
     this.expedientes.update((l) => [e, ...l]);
     return e;
@@ -60,7 +65,7 @@ export class ExpedientesSim {
     this.expedientes.update((l) =>
       l.map((e) =>
         e.id === id
-          ? { ...e, ...cambios, historial: nota ? [{ fecha: ahora(), autor: 'Tú', texto: nota }, ...e.historial] : e.historial }
+          ? { ...e, ...cambios, historial: nota ? [{ fecha: ahora(), autor: this.autor(), texto: nota }, ...e.historial] : e.historial }
           : e,
       ),
     );
@@ -117,115 +122,6 @@ export class ExpedientesSim {
     const textos = { por_pedir: 'por pedir', pedido: 'pedido al proveedor', llego: 'llegó' };
     this.actualizar(id, { compras: e.compras.map((x) => (x.id === compraId ? { ...x, estado } : x)) }, `${c.descripcion}: ${textos[estado]}`);
   }
-
-  private ejemplo(): Expediente[] {
-    const h = hoy();
-    const base = { ingreso: { personal: [] as string[], sctrEnviado: false, induccion: false, guiaRemision: false, correoEnviado: false }, ordenesTrabajo: [] as string[], compras: [] as Compra[], tareas: [] as Tarea[] };
-    return [
-      {
-        ...base,
-        id: 'ex1',
-        codigo: 'EXP-2026-014',
-        clienteId: 'c1',
-        titulo: 'Cámara 1 no baja de -10 °C',
-        solicitud: 'Correo de la Ing. Rosa Pérez: la cámara de producto terminado no llega a temperatura. Urgente por exportación.',
-        responsableId: 'p1',
-        etapa: 'ejecucion',
-        moneda: 'PEN',
-        exigirAdelanto: true,
-        hitos: hitos(2850, [50, 50], ['cobrado', 'pendiente']),
-        creado: sumarDias(h, -3),
-        cotizacion: { numero: 'COT-2026-088', monto: 2850, fecha: sumarDias(h, -3) },
-        ordenCliente: { numero: 'OS-4500021987', fecha: sumarDias(h, -2) },
-        ingreso: { personal: ['t1', 't2'], fecha: h, sctrEnviado: true, induccion: true, guiaRemision: true, correoEnviado: true },
-        ordenesTrabajo: ['ot1'],
-        compras: [
-          { id: 'k1', descripcion: 'Filtro secador 5/8" roscable', proveedor: 'Frío Importaciones', estado: 'llego' },
-          { id: 'k2', descripcion: 'Gas R-404A (balón 10.9 kg)', proveedor: 'Friotem', estado: 'llego' },
-        ],
-        tareas: [
-          { id: 'a1', texto: 'Enviar lista de personal y SCTR a seguridad de planta', asignadoA: 'p1', vence: sumarDias(h, -1), hecha: true },
-          { id: 'a2', texto: 'Comprar filtro secador y gas', asignadoA: 'p2', vence: sumarDias(h, -1), hecha: true },
-          { id: 'a3', texto: 'Subir fotos del antes y después', asignadoA: 't1', vence: h, hecha: false },
-        ],
-        historial: [
-          { fecha: `${h} 08:40`, autor: 'Carlos Huamán', texto: 'Inició la orden de trabajo OT-000241 en planta.' },
-          { fecha: `${sumarDias(h, -1)} 17:10`, autor: 'José Sánchez', texto: 'Llegaron el filtro secador y el gas.' },
-          { fecha: `${sumarDias(h, -2)} 11:30`, autor: 'Ing. Ricardo Flores', texto: 'El cliente envió la orden de servicio OS-4500021987.' },
-          { fecha: `${sumarDias(h, -3)} 16:00`, autor: 'Ing. Ricardo Flores', texto: 'Cotización COT-2026-088 enviada por S/ 2,850.00.' },
-        ],
-      },
-      {
-        ...base,
-        id: 'ex2',
-        codigo: 'EXP-2026-015',
-        clienteId: 'c2',
-        titulo: 'Mantenimiento trimestral del chiller',
-        solicitud: 'Contrato de mantenimiento preventivo: visita de noviembre.',
-        responsableId: 'p1',
-        etapa: 'cotizacion',
-        creado: sumarDias(h, -2),
-        cotizacion: { numero: 'COT-2026-091', monto: 1650, fecha: sumarDias(h, -1) },
-        tareas: [{ id: 'b1', texto: 'Llamar para confirmar si aprueban la cotización', asignadoA: 'p1', vence: h, hecha: false }],
-        historial: [{ fecha: `${sumarDias(h, -1)} 10:15`, autor: 'Ing. Ricardo Flores', texto: 'Cotización COT-2026-091 enviada por S/ 1,650.00.' }],
-      },
-      {
-        ...base,
-        id: 'ex3',
-        codigo: 'EXP-2026-016',
-        clienteId: 'c3',
-        titulo: 'Instalación de vitrina nueva (lácteos)',
-        solicitud: 'WhatsApp de la Sra. Ana Rojas: quiere cambiar la vitrina de lácteos antes de diciembre.',
-        responsableId: 'p1',
-        etapa: 'orden_cliente',
-        moneda: 'PEN',
-        exigirAdelanto: true,
-        hitos: hitos(12400, [40, 50, 10], ['pendiente', 'pendiente', 'pendiente']),
-        creado: sumarDias(h, -6),
-        cotizacion: { numero: 'COT-2026-079', monto: 12400, fecha: sumarDias(h, -6) },
-        ordenCliente: { numero: 'OC-000318', fecha: sumarDias(h, -1) },
-        ingreso: { personal: ['t3'], sctrEnviado: false, induccion: false, guiaRemision: false, correoEnviado: false },
-        compras: [{ id: 'k3', descripcion: 'Vitrina refrigerada 2.5 m', proveedor: 'Por definir', estado: 'por_pedir' }],
-        tareas: [{ id: 'c1', texto: 'Cotizar la vitrina con dos proveedores', asignadoA: 'p2', vence: sumarDias(h, 1), hecha: false }],
-        historial: [{ fecha: `${sumarDias(h, -1)} 09:00`, autor: 'Ing. Ricardo Flores', texto: 'El cliente aprobó: orden de compra OC-000318.' }],
-      },
-      {
-        ...base,
-        id: 'ex4',
-        codigo: 'EXP-2026-012',
-        clienteId: 'c2',
-        titulo: 'Cambio de contactor del compresor 2',
-        solicitud: 'Emergencia: compresor 2 del chiller no arranca.',
-        responsableId: 'p1',
-        etapa: 'facturado',
-        moneda: 'PEN',
-        hitos: hitos(980, [100], ['facturado']),
-        creado: sumarDias(h, -10),
-        cotizacion: { numero: 'COT-2026-070', monto: 980, fecha: sumarDias(h, -10) },
-        ordenCliente: { numero: 'OS-4500021550', fecha: sumarDias(h, -10) },
-        ingreso: { personal: ['t1', 't3'], fecha: sumarDias(h, -9), sctrEnviado: true, induccion: true, guiaRemision: false, correoEnviado: true },
-        ordenesTrabajo: ['ot5'],
-        conformidad: { fecha: sumarDias(h, -8), hes: '1000045521' },
-        factura: { numero: 'F001-125', fecha: sumarDias(h, -7) },
-        historial: [{ fecha: `${sumarDias(h, -7)} 12:00`, autor: 'Tú', texto: 'Factura F001-125 emitida (vence a 30 días).' }],
-      },
-    ];
-  }
-}
-
-/** Hitos de ejemplo sobre un valor de venta (se les suma IGV), con su estado. */
-function hitos(valorVenta: number, porcentajes: number[], estados: HitoPago['estado'][]): HitoPago[] {
-  const nombres: Record<number, string[]> = {
-    1: ['Pago con la conformidad'],
-    2: ['Adelanto con la orden', 'Saldo con la conformidad'],
-    3: ['1.er adelanto con la orden', '2.º adelanto según valorización', 'Saldo con la entrega'],
-  };
-  const lista = porcentajes.map((porcentaje, i) => ({ id: crypto.randomUUID(), descripcion: nombres[porcentajes.length][i], porcentaje }));
-  return hitosConMonto(lista, Math.round(valorVenta * 118) / 100).map((h, i) => ({
-    ...h,
-    estado: estados[i],
-    factura: estados[i] !== 'pendiente' ? `F001-${110 + i}` : undefined,
-  }));
 }
 
 function ahora(): string {

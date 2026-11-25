@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
 import type { MetodoMarca } from '../../models/personal.model';
-import { AsistenciaSim, OFICINA } from '../../services/asistencia-sim.service';
+import { AsistenciaSim, LUGAR_OFICINA } from '../../services/asistencia-sim.service';
 import { codigoDelMomento, distanciaMetros } from '../../utils/horas';
 
 /**
@@ -23,24 +23,30 @@ export class Marcar {
   private readonly avisos = inject(MessageService);
 
   protected readonly metodo = signal<MetodoMarca>('gps');
-  protected readonly trabajadorId = signal('t1');
+  /** Por defecto marca quien está usando la app (su propio celular). */
+  private readonly elegido = signal<string | null>(null);
+  protected readonly trabajadorId = computed(() => this.elegido() ?? this.sim.yoId());
   protected readonly trabajador = computed(() => this.sim.trabajador(this.trabajadorId()));
   protected readonly marcaHoy = computed(() => this.sim.marcaDe(this.trabajadorId()));
   protected readonly accion = computed(() => (this.marcaHoy()?.salida ? 'ya' : this.marcaHoy() ? 'salida' : 'entrada'));
 
   // ── GPS + selfie ───────────────────────────────────────────────
-  protected readonly ubicacion = signal<{ lat: number; lng: number; precision: number; simulada: boolean } | null>(null);
+  protected readonly ubicacion = signal<{ lat: number; lng: number; precision: number } | null>(null);
   protected readonly buscando = signal(false);
   protected readonly selfie = signal<string | null>(null);
   protected readonly distancia = computed(() => {
     const u = this.ubicacion();
-    return u ? Math.round(distanciaMetros(u, OFICINA)) : null;
+    const o = this.sim.horario().oficina;
+    return u && o ? Math.round(distanciaMetros(u, o)) : null;
   });
   /** Dentro de la oficina, o técnico de campo (en la versión real: cerca de la obra de su orden de trabajo). */
   protected readonly zona = computed(() => {
+    if (this.ubicacion() && !this.sim.horario().oficina) {
+      return { ok: false, lugar: '', texto: 'Primero fija la ubicación de la oficina en "Horario y métodos".' };
+    }
     const d = this.distancia();
     if (d === null) return null;
-    if (d <= this.sim.horario().radioOficina) return { ok: true, lugar: OFICINA.nombre, texto: `En la oficina (a ${d} m)` };
+    if (d <= this.sim.horario().radioOficina) return { ok: true, lugar: LUGAR_OFICINA, texto: `En la oficina (a ${d} m)` };
     if (this.trabajador()?.campo) return { ok: true, lugar: 'Obra del cliente (OT del día)', texto: `En campo, a ${(d / 1000).toFixed(1)} km de la oficina` };
     return { ok: false, lugar: '', texto: `Fuera de la oficina (a ${(d / 1000).toFixed(1)} km). Personal de oficina solo marca dentro.` };
   });
@@ -60,7 +66,6 @@ export class Marcar {
   protected motivoDeclarado = '';
 
   protected readonly opciones = computed(() => this.sim.trabajadores().map((t) => ({ id: t.id, etiqueta: `${t.nombre} · ${t.cargo}` })));
-  protected readonly oficina = OFICINA;
 
   constructor() {
     const id = setInterval(() => this.reloj.set(Date.now()), 1000);
@@ -72,33 +77,25 @@ export class Marcar {
   }
 
   protected elegirTrabajador(id: string) {
-    this.trabajadorId.set(id);
+    this.elegido.set(id);
     this.ubicacion.set(null);
     this.selfie.set(null);
   }
 
   /** Pide la ubicación real del navegador (con permiso). Solo en el momento de marcar: no se rastrea a nadie. */
   protected obtenerUbicacion() {
-    if (!('geolocation' in navigator)) return this.simularUbicacion(true);
+    if (!('geolocation' in navigator)) return this.error('Este equipo no tiene GPS: usa el código de oficina o "¿Tu celular falla?".');
     this.buscando.set(true);
     navigator.geolocation.getCurrentPosition(
       (p) => {
         this.buscando.set(false);
-        this.ubicacion.set({ lat: p.coords.latitude, lng: p.coords.longitude, precision: Math.round(p.coords.accuracy), simulada: false });
+        this.ubicacion.set({ lat: p.coords.latitude, lng: p.coords.longitude, precision: Math.round(p.coords.accuracy) });
       },
       () => {
         this.buscando.set(false);
-        this.avisos.add({ severity: 'info', summary: 'Ubicación no disponible', detail: 'Usa los botones de simulación.', life: 3500 });
+        this.avisos.add({ severity: 'info', summary: 'Ubicación no disponible', detail: 'Activa el GPS o usa "¿Tu celular falla?".', life: 4000 });
       },
       { enableHighAccuracy: true, timeout: 8000 },
-    );
-  }
-
-  protected simularUbicacion(enOficina: boolean) {
-    this.ubicacion.set(
-      enOficina
-        ? { lat: OFICINA.lat + 0.0003, lng: OFICINA.lng + 0.0002, precision: 12, simulada: true }
-        : { lat: -14.0889, lng: -75.7633, precision: 18, simulada: true },
     );
   }
 
@@ -116,7 +113,7 @@ export class Marcar {
 
   protected marcarCodigo() {
     if (this.codigoEscrito.trim() !== this.codigo()) return this.error('Código incorrecto o vencido. Escribe el que ves ahora en la tablet.');
-    this.registrar('qr', OFICINA.nombre, true);
+    this.registrar('qr', LUGAR_OFICINA, true);
     this.codigoEscrito = '';
   }
 

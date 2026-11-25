@@ -46,7 +46,7 @@ import { ServiciosSim } from '../../services/servicios-sim.service';
           <span class="lbl">Técnicos asignados</span>
           <div class="tecnicos">
             @for (t of sim.tecnicos(); track t.id) {
-              @let vencido = t.sctrHasta < hoyStr;
+              @let vencido = !!t.sctrHasta && t.sctrHasta < hoyStr;
               <button type="button" class="tec" [class.on]="asignados().has(t.id)" [disabled]="vencido" (click)="alternar(t.id)"
                 [title]="vencido ? 'SCTR vencido: no puede ir a campo' : t.especialidad">
                 <span class="lg-avatar">{{ iniciales(t.nombre) }}</span>

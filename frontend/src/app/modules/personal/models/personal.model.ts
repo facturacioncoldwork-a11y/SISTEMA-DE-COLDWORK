@@ -62,4 +62,6 @@ export interface Horario {
   radioOficina: number;
   /** Pedir selfie al marcar con el celular. */
   selfie: boolean;
+  /** Ubicación de la oficina (se fija una vez desde "Horario y métodos" con el GPS). */
+  oficina: { lat: number; lng: number } | null;
 }

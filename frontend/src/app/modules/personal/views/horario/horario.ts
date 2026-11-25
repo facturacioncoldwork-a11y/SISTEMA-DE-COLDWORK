@@ -39,6 +39,17 @@ import { AsistenciaSim } from '../../services/asistencia-sim.service';
         <label class="radio">Radio de la oficina: <b>{{ h.radioOficina }} m</b>
           <input type="range" min="50" max="500" step="10" [(ngModel)]="h.radioOficina" />
         </label>
+        <div class="ubicacion">
+          @if (h.oficina) {
+            <span class="lg-chip ok"><i class="pi pi-map-marker"></i> Oficina ubicada ({{ h.oficina.lat.toFixed(4) }}, {{ h.oficina.lng.toFixed(4) }})</span>
+          } @else {
+            <span class="lg-chip critico">Falta fijar la ubicación de la oficina</span>
+          }
+          <button type="button" class="lg-cta lg-cta--suave" (click)="fijarOficina()" [disabled]="buscando()">
+            <i [class]="buscando() ? 'pi pi-spin pi-spinner' : 'pi pi-compass'"></i> Usar mi ubicación actual como oficina
+          </button>
+          <small>Hazlo una vez estando en la oficina. Sirve para validar las marcas con GPS.</small>
+        </div>
       </section>
     </div>
   `,
@@ -53,6 +64,8 @@ import { AsistenciaSim } from '../../services/asistencia-sim.service';
     .opciones small { color: var(--lg-muted); font-size: 0.78rem; }
     .opciones input { width: 1.1rem; height: 1.1rem; accent-color: var(--lg-blue); }
     .nota-ref { margin: 0; font-size: 0.8rem; color: var(--lg-muted); }
+    .ubicacion { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--lg-line); }
+    .ubicacion small { color: var(--lg-muted); font-size: 0.78rem; }
     .radio { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.86rem; color: var(--lg-muted); }
   `,
 })
@@ -61,6 +74,30 @@ export class HorarioView {
   private readonly avisos = inject(MessageService);
   protected readonly borrador = signal<Horario>(structuredClone(this.sim.horario()));
   protected readonly error = signal<string | null>(null);
+  protected readonly buscando = signal(false);
+
+  /** Toma la ubicación actual del GPS como la de la oficina (se pide permiso al navegador). */
+  protected fijarOficina() {
+    if (!('geolocation' in navigator)) {
+      this.avisos.add({ severity: 'warn', summary: 'Este equipo no tiene GPS', life: 3500 });
+      return;
+    }
+    this.buscando.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        this.buscando.set(false);
+        const oficina = { lat: p.coords.latitude, lng: p.coords.longitude };
+        this.borrador.update((h) => ({ ...h, oficina }));
+        this.sim.guardarHorario({ ...this.sim.horario(), oficina });
+        this.avisos.add({ severity: 'success', summary: 'Oficina ubicada', detail: `Precisión: ${Math.round(p.coords.accuracy)} m`, life: 3500 });
+      },
+      () => {
+        this.buscando.set(false);
+        this.avisos.add({ severity: 'warn', summary: 'No se pudo obtener la ubicación', detail: 'Permite el acceso a la ubicación en el navegador.', life: 4000 });
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
 
   protected guardar() {
     const h = this.borrador();

@@ -8,7 +8,7 @@ import { map } from 'rxjs';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { dinero, hoy } from '../../../finanzas/utils/calculos';
 import type { Cotizacion, LineaCot } from '../../models/cotizacion.model';
-import { CotizacionesSim, DATOS_COTIZACION } from '../../services/cotizaciones-sim.service';
+import { CotizacionesSim } from '../../services/cotizaciones-sim.service';
 import { ServiciosSim } from '../../services/servicios-sim.service';
 import { hitosConMonto, problemasCotizacion, subtotalSeccion, sumaHitos, totalesCotizacion, totalLinea, venceEl } from '../../utils/cotizacion';
 
@@ -177,7 +177,7 @@ export class CotizacionView {
         cotizacion: c,
         cliente: this.servicios.cliente(c.clienteId),
         empresa: { razonSocial: e?.razonSocial ?? 'COLD WORK S.A.C.', ruc: e?.ruc ?? null },
-        datos: DATOS_COTIZACION,
+        datos: this.sim.datosPdf(),
       });
     } catch {
       this.avisos.add({ severity: 'error', summary: 'No se pudo generar el PDF', life: 4000 });

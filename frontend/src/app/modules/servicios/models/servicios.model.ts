@@ -8,8 +8,8 @@ export interface Tecnico {
   id: string;
   nombre: string;
   especialidad: string;
-  /** SCTR vigente hasta (seguro obligatorio para trabajo de riesgo, Ley 26790). */
-  sctrHasta: string;
+  /** SCTR vigente hasta (seguro obligatorio para trabajo de riesgo, Ley 26790). null = aún no registrado. */
+  sctrHasta: string | null;
 }
 
 export interface Cliente {

@@ -32,7 +32,7 @@ export class Expedientes {
 
   // Nuevo expediente
   protected readonly dialogo = signal(false);
-  protected nuevo = { clienteId: '', titulo: '', solicitud: '', responsableId: 'p1' };
+  protected nuevo = { clienteId: '', titulo: '', solicitud: '', responsableId: '' };
   protected readonly error = signal<string | null>(null);
 
   private readonly esperaMateriales = (e: Expediente) => e.compras.some((c) => c.estado !== 'llego');
@@ -86,7 +86,7 @@ export class Expedientes {
   }
 
   protected abrirNuevo() {
-    this.nuevo = { clienteId: '', titulo: '', solicitud: '', responsableId: 'p1' };
+    this.nuevo = { clienteId: '', titulo: '', solicitud: '', responsableId: this.sim.personas()[0]?.id ?? '' };
     this.error.set(null);
     this.dialogo.set(true);
   }

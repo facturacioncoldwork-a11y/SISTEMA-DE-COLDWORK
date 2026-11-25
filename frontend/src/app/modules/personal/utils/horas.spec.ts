@@ -13,6 +13,7 @@ const H: Horario = {
   metodos: { gps: true, qr: true, manual: true },
   radioOficina: 150,
   selfie: true,
+  oficina: null,
 };
 
 describe('horas · normas de Perú', () => {

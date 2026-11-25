@@ -9,7 +9,7 @@ import { aHoras, resumenDia } from '../../utils/horas';
   template: `
     @let t = totales();
     <section class="lg-kpis">
-      <div class="lg-kpi"><small><i class="pi pi-calendar"></i> Días laborables del mes</small><strong>{{ diasLaborables() }}</strong><span class="pie">Lunes a sábado hasta hoy</span></div>
+      <div class="lg-kpi"><small><i class="pi pi-calendar"></i> Días laborables del mes</small><strong>{{ diasLaborables() }}</strong><span class="pie">Desde la primera marca registrada</span></div>
       <div class="lg-kpi"><small><i class="pi pi-clock"></i> Horas trabajadas (todos)</small><strong>{{ aHoras(t.trabajados) }}</strong><span class="pie">Sin contar refrigerio</span></div>
       <div class="lg-kpi"><small><i class="pi pi-plus-circle"></i> Horas extra</small><strong>{{ aHoras(t.extra25 + t.extra35) }}</strong><span class="pie">{{ aHoras(t.extra25) }} al 25 % · {{ aHoras(t.extra35) }} al 35 %</span></div>
       <div class="lg-kpi"><small><i class="pi pi-exclamation-triangle"></i> Tardanzas</small><strong>{{ t.tardanzas }}</strong><span class="pie">{{ t.minTarde }} min en total</span></div>
@@ -82,16 +82,26 @@ import { aHoras, resumenDia } from '../../utils/horas';
 export class Registro {
   protected readonly sim = inject(AsistenciaSim);
   protected readonly aHoras = aHoras;
-  protected readonly elegido = signal('t1');
+  private readonly seleccion = signal<string | null>(null);
+  /** El elegido en la tabla, o el primer trabajador real. */
+  protected readonly elegido = Object.assign(
+    computed(() => this.seleccion() ?? this.sim.trabajadores()[0]?.id ?? ''),
+    { set: (id: string) => this.seleccion.set(id) },
+  );
   protected readonly nombreMes = new Date().toLocaleDateString('es-PE', { month: 'long', year: 'numeric' });
 
-  /** Fechas laborables del mes hasta hoy (lunes a sábado). */
+  /**
+   * Fechas laborables del mes hasta hoy (lunes a sábado), desde el primer día en que se usó la
+   * asistencia: antes de eso no hay registro y no se cuentan faltas.
+   */
   protected readonly fechas = computed(() => {
     const h = new Date();
+    const inicio = this.sim.marcas().reduce((min, m) => (m.fecha < min ? m.fecha : min), '9999-12-31');
     const lista: string[] = [];
     for (let d = 1; d <= h.getDate(); d++) {
       const f = new Date(h.getFullYear(), h.getMonth(), d);
-      if (f.getDay() !== 0) lista.push(`${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+      const iso = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      if (f.getDay() !== 0 && iso >= inicio) lista.push(iso);
     }
     return lista;
   });

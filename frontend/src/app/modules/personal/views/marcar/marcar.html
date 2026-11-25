@@ -2,7 +2,7 @@
 
 <div class="lg-toolbar">
   <div class="como">
-    <label for="sim-trab">Simular como</label>
+    <label for="sim-trab">Marcar como</label>
     <p-select inputId="sim-trab" [options]="opciones()" optionLabel="etiqueta" optionValue="id" appendTo="body" [ngModel]="trabajadorId()" (ngModelChange)="elegirTrabajador($event)" />
   </div>
   <div class="lg-seg" role="group" aria-label="Forma de marcar">
@@ -35,17 +35,14 @@
             <div class="crece">
               <strong>Tu ubicación</strong>
               @if (zona(); as z) {
-                <small [class.mal]="!z.ok"><i [class]="z.ok ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i> {{ z.texto }}{{ ubicacion()?.simulada ? ' (simulada)' : '' }}</small>
+                <small [class.mal]="!z.ok"><i [class]="z.ok ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i> {{ z.texto }}</small>
               } @else {
                 <small>Se pide solo al marcar. No se rastrea al trabajador.</small>
               }
               <div class="botones">
                 <button type="button" class="lg-cta lg-cta--suave chico" (click)="obtenerUbicacion()" [disabled]="buscando()">
                   <i [class]="buscando() ? 'pi pi-spin pi-spinner' : 'pi pi-compass'"></i> Usar mi GPS
-                </button>
-                <button type="button" class="lg-cta lg-cta--suave chico" (click)="simularUbicacion(true)">Simular: oficina</button>
-                <button type="button" class="lg-cta lg-cta--suave chico" (click)="simularUbicacion(false)">Simular: obra</button>
-              </div>
+                </button>              </div>
             </div>
           </div>
           @if (h.selfie) {
@@ -129,7 +126,7 @@
   <div class="lado">
     @if (metodo() === 'qr') {
       <div class="tablet">
-        <small>Tablet de la oficina · {{ oficina.nombre }}</small>
+        <small>Pantalla para la tablet de la oficina</small>
         <span class="codigo lg-mono">{{ codigo().slice(0, 3) }} {{ codigo().slice(3) }}</span>
         <span class="cuenta">Cambia en {{ segundos() }} s</span>
         <div class="anillo"><span [style.width.%]="(segundos() / 30) * 100"></span></div>

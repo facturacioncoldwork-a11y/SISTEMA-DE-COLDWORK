@@ -1,12 +1,12 @@
 import { Component, input } from '@angular/core';
 
-/** Franja que avisa que la pantalla es una SIMULACIÓN (datos de ejemplo, nada se guarda). */
+/** Franja que avisa que la sección es una VISTA PREVIA: todavía no guarda en la base de datos. */
 @Component({
   selector: 'app-aviso-simulacion',
   template: `
     <div class="aviso no-imprimir" role="note">
       <i class="pi pi-eye"></i>
-      <span><strong>Simulación:</strong> {{ texto() }}</span>
+      <span><strong>Vista previa:</strong> {{ texto() }}</span>
     </div>
   `,
   styles: `
@@ -15,5 +15,7 @@ import { Component, input } from '@angular/core';
   `,
 })
 export class AvisoSimulacion {
-  readonly texto = input('datos de ejemplo para revisar el diseño. Nada se guarda en la base de datos.');
+  readonly texto = input(
+    'esta sección aún no guarda en la base de datos; lo que registres se borra al recargar la página. Clientes y personal son los reales de tu empresa.',
+  );
 }

@@ -65,14 +65,14 @@
               @for (t of tecnicosIngreso(); track t.id) {
                 <button type="button" class="per" [class.on]="t.elegido" [disabled]="t.vencido" (click)="alternarPersonal(t.id)">
                   <span class="lg-avatar">{{ iniciales(t.nombre) }}</span>
-                  <span><strong>{{ t.nombre }}</strong><small [class.mal]="t.vencido">{{ t.vencido ? 'SCTR vencido: no puede ingresar' : 'SCTR al ' + t.sctrHasta.split('-').reverse().join('/') }}</small></span>
+                  <span><strong>{{ t.nombre }}</strong><small [class.mal]="t.vencido">{{ t.vencido ? 'SCTR vencido: no puede ingresar' : t.sctrHasta ? 'SCTR al ' + t.sctrHasta.split('-').reverse().join('/') : 'SCTR aún no registrado' }}</small></span>
                 </button>
               }
             </div>
             @for (v of sctrVencidos(); track v.id) {
               <p class="alerta">
                 <i class="pi pi-exclamation-triangle"></i>
-                <span><b>{{ v.nombre }}</b> estaba asignado, pero su SCTR venció el {{ v.sctrHasta.split('-').reverse().join('/') }}: no puede ingresar a la planta.</span>
+                <span><b>{{ v.nombre }}</b> estaba asignado, pero su SCTR venció el {{ v.sctrHasta?.split('-')?.reverse()?.join('/') }}: no puede ingresar a la planta.</span>
                 <button type="button" class="lg-cta lg-cta--suave chico" (click)="alternarPersonal(v.id)">Quitarlo</button>
               </p>
             }

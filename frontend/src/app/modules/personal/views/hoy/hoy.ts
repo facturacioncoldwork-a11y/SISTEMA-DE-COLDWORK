@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { MetodoMarca } from '../../models/personal.model';
-import { AsistenciaSim, OFICINA } from '../../services/asistencia-sim.service';
+import { AsistenciaSim, LUGAR_OFICINA } from '../../services/asistencia-sim.service';
 import { aHoras, resumenDia } from '../../utils/horas';
 
 const METODOS: Record<MetodoMarca, { nombre: string; icono: string }> = {
@@ -31,7 +31,7 @@ const AUSENCIAS: Record<string, string> = {
     </section>
 
     <div class="lg-toolbar">
-      <span class="lg-chip ok">{{ oficina }}</span>
+      <span class="lg-chip" [class]="sim.horario().oficina ? 'ok' : 'critico'">{{ oficina() }}</span>
       <span class="espacio"></span>
       <a class="lg-cta lg-cta--suave" routerLink="/personal/registro"><i class="pi pi-calendar"></i> Registro del mes</a>
       <a class="lg-cta" routerLink="/personal/marcar"><i class="pi pi-mobile"></i> Probar cómo marca un trabajador</a>
@@ -89,7 +89,7 @@ const AUSENCIAS: Record<string, string> = {
 export class AsistenciaHoy {
   protected readonly sim = inject(AsistenciaSim);
   protected readonly metodos = METODOS;
-  protected readonly oficina = OFICINA.nombre;
+  protected readonly oficina = computed(() => (this.sim.horario().oficina ? 'Ubicación de la oficina fijada' : 'Falta fijar la ubicación de la oficina'));
 
   protected readonly filas = computed(() => {
     const h = this.sim.horario();
@@ -125,7 +125,7 @@ export class AsistenciaHoy {
     return {
       total: f.length,
       presentes: f.filter((x) => x.m).length,
-      campo: f.filter((x) => x.m && x.m.lugar !== OFICINA.nombre).length,
+      campo: f.filter((x) => x.m && x.m.lugar !== LUGAR_OFICINA).length,
       tarde: f.filter((x) => x.m && resumenDia(x.m, h).tardanza > 0).length,
       faltan: f.filter((x) => !x.m).length,
       justificados: f.filter((x) => !x.m && x.clase === 'sin-punto').length,

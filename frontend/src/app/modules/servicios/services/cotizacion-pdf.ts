@@ -74,7 +74,7 @@ export async function descargarCotizacionPdf(d: DatosCotizacionPdf): Promise<voi
     body: [
       ['Cliente', `: ${cli?.razonSocial ?? '—'}`, 'Fecha', `: ${fechaPe(q.fecha)}`],
       ['RUC', `: ${cli?.ruc ?? '—'}`, 'Validez de oferta', `: ${q.validezDias} días (hasta ${fechaPe(venceEl(q))})`],
-      ['Atención', `: ${q.atencion || '—'}`, 'Enviar orden a', `: ${d.datos.enviarOrdenA}`],
+      ['Atención', `: ${q.atencion || '—'}`, 'Enviar orden a', `: ${d.datos.enviarOrdenA || '—'}`],
       ['Celular', `: ${q.celular || '—'}`, 'Moneda', `: ${q.moneda === 'USD' ? 'Dólares americanos' : 'Soles'}`],
       ['Proyecto', `: ${q.proyecto}`, '', ''],
       ['Ubicación', `: ${q.ubicacion || '—'}`, '', ''],
@@ -161,12 +161,12 @@ export async function descargarCotizacionPdf(d: DatosCotizacionPdf): Promise<voi
     y += 2;
   }
 
-  // ── Cuentas ───────────────────────────────────────────────────
+  // ── Cuentas (solo si la empresa las configuró) ────────────────
   if (y > H - 40) {
     doc.addPage();
     y = 18;
   }
-  autoTable(doc, {
+  if (d.datos.cuentas.length) autoTable(doc, {
     startY: y,
     margin: { left: M, right: M },
     theme: 'grid',
