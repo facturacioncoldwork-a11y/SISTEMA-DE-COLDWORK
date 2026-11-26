@@ -239,3 +239,54 @@ h4 {
   text-decoration: underline;
   cursor: pointer;
 }
+
+.proy {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--lg-blue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.1rem;
+  i {
+    font-size: 0.66rem;
+  }
+}
+.proyecto-det {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  margin: 0.6rem 0;
+  border-radius: 0.85rem;
+  background: rgb(59 130 246 / 0.07);
+  border: 1px solid rgb(59 130 246 / 0.2);
+  > i {
+    color: var(--lg-blue);
+  }
+  div {
+    display: grid;
+    flex: 1;
+  }
+  small {
+    font-size: 0.68rem;
+    color: var(--lg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .lg-mono {
+    font-size: 0.74rem;
+    color: var(--lg-blue);
+  }
+  .aprob {
+    flex: none;
+    text-align: right;
+  }
+}
+// El nombre del proyecto se recorta con "…" sin ensanchar la columna del tablero
+.lg-col,
+.tarjetas,
+.lg-oc {
+  min-width: 0;
+}

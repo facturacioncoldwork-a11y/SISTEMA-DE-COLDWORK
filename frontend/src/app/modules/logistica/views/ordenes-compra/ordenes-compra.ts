@@ -7,6 +7,7 @@ import { LineaTiempo } from '../../components/linea-tiempo/linea-tiempo';
 import { ImportarCotizacion } from '../../components/importar-cotizacion/importar-cotizacion';
 import { OrdenDialogo } from '../../components/orden-dialogo/orden-dialogo';
 import { PdfOrden } from '../../components/pdf-orden/pdf-orden';
+import { ProyectosOc } from '../../components/proyectos-oc/proyectos-oc';
 import {
   ESTADOS_OC,
   SIMBOLO,
@@ -28,6 +29,7 @@ import { OrdenesCompraService } from '../../services/ordenes-compra.service';
 @Component({
   selector: 'app-ordenes-compra',
   imports: [
+    ProyectosOc,
     FormsModule,
     DatePipe,
     DecimalPipe,
@@ -52,7 +54,7 @@ export class OrdenesCompra implements OnInit {
   protected readonly ordenes = signal<OrdenCompra[]>([]);
   protected readonly cargando = signal(true);
   protected readonly texto = signal('');
-  protected readonly vista = signal<'tablero' | 'tiempo'>('tablero');
+  protected readonly vista = signal<'tablero' | 'proyectos' | 'tiempo'>('tablero');
   protected readonly verAnuladas = signal(false);
   protected readonly detalle = signal<OrdenCompra | null>(null);
   protected readonly detalleVisible = signal(false);
@@ -69,7 +71,7 @@ export class OrdenesCompra implements OnInit {
   protected readonly colorLlegada = colorLlegada;
   protected readonly colorCliente = colorCliente;
 
-  private readonly filtradas = computed(() => {
+  protected readonly filtradas = computed(() => {
     const t = this.texto().trim().toLowerCase();
     return this.ordenes().filter(
       (o) =>
@@ -79,6 +81,8 @@ export class OrdenesCompra implements OnInit {
           o.proveedor.razonSocial,
           o.almacen.nombre,
           o.cliente,
+          o.proyecto?.codigo,
+          o.proyecto?.nombre,
           ...o.items.map((i) => i.nombre),
         ]
           .join(' ')

@@ -3,7 +3,7 @@
     <i class="pi pi-search"></i>
     <input
       type="text"
-      placeholder="Buscar por código, proveedor, cliente o producto"
+      placeholder="Buscar por código, proyecto, proveedor o producto"
       [ngModel]="texto()"
       (ngModelChange)="texto.set($event)"
       aria-label="Buscar órdenes"
@@ -12,6 +12,9 @@
   <div class="lg-seg" aria-label="Vista">
     <button type="button" [class.on]="vista() === 'tablero'" (click)="vista.set('tablero')">
       <i class="pi pi-objects-column"></i> Tablero
+    </button>
+    <button type="button" [class.on]="vista() === 'proyectos'" (click)="vista.set('proyectos')">
+      <i class="pi pi-briefcase"></i> Por proyecto
     </button>
     <button type="button" [class.on]="vista() === 'tiempo'" (click)="vista.set('tiempo')">
       <i class="pi pi-calendar"></i> Línea de tiempo
@@ -67,6 +70,8 @@
 
 @if (vista() === 'tiempo') {
   <app-linea-tiempo [ordenes]="enTiempo()" (abrir)="ver($event)" />
+} @else if (vista() === 'proyectos') {
+  <app-proyectos-oc [ordenes]="filtradas()" (abrir)="ver($event)" />
 } @else {
   <div
     class="lg-kanban"
@@ -105,6 +110,12 @@
                   ></i>
                 }
               </div>
+              @if (o.proyecto) {
+                <span class="proy" [title]="o.proyecto.nombre"
+                  ><i class="pi pi-briefcase"></i> {{ o.proyecto.codigo }} ·
+                  {{ o.proyecto.nombre }}</span
+                >
+              }
               <strong>{{ o.proveedor.razonSocial }}</strong>
               <span class="items"
                 >{{ o.items.length }} productos{{ o.cliente ? ' · para ' + o.cliente : '' }}</span
@@ -151,6 +162,21 @@
         }}</span>
         <span>{{ o.avance }}% recibido</span>
       </div>
+      @if (o.proyecto) {
+        <div class="proyecto-det">
+          <i class="pi pi-briefcase"></i>
+          <div>
+            <small>Proyecto</small>
+            <b>{{ o.proyecto.nombre }}</b>
+            <span class="lg-mono">{{ o.proyecto.codigo }}</span>
+          </div>
+          @if (o.fechaAprobado) {
+            <div class="aprob">
+              <small>Aprobado</small><b>{{ o.fechaAprobado + 'T12:00:00' | date: 'd MMM y' }}</b>
+            </div>
+          }
+        </div>
+      }
       <ol class="linea-estados">
         @for (e of columnas; track e; let i = $index) {
           <li [class.on]="columnas.indexOf(o.estado) >= i && o.estado !== 'anulada'">

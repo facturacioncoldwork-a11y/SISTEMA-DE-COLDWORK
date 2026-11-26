@@ -1,0 +1,129 @@
+<div class="cuadros">
+  @for (p of proyectos(); track p.clave) {
+    <button
+      type="button"
+      class="cuadro lg-card"
+      [class.on]="elegido() === p.clave"
+      [class.sin]="!p.codigo"
+      (click)="elegir(p)"
+      [attr.aria-expanded]="elegido() === p.clave"
+    >
+      <div class="cab">
+        <span class="sello"><i [class]="p.codigo ? 'pi pi-briefcase' : 'pi pi-inbox'"></i></span>
+        @if (p.atrasadas) {
+          <span class="atraso" [title]="p.atrasadas + ' orden(es) atrasada(s)'"
+            ><i class="pi pi-exclamation-circle"></i> {{ p.atrasadas }}</span
+          >
+        }
+      </div>
+      @if (p.codigo) {
+        <span class="codigo">{{ p.codigo }}</span>
+      }
+      <strong class="nombre">{{ p.nombre }}</strong>
+      <span class="datos"
+        >{{ p.equipos.length }} {{ p.equipos.length === 1 ? 'equipo' : 'equipos' }} ·
+        {{ p.ordenes.length }} {{ p.ordenes.length === 1 ? 'orden' : 'órdenes' }}</span
+      >
+      <div class="barra" [attr.aria-label]="avance(p) + '% recibido'">
+        <span [style.width.%]="avance(p)"></span>
+      </div>
+      <div class="pie">
+        <span>{{ avance(p) }}% recibido</span>
+        <span>{{
+          p.proxima ? 'Próxima: ' + (p.proxima + 'T12:00:00' | date: 'd MMM') : 'Todo llegó'
+        }}</span>
+      </div>
+    </button>
+  } @empty {
+    <div class="lg-card lg-vacio">
+      <i class="pi pi-briefcase"></i>
+      <h4>Sin órdenes de compra</h4>
+      <p>Al crear una orden elige su proyecto: aquí se agrupan los equipos de cada uno.</p>
+    </div>
+  }
+</div>
+
+@if (abierto(); as p) {
+  <section class="lg-card detalle">
+    <header>
+      <div>
+        @if (p.codigo) {
+          <span class="codigo">{{ p.codigo }}</span>
+        }
+        <h3>{{ p.nombre }}</h3>
+        <p>
+          {{ p.recibidos | number: '1.0-2' }} de {{ p.pedidos | number: '1.0-2' }} unidades
+          recibidas · comprado {{ montos(p.comprado) }}
+        </p>
+      </div>
+      <button type="button" class="cerrar" (click)="elegido.set(null)" aria-label="Cerrar">
+        <i class="pi pi-times"></i>
+      </button>
+    </header>
+    <div class="lg-scroll">
+      <table class="lg-tabla">
+        <thead>
+          <tr>
+            <th>Equipo / producto</th>
+            <th class="num">Cantidad</th>
+            <th>Proveedor</th>
+            <th>Orden</th>
+            <th>Llegada</th>
+            <th>Cliente</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of p.equipos; track e.orden.id + e.sku) {
+            @let s = seg(e.orden);
+            <tr
+              class="clic"
+              (click)="abrir.emit(e.orden)"
+              tabindex="0"
+              (keydown.enter)="abrir.emit(e.orden)"
+            >
+              <td>
+                <strong>{{ e.nombre }}</strong>
+                <span class="sub lg-mono">{{ e.sku }}</span>
+              </td>
+              <td class="num">
+                <b>{{ e.cantidad | number: '1.0-2' }}</b> {{ e.unidad }}
+                <span class="sub" [class.ok]="e.recibida >= e.cantidad">{{
+                  e.recibida >= e.cantidad ? 'recibido' : e.recibida + ' recibido(s)'
+                }}</span>
+              </td>
+              <td>{{ e.orden.proveedor.razonSocial }}</td>
+              <td>
+                <span class="lg-mono">{{ e.orden.codigo }}</span>
+                <span class="lg-chip sub-chip" [style.--c]="estado(e.orden.estado).color">{{
+                  estado(e.orden.estado).nombre
+                }}</span>
+              </td>
+              <td>
+                <span class="lg-eta" [style.--c]="colorLlegada(s.llegada)"
+                  ><i class="pi pi-truck"></i> {{ s.textoLlegada }}</span
+                >
+                @if (e.orden.fechaLlegadaReal || e.orden.entregaHasta) {
+                  <span class="sub">{{
+                    (e.orden.fechaLlegadaReal ?? e.orden.entregaHasta) + 'T12:00:00'
+                      | date: 'd MMM y'
+                  }}</span>
+                }
+              </td>
+              <td>
+                {{ e.orden.cliente || '—' }}
+                @if (e.orden.compromisoCliente) {
+                  <span class="sub"
+                    >prometido {{ e.orden.compromisoCliente + 'T12:00:00' | date: 'd MMM' }}</span
+                  >
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="nota">
+      <i class="pi pi-info-circle"></i> Toca un equipo para abrir su orden de compra.
+    </p>
+  </section>
+}
