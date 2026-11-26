@@ -13,6 +13,7 @@ import { ContabilidadModule } from './modules/contabilidad/contabilidad.module.j
 import { AsistenciaModule } from './modules/asistencia/asistencia.module.js';
 import { FinanzasModule } from './modules/finanzas/finanzas.module.js';
 import { LogisticaModule } from './modules/logistica/logistica.module.js';
+import { OperacionesModule } from './modules/operaciones/operaciones.module.js';
 
 /**
  * Módulo raíz. Cada módulo de negocio del ERP (terceros, caja, ventas,
@@ -70,6 +71,7 @@ import { LogisticaModule } from './modules/logistica/logistica.module.js';
     ContabilidadModule,
     FinanzasModule,
     AsistenciaModule,
+    OperacionesModule,
   ],
 })
 export class AppModule {}

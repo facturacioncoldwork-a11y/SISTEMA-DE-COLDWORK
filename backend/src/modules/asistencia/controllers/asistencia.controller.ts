@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, Param, ParseUUIDPipe, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Empresa, RequiereEmpresa, Usuario, type EmpresaActual, type UsuarioActual } from '../../../common/index.js';
-import { AusenciaDto, HorarioDto, MarcaManualDto, MarcarDto } from '../dto/asistencia.dto.js';
+import { Throttle } from '@nestjs/throttler';
+import { Empresa, Publica, RequiereEmpresa, Usuario, type EmpresaActual, type UsuarioActual } from '../../../common/index.js';
+import { AusenciaDto, HorarioDto, MarcaManualDto, MarcarDto, TabletaDto } from '../dto/asistencia.dto.js';
 import { AsistenciaService } from '../services/asistencia.service.js';
 
 /**
@@ -62,5 +63,40 @@ export class AsistenciaController {
   @HttpCode(204)
   registrarAusencia(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual, @Body() dto: AusenciaDto) {
     return this.asistencia.registrarAusencia(u, e, dto);
+  }
+
+  // ─── Tabletas de la oficina (solo dueño o encargado de asistencia) ──
+  @Get('tabletas')
+  tabletas(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual) {
+    return this.asistencia.tabletas(u, e);
+  }
+
+  /** Devuelve el token UNA sola vez (en la base solo queda su hash). */
+  @Post('tabletas')
+  crearTableta(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual, @Body() dto: TabletaDto) {
+    return this.asistencia.crearTableta(u, e, dto.nombre);
+  }
+
+  @Post('tabletas/:id/desactivar')
+  @HttpCode(204)
+  desactivarTableta(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual, @Param('id', ParseUUIDPipe) id: string) {
+    return this.asistencia.desactivarTableta(u, e, id);
+  }
+}
+
+/**
+ * La tablet de la oficina pide el código SIN iniciar sesión, solo con su token
+ * (cabecera X-Tableta-Token). Límite de peticiones más estricto.
+ */
+@ApiTags('Asistencia')
+@Controller({ path: 'tableta', version: '1' })
+export class TabletaController {
+  constructor(private readonly asistencia: AsistenciaService) {}
+
+  @Publica()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Get('codigo')
+  codigo(@Headers('x-tableta-token') token: string | undefined) {
+    return this.asistencia.codigoTableta(token);
   }
 }

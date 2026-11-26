@@ -86,6 +86,9 @@ export interface OrdenTrabajo {
   informe: Informe;
   /** Mensajes del equipo dentro de la orden (se ven al instante en todos los celulares). */
   mensajes: Mensaje[];
+  /** Servicio (expediente) del que salió la orden. */
+  expedienteId?: string;
+  version?: number;
 }
 
 export interface Mensaje {

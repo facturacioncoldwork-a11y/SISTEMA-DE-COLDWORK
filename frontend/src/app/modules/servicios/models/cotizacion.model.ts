@@ -48,6 +48,8 @@ export interface Cotizacion {
   estado: EstadoCotizacion;
   expedienteId?: string;
   motivoRechazo?: string;
+  /** Versión en la base (evita que dos personas se pisen los cambios). */
+  version?: number;
 }
 
 export type EstadoHito = 'pendiente' | 'facturado' | 'cobrado';
@@ -57,4 +59,6 @@ export interface HitoPago extends HitoCot {
   monto: number;
   estado: EstadoHito;
   factura?: string;
+  /** Comprobante de venta registrado en Finanzas · Ventas (vínculo real). */
+  comprobanteId?: string;
 }

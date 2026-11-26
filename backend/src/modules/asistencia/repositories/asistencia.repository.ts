@@ -19,6 +19,30 @@ export class AsistenciaRepository {
     return this.supabase.paraUsuario(token);
   }
 
+  // ─── Tabletas de la oficina ───────────────────────────────────
+  async tabletas(token: string, empresaId: string): Promise<Fila[]> {
+    const r = await this.db(token)
+      .from('asistencia_tabletas')
+      .select('id, nombre, activa, creado_en, ultimo_uso')
+      .eq('empresa_id', empresaId)
+      .order('creado_en', { ascending: false })
+      .limit(50);
+    return (datosOError(r) as unknown as Fila[] | null) ?? [];
+  }
+
+  async crearTableta(token: string, empresaId: string, nombre: string): Promise<Fila> {
+    return datosOError(await this.db(token).rpc('asis_crear_tableta', { p_empresa: empresaId, p_nombre: nombre })) as Fila;
+  }
+
+  async desactivarTableta(token: string, empresaId: string, id: string): Promise<void> {
+    datosOError(await this.db(token).rpc('asis_desactivar_tableta', { p_empresa: empresaId, p_id: id }));
+  }
+
+  /** Sin sesión: la tablet solo presenta su token. */
+  async codigoTableta(tokenTableta: string): Promise<Fila> {
+    return datosOError(await this.supabase.publico().rpc('asis_codigo_tableta', { p_token: tokenTableta })) as Fila;
+  }
+
   async horario(token: string, empresaId: string): Promise<Fila | null> {
     const r = await this.db(token).from('asistencia_horario').select('*').eq('empresa_id', empresaId).maybeSingle();
     return datosOError(r) as Fila | null;

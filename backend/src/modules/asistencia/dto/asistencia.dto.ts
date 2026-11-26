@@ -85,3 +85,12 @@ export class AusenciaDto {
 
   @ApiPropertyOptional() @IsOptional() @Transform(recortar) @IsString() @MaxLength(300) sustento?: string;
 }
+
+export class TabletaDto {
+  @ApiProperty({ example: 'Tablet de la entrada' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(60)
+  @Transform(recortar)
+  nombre!: string;
+}

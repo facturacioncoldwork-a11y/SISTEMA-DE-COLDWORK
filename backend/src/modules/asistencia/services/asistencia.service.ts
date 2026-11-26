@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Area, Rol, type EmpresaActual, type UsuarioActual } from '../../../common/index.js';
 import { FECHA } from '../../finanzas/services/finanzas.service.js';
 import type { AusenciaDto, HorarioDto, MarcaManualDto, MarcarDto } from '../dto/asistencia.dto.js';
@@ -99,6 +99,32 @@ export class AsistenciaService {
   async codigoOficina(u: UsuarioActual, e: EmpresaActual) {
     const r = await this.repo.codigoOficina(u.token, e.id);
     return { codigo: txt(r['codigo']), segundos: Number(r['segundos']) };
+  }
+
+  async tabletas(u: UsuarioActual, e: EmpresaActual) {
+    const filas = await this.repo.tabletas(u.token, e.id);
+    return filas.map((f) => ({
+      id: txt(f['id']),
+      nombre: txt(f['nombre']),
+      activa: Boolean(f['activa']),
+      creadoEn: txt(f['creado_en']),
+      ultimoUso: f['ultimo_uso'] ? txt(f['ultimo_uso']) : null,
+    }));
+  }
+
+  async crearTableta(u: UsuarioActual, e: EmpresaActual, nombre: string) {
+    const r = await this.repo.crearTableta(u.token, e.id, nombre);
+    return { id: txt(r['id']), token: txt(r['token']) };
+  }
+
+  desactivarTableta(u: UsuarioActual, e: EmpresaActual, id: string) {
+    return this.repo.desactivarTableta(u.token, e.id, id);
+  }
+
+  async codigoTableta(token: string | undefined) {
+    if (!token || !/^[0-9a-f]{64}$/.test(token)) throw new UnauthorizedException('Tableta no autorizada');
+    const r = await this.repo.codigoTableta(token);
+    return { codigo: txt(r['codigo']), segundos: Number(r['segundos']), empresa: txt(r['empresa']), tableta: txt(r['tableta']) };
   }
 
   registrarAusencia(u: UsuarioActual, e: EmpresaActual, dto: AusenciaDto) {

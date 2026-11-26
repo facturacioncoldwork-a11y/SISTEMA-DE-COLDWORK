@@ -1,10 +1,12 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { MessageService } from 'primeng/api';
+import { mensajeError } from '../../../../core/api/errores';
 import { dinero, hoy } from '../../../finanzas/utils/calculos';
 import type { Cotizacion, SerieCotizacion } from '../../models/cotizacion.model';
-import { CotizacionesSim } from '../../services/cotizaciones-sim.service';
-import { ServiciosSim } from '../../services/servicios-sim.service';
+import { CotizacionesStore } from '../../services/cotizaciones-store.service';
+import { ServiciosStore } from '../../services/servicios-store.service';
 import { totalesCotizacion, venceEl } from '../../utils/cotizacion';
 
 type Filtro = 'todas' | 'borrador' | 'enviada' | 'vencida' | 'aprobada' | 'rechazada';
@@ -41,8 +43,8 @@ const ESTADOS: Record<string, { nombre: string; clase: string }> = {
         }
       </div>
       <span class="espacio"></span>
-      <button type="button" class="lg-cta lg-cta--suave" (click)="crear('SERV')"><i class="pi pi-wrench"></i> Cotizar servicio</button>
-      <button type="button" class="lg-cta" (click)="crear('PROY')"><i class="pi pi-plus"></i> Cotizar proyecto</button>
+      <button type="button" class="lg-cta lg-cta--suave" [disabled]="creando()" (click)="crear('SERV')"><i class="pi pi-wrench"></i> Cotizar servicio</button>
+      <button type="button" class="lg-cta" [disabled]="creando()" (click)="crear('PROY')"><i class="pi pi-plus"></i> Cotizar proyecto</button>
     </div>
 
     <section class="lg-card lg-scroll">
@@ -73,9 +75,10 @@ const ESTADOS: Record<string, { nombre: string; clase: string }> = {
   `,
 })
 export class Cotizaciones {
-  protected readonly sim = inject(CotizacionesSim);
-  protected readonly servicios = inject(ServiciosSim);
+  protected readonly sim = inject(CotizacionesStore);
+  protected readonly servicios = inject(ServiciosStore);
   private readonly router = inject(Router);
+  private readonly avisos = inject(MessageService);
 
   protected readonly estados = ESTADOS;
   protected readonly dinero = dinero;
@@ -127,8 +130,18 @@ export class Cotizaciones {
     return f.split('-').reverse().join('/');
   }
 
-  protected crear(serie: SerieCotizacion) {
-    const c = this.sim.nueva(serie);
-    void this.router.navigate(['/proyectos/cotizaciones', c.id]);
+  protected readonly creando = signal(false);
+
+  protected async crear(serie: SerieCotizacion) {
+    if (this.creando()) return;
+    this.creando.set(true);
+    try {
+      const c = await this.sim.nueva(serie);
+      void this.router.navigate(['/proyectos/cotizaciones', c.id]);
+    } catch (e) {
+      this.avisos.add({ severity: 'error', summary: 'No se pudo crear la cotización', detail: mensajeError(e) ?? 'Revisa tu conexión.', life: 5000 });
+    } finally {
+      this.creando.set(false);
+    }
   }
 }

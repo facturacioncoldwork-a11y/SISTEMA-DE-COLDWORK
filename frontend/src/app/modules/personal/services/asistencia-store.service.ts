@@ -53,7 +53,7 @@ export class AsistenciaStore {
   readonly trabajadores = computed<Trabajador[]>(() => {
     const lista = this.datos.activos().map((m) => ({
       id: m.usuarioId,
-      nombre: m.nombre || m.correo,
+      nombre: m.nombre,
       cargo: m.areas.includes('tecnica') ? 'Área técnica' : m.rol === 'dueno' ? 'Dueño' : 'Personal',
       campo: m.areas.includes('tecnica'),
     }));

@@ -5,7 +5,6 @@ import { conArea } from '../../core/permisos/permisos.guards';
  * Servicios y proyectos (coordinación comercial y operativa): cotizaciones, órdenes de los
  * clientes y cada servicio de principio a fin. Es del coordinador/ingeniero y del dueño;
  * los técnicos usan el Área técnica (/servicios) y no ven precios.
- * (Simulación: usa el área "ventas"; al conectarlo tendrá su propia área.)
  */
 export const PROYECTOS_ROUTES: Routes = [
   {

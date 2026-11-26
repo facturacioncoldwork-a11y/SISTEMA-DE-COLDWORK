@@ -7,7 +7,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { hoy } from '../../../finanzas/utils/calculos';
 import { PRIORIDADES, TIPOS_SERVICIO } from '../../data/catalogos';
 import type { OrdenTrabajo, Prioridad, TipoServicio } from '../../models/servicios.model';
-import { ServiciosSim } from '../../services/servicios-sim.service';
+import { ServiciosStore } from '../../services/servicios-store.service';
 
 /** Nueva orden de trabajo: cliente, equipo, tipo, prioridad y técnicos asignados. */
 @Component({
@@ -81,7 +81,7 @@ import { ServiciosSim } from '../../services/servicios-sim.service';
   `,
 })
 export class OrdenDialogo {
-  protected readonly sim = inject(ServiciosSim);
+  protected readonly sim = inject(ServiciosStore);
   readonly visible = model(false);
   readonly creada = output<OrdenTrabajo>();
 

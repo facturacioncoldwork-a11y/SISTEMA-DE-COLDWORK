@@ -38,6 +38,9 @@ export const routes: Routes = [
   // Portales de trabajadores: interfaz propia, sin el menú del ERP
   ...PORTAL_TRABAJO_ROUTES,
 
+  // Tablet de la oficina: muestra el código de asistencia sin iniciar sesión (solo con su token)
+  { path: 'tableta', loadComponent: () => import('./modules/personal/views/tableta/tableta').then((m) => m.Tableta) },
+
   {
     path: '',
     // Primero se elige empresa (si tiene varias); quien tiene portal propio va a él y no ve el ERP
@@ -52,7 +55,7 @@ export const routes: Routes = [
       ...FINANZAS_ROUTES,
       ...REPORTES_ROUTES,
 
-      // Operaciones (simulación en revisión)
+      // Operaciones
       ...PROYECTOS_ROUTES,
       ...SERVICIOS_ROUTES,
       ...PERSONAL_ROUTES,

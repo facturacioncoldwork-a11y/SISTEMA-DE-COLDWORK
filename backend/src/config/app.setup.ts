@@ -17,12 +17,15 @@ export function configurarApp(app: INestApplication): void {
   // para el límite de peticiones y los logs.
   (app as NestExpressApplication).set('trust proxy', 1);
 
+  // Un informe técnico lleva la firma del cliente: hasta 1 MB por petición (la base pone sus propios topes)
+  (app as NestExpressApplication).useBodyParser('json', { limit: '1mb' });
+
   app.use(helmet());
   // Respuestas comprimidas (gzip): listas de asientos o productos viajan hasta 5-10 veces más livianas
   app.use(compression({ threshold: 1024 }));
   app.enableCors({
     origin: config.get('CORS_ORIGINS', { infer: true }),
-    allowedHeaders: ['Authorization', 'Content-Type', 'X-Empresa-Id', 'X-Request-Id'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Empresa-Id', 'X-Request-Id', 'X-Tableta-Token'],
     exposedHeaders: ['X-Request-Id'],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     maxAge: 600,

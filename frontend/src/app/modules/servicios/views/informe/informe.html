@@ -150,7 +150,7 @@
       @if (!cerrada()) {
         @let nr = nuevoRepuesto();
         <div class="agregar no-imprimir">
-          <input type="text" placeholder="Repuesto (en la versión real se elige del inventario)" [ngModel]="nr.descripcion"
+          <input type="text" placeholder="Repuesto usado (ej. Filtro secador 3/8)" [ngModel]="nr.descripcion"
             (ngModelChange)="nuevoRepuesto.set({ descripcion: $event, cantidad: nr.cantidad, unidad: nr.unidad })" />
           <input type="number" min="1" class="cant" [ngModel]="nr.cantidad"
             (ngModelChange)="nuevoRepuesto.set({ descripcion: nr.descripcion, cantidad: +$event, unidad: nr.unidad })" />
@@ -188,7 +188,7 @@
             <div class="fotos">
               @for (f of fotosDe($any(etapa)); track f.id) {
                 <figure>
-                  <img [src]="f.url" alt="Foto del servicio" />
+                  <img [src]="fotoUrl(f.url)" alt="Foto del servicio" loading="lazy" />
                   @if (!cerrada()) {
                     <button type="button" class="quitar no-imprimir" (click)="quitarFoto(f.id)" aria-label="Quitar foto"><i class="pi pi-times"></i></button>
                   }

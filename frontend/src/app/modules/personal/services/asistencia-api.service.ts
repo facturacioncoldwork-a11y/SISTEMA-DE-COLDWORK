@@ -18,6 +18,15 @@ export interface HorarioApi {
   esGestor?: boolean;
 }
 
+/** Tablet de la oficina autorizada a mostrar el código (el token nunca vuelve a mostrarse). */
+export interface Tableta {
+  id: string;
+  nombre: string;
+  activa: boolean;
+  creadoEn: string;
+  ultimoUso: string | null;
+}
+
 /** Llamadas al backend de asistencia (/api/v1/asistencia). */
 @Injectable({ providedIn: 'root' })
 export class AsistenciaApi {
@@ -43,6 +52,15 @@ export class AsistenciaApi {
   }
   codigoOficina() {
     return this.api.get<{ codigo: string; segundos: number }>('/asistencia/codigo-oficina');
+  }
+  tabletas() {
+    return this.api.get<Tableta[]>('/asistencia/tabletas');
+  }
+  crearTableta(nombre: string) {
+    return this.api.post<{ id: string; token: string }>('/asistencia/tabletas', { nombre });
+  }
+  desactivarTableta(id: string) {
+    return this.api.post<void>(`/asistencia/tabletas/${id}/desactivar`, {});
   }
   registrarAusencia(usuarioId: string, fecha: string, tipo: Justificacion, sustento?: string) {
     return this.api.post<void>('/asistencia/ausencias', { usuarioId, fecha, tipo, sustento });

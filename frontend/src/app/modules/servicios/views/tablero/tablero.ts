@@ -4,7 +4,7 @@ import { MessageService } from 'primeng/api';
 import { OrdenDialogo } from '../../components/orden-dialogo/orden-dialogo';
 import { ESTADOS_ORDEN, PRIORIDADES, TIPOS_SERVICIO } from '../../data/catalogos';
 import type { EstadoOrden, OrdenTrabajo } from '../../models/servicios.model';
-import { ServiciosSim } from '../../services/servicios-sim.service';
+import { ServiciosStore } from '../../services/servicios-store.service';
 
 /** Tablero del día: órdenes por estado, filtro por técnico y alta de nuevas órdenes. */
 @Component({
@@ -14,7 +14,7 @@ import { ServiciosSim } from '../../services/servicios-sim.service';
   styleUrl: './tablero.scss',
 })
 export class Tablero {
-  protected readonly sim = inject(ServiciosSim);
+  protected readonly sim = inject(ServiciosStore);
   private readonly avisos = inject(MessageService);
 
   protected readonly estados = ESTADOS_ORDEN;

@@ -29,6 +29,15 @@ interface LineaVista {
   haber: number;
 }
 
+export interface PrellenadoComprobante {
+  terceroId: string;
+  moneda: Moneda;
+  /** Total con IGV. */
+  total: number;
+  glosa: string;
+  detraccion?: number;
+}
+
 /**
  * Registrar un comprobante de venta o de compra.
  * Calcula IGV (18 %), retención de 4.ª (recibos por honorarios), detracción y vencimiento,
@@ -55,7 +64,11 @@ export class ComprobanteDialogo {
 
   readonly visible = model(false);
   readonly operacion = input.required<Operacion>();
+  /** Datos que llegan de otro módulo (ej. un adelanto de un servicio): se pueden revisar antes de registrar. */
+  readonly prellenar = input<PrellenadoComprobante | null>(null);
   readonly guardado = output<void>();
+  /** Comprobante ya registrado (para vincularlo desde otro módulo). */
+  readonly registrado = output<{ id: string; serie: string; numero: string }>();
 
   protected readonly dinero = dinero;
   protected readonly detracciones = DETRACCIONES;
@@ -207,6 +220,16 @@ export class ComprobanteDialogo {
     this.glosa = '';
     this.totalConIgv = null;
     this.error.set(null);
+    void this.store.asegurar();
+    const p = this.prellenar();
+    if (p) {
+      this.terceroId.set(p.terceroId || null);
+      this.moneda.set(p.moneda);
+      this.desdeTotal(p.total);
+      this.totalConIgv = p.total;
+      this.glosa = p.glosa.slice(0, 200);
+      if (p.detraccion) this.detraccion.set(p.detraccion);
+    }
   }
 
   /** Si tiene el total con IGV a la mano, calcula la base. */
@@ -259,8 +282,9 @@ export class ComprobanteDialogo {
     this.guardando.set(true);
     this.error.set(null);
     try {
-      await this.api.registrarComprobante(datos);
+      const r = await this.api.registrarComprobante(datos);
       this.guardado.emit();
+      this.registrado.emit({ id: r.id, serie: datos.serie, numero: datos.numero });
       this.visible.set(false);
     } catch (e) {
       this.error.set(mensajeError(e) ?? 'No se pudo registrar.');

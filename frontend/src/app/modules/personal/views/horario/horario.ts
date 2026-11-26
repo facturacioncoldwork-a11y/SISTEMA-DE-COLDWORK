@@ -3,12 +3,13 @@ import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { mensajeError } from '../../../../core/api/errores';
 import type { Horario } from '../../models/personal.model';
+import { Tabletas } from '../../components/tabletas/tabletas';
 import { AsistenciaStore } from '../../services/asistencia-store.service';
 
 /** Horario de la empresa y formas de marcar permitidas (solo dueño o administración). */
 @Component({
   selector: 'app-horario',
-  imports: [FormsModule],
+  imports: [FormsModule, Tabletas],
   template: `
     @let h = borrador();
     <div class="rejilla">
@@ -53,6 +54,7 @@ import { AsistenciaStore } from '../../services/asistencia-store.service';
         </div>
       </section>
     </div>
+    <app-tabletas />
   `,
   styles: `
     .rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
