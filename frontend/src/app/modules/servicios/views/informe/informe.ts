@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,7 +8,8 @@ import { EmpresaActualService } from '../../../../core/empresa/services/empresa-
 import { Firma } from '../../components/firma/firma';
 import { ATS, ESTADOS_ORDEN, MEDICIONES, PRIORIDADES, TIPOS_SERVICIO } from '../../data/catalogos';
 import type { Foto, Informe, SeccionInforme } from '../../models/servicios.model';
-import { ServiciosSim } from '../../services/servicios-sim.service';
+import { FotosService } from '../../services/fotos.service';
+import { ServiciosStore } from '../../services/servicios-store.service';
 
 /**
  * Informe técnico de campo. El técnico lo llena en el celular durante el servicio:
@@ -25,8 +26,17 @@ export class InformeTecnico {
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly avisos = inject(MessageService);
-  protected readonly sim = inject(ServiciosSim);
+  protected readonly sim = inject(ServiciosStore);
   protected readonly empresa = inject(EmpresaActualService);
+  private readonly fotos = inject(FotosService);
+
+  constructor() {
+    // Mensajes del equipo de esta orden (al abrirla)
+    effect(() => {
+      const id = this.id();
+      if (id) untracked(() => void this.sim.cargarMensajes(id));
+    });
+  }
 
   protected readonly ats = ATS;
   protected readonly mediciones = MEDICIONES;
@@ -56,7 +66,7 @@ export class InformeTecnico {
     const o = this.orden();
     const t = this.texto.trim();
     if (!o || !t) return;
-    this.sim.enviarMensaje(o.id, { autorId: 'yo', autor: 'Tú', texto: t.slice(0, 500) });
+    void this.sim.enviarMensaje(o.id, t.slice(0, 500));
     this.texto = '';
   }
   protected readonly nuevoRepuesto = signal({ descripcion: '', cantidad: 1, unidad: 'UND' });
@@ -108,12 +118,30 @@ export class InformeTecnico {
     this.cambiar({ repuestos: this.inf()!.repuestos.filter((_, j) => j !== i) });
   }
 
-  /** Fotos desde la cámara del celular o la galería (en la simulación quedan solo en este navegador). */
-  protected subirFotos(ev: Event, etapa: Foto['etapa']) {
-    const archivos = Array.from((ev.target as HTMLInputElement).files ?? []).filter((f) => f.type.startsWith('image/'));
-    const nuevas = archivos.slice(0, 6).map((f) => ({ id: crypto.randomUUID(), etapa, url: URL.createObjectURL(f), nota: '' }));
-    this.cambiar({ fotos: [...this.inf()!.fotos, ...nuevas] });
-    (ev.target as HTMLInputElement).value = '';
+  protected readonly subiendo = signal(0);
+
+  /** Fotos desde la cámara del celular o la galería: se comprimen y van al almacenamiento privado. */
+  protected async subirFotos(ev: Event, etapa: Foto['etapa']) {
+    const o = this.orden();
+    const input = ev.target as HTMLInputElement;
+    const archivos = Array.from(input.files ?? []).filter((f) => f.type.startsWith('image/')).slice(0, 6);
+    input.value = '';
+    if (!o || !archivos.length) return;
+    this.subiendo.update((n) => n + archivos.length);
+    for (const f of archivos) {
+      try {
+        const url = await this.fotos.subir(o.id, f);
+        this.cambiar({ fotos: [...this.inf()!.fotos, { id: crypto.randomUUID(), etapa, url, nota: '' }] });
+      } catch {
+        this.avisos.add({ severity: 'error', summary: 'No se pudo subir una foto', detail: 'Revisa tu conexión e inténtalo de nuevo.', life: 4500 });
+      } finally {
+        this.subiendo.update((n) => n - 1);
+      }
+    }
+  }
+
+  protected fotoUrl(ruta: string) {
+    return this.fotos.url(ruta);
   }
 
   protected quitarFoto(id: string) {
@@ -155,8 +183,9 @@ export class InformeTecnico {
       this.avisos.add({ severity: 'warn', summary: 'Falta la conformidad', detail: 'El cliente debe firmar y escribir su nombre.', life: 4500 });
       return;
     }
-    this.sim.actualizar(o.id, { estado: 'cerrada' });
-    this.avisos.add({ severity: 'success', summary: `${o.numero} cerrada`, detail: 'El informe quedó firmado. En la versión real se envía al cliente por correo.', life: 4500 });
+    void this.sim.cerrar(o.id).then((ok) => {
+      if (ok) this.avisos.add({ severity: 'success', summary: `${o.numero} cerrada`, detail: 'El informe quedó firmado y ya no se puede cambiar. Descarga el PDF para el cliente.', life: 5000 });
+    });
   }
 
   protected imprimir() {
@@ -173,8 +202,9 @@ export class InformeTecnico {
     try {
       const { descargarInformePdf } = await import('../../services/informe-pdf');
       const e = this.empresa.actual();
+      const enlaces = await this.fotos.urls(o.informe.fotos.map((f) => f.url));
       await descargarInformePdf({
-        orden: o,
+        orden: { ...o, informe: { ...o.informe, fotos: o.informe.fotos.map((f) => ({ ...f, url: enlaces[f.url] ?? f.url })) } },
         cliente: this.cliente(),
         equipo: this.equipo(),
         tecnicos: o.tecnicos.flatMap((t) => this.sim.tecnico(t) ?? []),

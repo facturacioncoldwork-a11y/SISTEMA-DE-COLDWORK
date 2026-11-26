@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -7,16 +7,18 @@ import { DialogModule } from 'primeng/dialog';
 import { map } from 'rxjs';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { dinero, hoy } from '../../../finanzas/utils/calculos';
+import { ComprobanteDialogo, type PrellenadoComprobante } from '../../../finanzas/components/comprobante-dialogo/comprobante-dialogo';
+import { FinanzasApi } from '../../../finanzas/services/finanzas-api.service';
 import { ESTADOS_ORDEN } from '../../data/catalogos';
 import { ESTADOS_COMPRA, ETAPAS, indiceEtapa } from '../../data/etapas';
 import type { Compra, Expediente } from '../../models/expediente.model';
-import { ExpedientesSim } from '../../services/expedientes-sim.service';
-import { ServiciosSim } from '../../services/servicios-sim.service';
+import { ExpedientesStore } from '../../services/expedientes-store.service';
+import { ServiciosStore } from '../../services/servicios-store.service';
 
 /** Ficha de un servicio de principio a fin: etapas, tareas, compras e historial. */
 @Component({
   selector: 'app-expediente',
-  imports: [FormsModule, RouterLink, DialogModule],
+  imports: [FormsModule, RouterLink, DialogModule, ComprobanteDialogo],
   templateUrl: './expediente.html',
   styleUrl: './expediente.scss',
 })
@@ -24,8 +26,22 @@ export class ExpedienteView {
   private readonly ruta = inject(ActivatedRoute);
   private readonly avisos = inject(MessageService);
   private readonly empresa = inject(EmpresaActualService);
-  protected readonly sim = inject(ExpedientesSim);
-  protected readonly servicios = inject(ServiciosSim);
+  protected readonly sim = inject(ExpedientesStore);
+  protected readonly servicios = inject(ServiciosStore);
+  private readonly finanzas = inject(FinanzasApi);
+
+  constructor() {
+    // Al abrir la ficha: historial completo y cobros registrados en Caja
+    effect(() => {
+      const id = this.id();
+      if (id && this.existe()) {
+        untracked(() => {
+          void this.sim.cargarHistorial(id);
+          void this.sincronizarCobros(id);
+        });
+      }
+    });
+  }
 
   protected readonly etapas = ETAPAS;
   protected readonly estadosCompra = ESTADOS_COMPRA;
@@ -35,13 +51,14 @@ export class ExpedienteView {
 
   private readonly id = toSignal(this.ruta.paramMap.pipe(map((p) => p.get('id') ?? '')), { initialValue: '' });
   protected readonly exp = computed(() => this.sim.expediente(this.id()));
+  private readonly existe = computed(() => !!this.exp());
   protected readonly cliente = computed(() => this.servicios.cliente(this.exp()?.clienteId ?? ''));
   protected readonly indice = computed(() => (this.exp() ? indiceEtapa(this.exp()!.etapa) : 0));
   protected readonly ordenes = computed(() => (this.exp()?.ordenesTrabajo ?? []).flatMap((id) => this.servicios.orden(id) ?? []));
   protected readonly ordenesCerradas = computed(() => this.ordenes().length > 0 && this.ordenes().every((o) => o.estado === 'cerrada'));
 
   // Formularios de cada etapa
-  protected f = { cotNumero: '', cotMonto: null as number | null, ocNumero: '', fechaIngreso: hoy(), hes: '', factura: '' };
+  protected f = { cotNumero: '', cotMonto: null as number | null, ocNumero: '', fechaIngreso: hoy(), hes: '' };
 
   // Tareas y compras
   protected nuevaTarea = { texto: '', asignadoA: '', vence: hoy() };
@@ -84,23 +101,82 @@ export class ExpedienteView {
 
   // ── Forma de pago (adelantos) ──────────────────────────────────
   protected readonly adelantoListo = computed(() => (this.exp() ? this.sim.adelantoListo(this.exp()!) : true));
-  protected facturaHito: Record<string, string> = {};
 
   protected dineroExp(n: number) {
     return dinero(n, this.exp()?.moneda ?? 'PEN');
   }
 
-  /** Factura de anticipo (con IGV y, si pasa S/ 700, detracción). En la versión real va a Ventas. */
+  // ── Vínculo con Finanzas · Ventas ──────────────────────────────
+  /** Qué se está facturando en el diálogo de Ventas: un hito (adelanto) o la factura final. */
+  private readonly facturando = signal<{ tipo: 'hito'; hitoId: string } | { tipo: 'final' } | null>(null);
+  protected readonly dialogoVenta = signal(false);
+  protected readonly prellenado = signal<PrellenadoComprobante | null>(null);
+
+  /** Abre el registro de la factura en Ventas con los datos del servicio (se revisan antes de guardar). */
   protected facturarHito(hitoId: string) {
     const e = this.exp();
-    const numero = (this.facturaHito[hitoId] ?? '').trim().toUpperCase();
-    if (!e || !/^[A-Z0-9]{4}-\d{1,8}$/.test(numero)) return this.aviso('Indica la factura del adelanto (ej. F001-130).');
-    this.sim.cambiarHito(e.id, hitoId, 'facturado', numero);
+    const h = e?.hitos?.find((x) => x.id === hitoId);
+    if (!e || !h) return;
+    this.facturando.set({ tipo: 'hito', hitoId });
+    this.prellenado.set({
+      terceroId: e.clienteId,
+      moneda: e.moneda ?? 'PEN',
+      total: h.monto,
+      glosa: `${h.descripcion} (${h.porcentaje} %) · ${e.codigo} · Cot. ${e.cotizacion?.numero ?? ''} · OC ${e.ordenCliente?.numero ?? ''}`,
+      detraccion: 12,
+    });
+    this.dialogoVenta.set(true);
   }
 
+  /** Factura final: el total menos lo ya facturado en adelantos. */
+  protected facturarFinal() {
+    const e = this.exp();
+    if (!e) return;
+    const total = (e.cotizacion?.monto ?? 0) * 1.18;
+    const adelantos = (e.hitos ?? []).filter((h) => h.estado !== 'pendiente').reduce((s, h) => s + h.monto, 0);
+    this.facturando.set({ tipo: 'final' });
+    this.prellenado.set({
+      terceroId: e.clienteId,
+      moneda: e.moneda ?? 'PEN',
+      total: Math.max(0, Math.round((total - adelantos) * 100) / 100),
+      glosa: `${e.titulo} · ${e.codigo} · OC ${e.ordenCliente?.numero ?? ''}${e.conformidad?.hes ? ' · HES ' + e.conformidad.hes : ''}`,
+      detraccion: 12,
+    });
+    this.dialogoVenta.set(true);
+  }
+
+  protected ventaRegistrada(c: { id: string; serie: string; numero: string }) {
+    const e = this.exp();
+    const f = this.facturando();
+    if (!e || !f) return;
+    const numero = `${c.serie}-${c.numero}`;
+    if (f.tipo === 'hito') this.sim.vincularHito(e.id, f.hitoId, { id: c.id, numero });
+    else this.sim.avanzar(e.id, { factura: { numero, fecha: hoy() }, facturaId: c.id }, `Factura ${numero} registrada en Ventas.`);
+    this.facturando.set(null);
+    this.avisos.add({ severity: 'success', summary: `Factura ${numero} registrada`, detail: 'Ya está en Ventas, Cuentas por cobrar y en el Libro Diario.', life: 4500 });
+  }
+
+  /** Sin vínculo con Ventas (servicios antiguos): se marca a mano. */
   protected cobrarHito(hitoId: string) {
     const e = this.exp();
     if (e) this.sim.cambiarHito(e.id, hitoId, 'cobrado');
+  }
+
+  /**
+   * Lo cobrado se registra en Finanzas · Caja (una sola vez, con su asiento). Aquí solo se lee:
+   * si la factura vinculada ya no tiene saldo pendiente, el hito o el servicio pasan a cobrado.
+   */
+  private async sincronizarCobros(id: string) {
+    const e = this.sim.expediente(id);
+    const vinculadas = [...(e?.hitos ?? []).filter((h) => h.estado === 'facturado' && h.comprobanteId), ...(e?.facturaId && e.etapa === 'facturado' ? [e] : [])];
+    if (!e || !vinculadas.length) return;
+    const pendientes = await this.finanzas.pendientes('venta').catch(() => null);
+    if (!pendientes) return;
+    const conSaldo = new Set(pendientes.filter((p) => p.pendiente > 0).map((p) => p.id));
+    for (const h of e.hitos ?? []) {
+      if (h.estado === 'facturado' && h.comprobanteId && !conSaldo.has(h.comprobanteId)) this.sim.cambiarHito(e.id, h.id, 'cobrado');
+    }
+    if (e.etapa === 'facturado' && e.facturaId && !conSaldo.has(e.facturaId)) this.sim.avanzar(e.id, {}, 'Cobro registrado en Caja. Servicio terminado.');
   }
 
   private exigirAdelanto(): boolean {
@@ -168,6 +244,7 @@ export class ExpedienteView {
     const ot = this.servicios.crear({
       clienteId: e.clienteId,
       equipoId: equipo.id,
+      expedienteId: e.id,
       tipo: 'correctivo',
       prioridad: 'alta',
       tecnicos: e.ingreso.personal,
@@ -175,7 +252,10 @@ export class ExpedienteView {
       hora: '08:00',
       descripcion: e.titulo,
     });
-    this.sim.avanzar(e.id, { ordenesTrabajo: [...e.ordenesTrabajo, ot.id] }, `Orden de trabajo ${ot.numero} creada y asignada.`);
+    // El número de OT lo da el servidor: se anota en el historial cuando llega
+    void this.servicios.numeroDe(ot.id).then((numero) =>
+      this.sim.avanzar(e.id, { ordenesTrabajo: [...e.ordenesTrabajo, ot.id] }, `Orden de trabajo ${numero} creada y asignada.`),
+    );
   }
 
   protected registrarConformidad() {
@@ -184,11 +264,6 @@ export class ExpedienteView {
     this.sim.avanzar(e.id, { conformidad: { fecha: hoy(), hes: this.f.hes.trim() || undefined } }, `Conformidad del cliente recibida${this.f.hes.trim() ? ` (HES ${this.f.hes.trim()})` : ''}.`);
   }
 
-  protected registrarFactura() {
-    const e = this.exp();
-    if (!e || !/^[A-Z0-9]{4}-\d{1,8}$/i.test(this.f.factura.trim())) return this.aviso('Indica la factura (ej. F001-126).');
-    this.sim.avanzar(e.id, { factura: { numero: this.f.factura.trim().toUpperCase(), fecha: hoy() } }, `Factura ${this.f.factura.trim().toUpperCase()} emitida.`);
-  }
 
   protected registrarCobro() {
     const e = this.exp();

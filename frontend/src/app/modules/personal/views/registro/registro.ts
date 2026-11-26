@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { descargarCsv } from '../../../finanzas/utils/csv';
-import { AsistenciaSim } from '../../services/asistencia-sim.service';
+import { AsistenciaStore } from '../../services/asistencia-store.service';
 import { aHoras, resumenDia } from '../../utils/horas';
 
 /** Registro mensual de asistencia: resumen por trabajador y detalle por día (base de la planilla). */
@@ -80,7 +80,7 @@ import { aHoras, resumenDia } from '../../utils/horas';
   `,
 })
 export class Registro {
-  protected readonly sim = inject(AsistenciaSim);
+  protected readonly sim = inject(AsistenciaStore);
   protected readonly aHoras = aHoras;
   private readonly seleccion = signal<string | null>(null);
   /** El elegido en la tabla, o el primer trabajador real. */
@@ -175,7 +175,6 @@ export class Registro {
       const t = this.sim.trabajador(m.trabajadorId);
       const r = resumenDia(m, h);
       return {
-        DNI: t?.dni ?? '',
         Trabajador: t?.nombre ?? '',
         Fecha: m.fecha,
         Ingreso: m.entrada ?? '',

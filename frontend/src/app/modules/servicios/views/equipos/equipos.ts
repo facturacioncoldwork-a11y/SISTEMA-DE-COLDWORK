@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ESTADOS_ORDEN, TIPOS_EQUIPO, TIPOS_SERVICIO } from '../../data/catalogos';
-import { ServiciosSim } from '../../services/servicios-sim.service';
+import { ServiciosStore } from '../../services/servicios-store.service';
 
 /** Equipos de los clientes con su hoja de vida (historial de servicios). */
 @Component({
@@ -113,7 +113,7 @@ import { ServiciosSim } from '../../services/servicios-sim.service';
   `,
 })
 export class Equipos {
-  protected readonly sim = inject(ServiciosSim);
+  protected readonly sim = inject(ServiciosStore);
   protected readonly estados = ESTADOS_ORDEN;
   protected readonly tipos = TIPOS_SERVICIO;
   private readonly avisos = inject(MessageService);

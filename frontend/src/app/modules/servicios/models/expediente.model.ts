@@ -77,4 +77,7 @@ export interface Expediente {
   hitos?: HitoPago[];
   /** No se programa el trabajo hasta cobrar el primer adelanto. */
   exigirAdelanto?: boolean;
+  /** Comprobante de la factura final en Finanzas · Ventas. */
+  facturaId?: string;
+  version?: number;
 }

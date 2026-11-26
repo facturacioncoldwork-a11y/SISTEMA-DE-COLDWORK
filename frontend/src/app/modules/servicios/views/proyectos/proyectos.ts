@@ -2,12 +2,11 @@ import { Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
-import { AvisoSimulacion } from '../../../../shared/components/aviso-simulacion/aviso-simulacion';
 
 /** Contenedor del área "Servicios y proyectos" (coordinación). */
 @Component({
   selector: 'app-proyectos',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, AvisoSimulacion],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="lg">
       <header class="lg-hero">
@@ -25,7 +24,6 @@ import { AvisoSimulacion } from '../../../../shared/components/aviso-simulacion/
         </nav>
       </header>
       <div class="lg-cuerpo">
-        <app-aviso-simulacion />
         <router-outlet />
       </div>
     </div>

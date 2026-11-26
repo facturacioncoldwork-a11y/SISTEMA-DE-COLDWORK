@@ -1,13 +1,16 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { MessageService } from 'primeng/api';
+import { mensajeError } from '../../../../core/api/errores';
 import type { MetodoMarca } from '../../models/personal.model';
-import { AsistenciaSim, LUGAR_OFICINA } from '../../services/asistencia-sim.service';
+import { AsistenciaStore, LUGAR_OFICINA } from '../../services/asistencia-store.service';
 import { aHoras, resumenDia } from '../../utils/horas';
 
 const METODOS: Record<MetodoMarca, { nombre: string; icono: string }> = {
   gps: { nombre: 'Celular + GPS', icono: 'pi pi-map-marker' },
-  qr: { nombre: 'Código de oficina', icono: 'pi pi-qrcode' },
+  codigo: { nombre: 'Código de oficina', icono: 'pi pi-qrcode' },
   manual: { nombre: 'Manual (supervisor)', icono: 'pi pi-user-edit' },
+  declarada: { nombre: 'Declarada (sin GPS)', icono: 'pi pi-exclamation-circle' },
 };
 
 const AUSENCIAS: Record<string, string> = {
@@ -34,20 +37,20 @@ const AUSENCIAS: Record<string, string> = {
       <span class="lg-chip" [class]="sim.horario().oficina ? 'ok' : 'critico'">{{ oficina() }}</span>
       <span class="espacio"></span>
       <a class="lg-cta lg-cta--suave" routerLink="/personal/registro"><i class="pi pi-calendar"></i> Registro del mes</a>
-      <a class="lg-cta" routerLink="/personal/marcar"><i class="pi pi-mobile"></i> Probar cómo marca un trabajador</a>
+      <a class="lg-cta" routerLink="/personal/marcar"><i class="pi pi-mobile"></i> Marcar asistencia</a>
     </div>
 
     @if (sim.porAprobar().length) {
       <section class="lg-card pendientes">
         <div class="lg-card__head"><div><h3>Marcas por aprobar</h3><p>Registradas sin GPS por el propio trabajador</p></div></div>
-        @for (p of sim.porAprobar(); track p.trabajadorId + p.fecha) {
+        @for (p of sim.porAprobar(); track p.id) {
           <div class="pend">
             <span class="lg-avatar">{{ iniciales(sim.trabajador(p.trabajadorId)?.nombre ?? '') }}</span>
             <div class="crece">
               <strong>{{ sim.trabajador(p.trabajadorId)?.nombre }}</strong>
-              <small>{{ p.fecha.slice(8) }}/{{ p.fecha.slice(5, 7) }} · entrada {{ p.entrada ?? '—' }} · salida {{ p.salida ?? '—' }} · "{{ p.motivoManual }}"</small>
+              <small>{{ p.fecha.slice(8) }}/{{ p.fecha.slice(5, 7) }} · entrada {{ p.entrada ?? '—' }} · salida {{ p.salida ?? '—' }} · "{{ p.motivo }}"</small>
             </div>
-            <button type="button" class="lg-cta" (click)="sim.aprobar(p.trabajadorId, p.fecha)"><i class="pi pi-check"></i> Aprobar</button>
+            <button type="button" class="lg-cta" [disabled]="aprobando() === p.id" (click)="aprobar(p.id)"><i class="pi pi-check"></i> Aprobar</button>
           </div>
         }
       </section>
@@ -87,8 +90,22 @@ const AUSENCIAS: Record<string, string> = {
   `,
 })
 export class AsistenciaHoy {
-  protected readonly sim = inject(AsistenciaSim);
+  protected readonly sim = inject(AsistenciaStore);
+  private readonly avisos = inject(MessageService);
   protected readonly metodos = METODOS;
+  protected readonly aprobando = signal<string | null>(null);
+
+  protected async aprobar(id: string) {
+    this.aprobando.set(id);
+    try {
+      await this.sim.aprobar(id);
+      this.avisos.add({ severity: 'success', summary: 'Marca aprobada', life: 3000 });
+    } catch (e) {
+      this.avisos.add({ severity: 'error', summary: 'No se pudo aprobar', detail: mensajeError(e), life: 4500 });
+    } finally {
+      this.aprobando.set(null);
+    }
+  }
   protected readonly oficina = computed(() => (this.sim.horario().oficina ? 'Ubicación de la oficina fijada' : 'Falta fijar la ubicación de la oficina'));
 
   protected readonly filas = computed(() => {

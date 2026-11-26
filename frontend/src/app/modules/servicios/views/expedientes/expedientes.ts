@@ -8,8 +8,8 @@ import { TextareaModule } from 'primeng/textarea';
 import { dinero, hoy } from '../../../finanzas/utils/calculos';
 import { ETAPAS, indiceEtapa } from '../../data/etapas';
 import type { Expediente } from '../../models/expediente.model';
-import { ExpedientesSim } from '../../services/expedientes-sim.service';
-import { ServiciosSim } from '../../services/servicios-sim.service';
+import { ExpedientesStore } from '../../services/expedientes-store.service';
+import { ServiciosStore } from '../../services/servicios-store.service';
 
 type Filtro = 'todos' | 'cliente' | 'materiales' | 'facturar' | 'cobrar';
 
@@ -21,8 +21,8 @@ type Filtro = 'todos' | 'cliente' | 'materiales' | 'facturar' | 'cobrar';
   styleUrl: './expedientes.scss',
 })
 export class Expedientes {
-  protected readonly sim = inject(ExpedientesSim);
-  protected readonly servicios = inject(ServiciosSim);
+  protected readonly sim = inject(ExpedientesStore);
+  protected readonly servicios = inject(ServiciosStore);
   private readonly router = inject(Router);
 
   protected readonly etapas = ETAPAS;

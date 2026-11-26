@@ -112,36 +112,48 @@
   <!-- ===== Áreas ===== -->
   <h2 class="titulo-seccion">Tus áreas</h2>
   <section class="areas">
-    @for (a of areas(); track a.clave) {
-      <a
+    @for (g of grupos(); track g.titulo) {
+      <div
         class="area"
-        [routerLink]="a.ruta"
-        [style.--c1]="a.colores[0]"
-        [style.--c2]="a.colores[1]"
+        [style.--c1]="g.colores[0]"
+        [style.--c2]="g.colores[1]"
         (pointermove)="inclinar($event)"
         (pointerleave)="soltar($event)"
       >
-        <span class="sticker-area"><app-emoji [nombre]="a.sticker" style="--tam: 2.6rem" /></span>
-        <b>{{ a.nombre }}</b>
-        <small>{{ a.descripcion }}</small>
-        <span class="estado">{{ a.lista ? 'Disponible' : 'Próximamente' }}</span>
-      </a>
+        <a class="cabeza" [routerLink]="g.items[0].ruta">
+          <span class="sticker-area"><app-emoji [nombre]="g.sticker" style="--tam: 2.4rem" /></span>
+          <b>{{ g.titulo }}</b>
+          <small>{{ g.descripcion }}</small>
+        </a>
+        <nav class="sub" [attr.aria-label]="g.titulo">
+          @for (i of g.items; track i.ruta) {
+            <a [routerLink]="i.ruta"><i [class]="i.icono"></i> {{ i.etiqueta }}</a>
+          }
+        </nav>
+      </div>
     } @empty {
-      <p class="sin-areas">Aún no tienes áreas asignadas. Pídele acceso al dueño de la empresa.</p>
+      <p class="sin-areas">Aún no tienes áreas asignadas. Pídele acceso al dueño de la empresa en "Equipo y accesos".</p>
     }
-    @if (esDueno()) {
-      <a
-        class="area equipo"
-        routerLink="/equipo"
-        (pointermove)="inclinar($event)"
-        (pointerleave)="soltar($event)"
-      >
-        <span class="sticker-area"><app-emoji nombre="estrella" style="--tam: 2.6rem" /></span>
-        <b>Equipo y accesos</b>
-        <small>Solo tú das acceso a cada área</small>
-        <span class="estado">Dueño</span>
-      </a>
-    }
+  </section>
+
+  <!-- ===== Cómo se conectan las áreas ===== -->
+  <section class="panel vinculos">
+    <h2><app-emoji nombre="idea" /> Cómo trabajan juntas</h2>
+    <ol>
+      @for (f of flujos; track f.titulo) {
+        <li>
+          <b>{{ f.titulo }}</b>
+          <span class="pasos">
+            @for (p of f.pasos; track p; let ultimo = $last) {
+              <span class="paso">{{ p }}</span>
+              @if (!ultimo) {
+                <i class="pi pi-arrow-right"></i>
+              }
+            }
+          </span>
+        </li>
+      }
+    </ol>
   </section>
 
   <!-- ===== Consejos ===== -->

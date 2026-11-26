@@ -1,13 +1,15 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
+import { mensajeError } from '../../../../core/api/errores';
 import type { Horario } from '../../models/personal.model';
-import { AsistenciaSim } from '../../services/asistencia-sim.service';
+import { Tabletas } from '../../components/tabletas/tabletas';
+import { AsistenciaStore } from '../../services/asistencia-store.service';
 
 /** Horario de la empresa y formas de marcar permitidas (solo dueño o administración). */
 @Component({
   selector: 'app-horario',
-  imports: [FormsModule],
+  imports: [FormsModule, Tabletas],
   template: `
     @let h = borrador();
     <div class="rejilla">
@@ -24,7 +26,7 @@ import { AsistenciaSim } from '../../services/asistencia-sim.service';
           @if (error(); as e) {
             <p class="error full"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
           }
-          <div class="full lg-pie-dialogo"><button type="submit" class="lg-cta"><i class="pi pi-check"></i> Guardar horario</button></div>
+          <div class="full lg-pie-dialogo"><button type="submit" class="lg-cta" [disabled]="guardando()"><i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"></i> Guardar horario</button></div>
         </form>
       </section>
 
@@ -32,9 +34,9 @@ import { AsistenciaSim } from '../../services/asistencia-sim.service';
         <div class="lg-card__head"><div><h3>Formas de marcar</h3><p>Activa las que usará tu empresa</p></div></div>
         <ul class="opciones">
           <li><label><input type="checkbox" [(ngModel)]="h.metodos.gps" /> <span><b>Celular + GPS</b><small>Técnicos en campo y oficina</small></span></label></li>
-          <li><label><input type="checkbox" [(ngModel)]="h.metodos.qr" /> <span><b>Código de la oficina</b><small>Tablet en la entrada, cambia cada 30 s</small></span></label></li>
+          <li><label><input type="checkbox" [(ngModel)]="h.metodos.codigo" /> <span><b>Código de la oficina</b><small>Tablet en la entrada, cambia cada 30 s</small></span></label></li>
           <li><label><input type="checkbox" [(ngModel)]="h.metodos.manual" /> <span><b>Manual por supervisor</b><small>Con motivo obligatorio</small></span></label></li>
-          <li><label><input type="checkbox" [(ngModel)]="h.selfie" /> <span><b>Pedir selfie con el celular</b><small>Evita que otro marque por el trabajador</small></span></label></li>
+          <li><label class="apagado"><input type="checkbox" disabled /> <span><b>Pedir selfie con el celular</b><small>Próximamente (se guardará cifrada, Ley 29733)</small></span></label></li>
         </ul>
         <label class="radio">Radio de la oficina: <b>{{ h.radioOficina }} m</b>
           <input type="range" min="50" max="500" step="10" [(ngModel)]="h.radioOficina" />
@@ -52,6 +54,7 @@ import { AsistenciaSim } from '../../services/asistencia-sim.service';
         </div>
       </section>
     </div>
+    <app-tabletas />
   `,
   styles: `
     .rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
@@ -66,15 +69,34 @@ import { AsistenciaSim } from '../../services/asistencia-sim.service';
     .nota-ref { margin: 0; font-size: 0.8rem; color: var(--lg-muted); }
     .ubicacion { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--lg-line); }
     .ubicacion small { color: var(--lg-muted); font-size: 0.78rem; }
+    .apagado { opacity: 0.6; cursor: default !important; }
     .radio { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.86rem; color: var(--lg-muted); }
   `,
 })
 export class HorarioView {
-  private readonly sim = inject(AsistenciaSim);
+  private readonly sim = inject(AsistenciaStore);
   private readonly avisos = inject(MessageService);
   protected readonly borrador = signal<Horario>(structuredClone(this.sim.horario()));
   protected readonly error = signal<string | null>(null);
   protected readonly buscando = signal(false);
+  protected readonly guardando = signal(false);
+
+  constructor() {
+    // Cuando llega el horario guardado en la base, el formulario lo muestra.
+    effect(() => this.borrador.set(structuredClone(this.sim.horario())));
+  }
+
+  private async enviar(h: Horario, ok: string) {
+    this.guardando.set(true);
+    try {
+      await this.sim.guardarHorario(h);
+      this.avisos.add({ severity: 'success', summary: ok, life: 3500 });
+    } catch (e) {
+      this.avisos.add({ severity: 'error', summary: 'No se pudo guardar', detail: mensajeError(e), life: 5000 });
+    } finally {
+      this.guardando.set(false);
+    }
+  }
 
   /** Toma la ubicación actual del GPS como la de la oficina (se pide permiso al navegador). */
   protected fijarOficina() {
@@ -87,9 +109,7 @@ export class HorarioView {
       (p) => {
         this.buscando.set(false);
         const oficina = { lat: p.coords.latitude, lng: p.coords.longitude };
-        this.borrador.update((h) => ({ ...h, oficina }));
-        this.sim.guardarHorario({ ...this.sim.horario(), oficina });
-        this.avisos.add({ severity: 'success', summary: 'Oficina ubicada', detail: `Precisión: ${Math.round(p.coords.accuracy)} m`, life: 3500 });
+        void this.enviar({ ...this.sim.horario(), oficina }, `Oficina ubicada (precisión ${Math.round(p.coords.accuracy)} m)`);
       },
       () => {
         this.buscando.set(false);
@@ -107,8 +127,8 @@ export class HorarioView {
     if (h.refrigerio < 45) return this.error.set('El refrigerio mínimo es de 45 minutos.');
     if (jornada > 480) return this.error.set('La jornada ordinaria no puede pasar de 8 horas diarias.');
     if (jornada <= 0) return this.error.set('Revisa las horas de entrada y salida.');
+    if (!h.metodos.gps && !h.metodos.codigo && !h.metodos.manual) return this.error.set('Activa al menos una forma de marcar.');
     this.error.set(null);
-    this.sim.guardarHorario({ ...h, jornada });
-    this.avisos.add({ severity: 'success', summary: 'Horario guardado', detail: 'Se recalcularon tardanzas y horas extra (simulación).', life: 3500 });
+    void this.enviar({ ...h, jornada }, 'Horario guardado');
   }
 }

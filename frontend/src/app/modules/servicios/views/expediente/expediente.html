@@ -118,15 +118,19 @@
           }
           @case ('conformidad') {
             <p class="dato">Conformidad del {{ e.conformidad?.fecha?.split('-')?.reverse()?.join('/') }}{{ e.conformidad?.hes ? ' · HES ' + e.conformidad?.hes : '' }}.</p>
-            <form class="lg-form" (ngSubmit)="registrarFactura()">
-              <div class="full"><label for="f-fac">Factura</label><input id="f-fac" name="fac" placeholder="F001-126" [(ngModel)]="f.factura" /></div>
-              <p class="full nota">En la versión real se registra en Ventas (con detracción del 12 % y su asiento contable) citando la orden {{ e.ordenCliente?.numero }}.</p>
-              <div class="full acciones"><button type="submit" class="lg-cta"><i class="pi pi-receipt"></i> Factura emitida</button></div>
-            </form>
+            <div class="acciones">
+              <button type="button" class="lg-cta" (click)="facturarFinal()"><i class="pi pi-receipt"></i> Registrar factura en Ventas</button>
+            </div>
+            <p class="nota">Se registra en Finanzas · Ventas con el cliente, la orden {{ e.ordenCliente?.numero }} y el saldo (descontando los adelantos ya facturados). Genera su cuenta por cobrar y su asiento contable.</p>
           }
           @case ('facturado') {
             <p class="dato">Factura <b>{{ e.factura?.numero }}</b> del {{ e.factura?.fecha?.split('-')?.reverse()?.join('/') }} por {{ dineroExp((e.cotizacion?.monto ?? 0) * 1.18) }} (con IGV).</p>
-            <button type="button" class="lg-cta" (click)="registrarCobro()"><i class="pi pi-wallet"></i> Cobro recibido</button>
+            @if (e.facturaId) {
+              <a class="lg-cta" routerLink="/finanzas/cuentas-cobrar"><i class="pi pi-wallet"></i> Registrar el cobro en Cuentas por cobrar</a>
+              <p class="nota">Cuando el cobro quede registrado en Caja, este servicio pasa a "Cobrado" solo.</p>
+            } @else {
+              <button type="button" class="lg-cta" (click)="registrarCobro()"><i class="pi pi-wallet"></i> Cobro recibido</button>
+            }
           }
           @case ('cobrado') {
             <div class="lg-vacio"><i class="pi pi-check-circle"></i><h4>Servicio terminado y cobrado</h4><p>Todo quedó registrado en el historial.</p></div>
@@ -164,13 +168,14 @@
                 </div>
                 @switch (h.estado) {
                   @case ('pendiente') {
-                    <span class="facturar">
-                      <input type="text" placeholder="N.° factura" [(ngModel)]="facturaHito[h.id]" [attr.aria-label]="'Factura de ' + h.descripcion" />
-                      <button type="button" class="lg-cta lg-cta--suave chico" (click)="facturarHito(h.id)">Facturar</button>
-                    </span>
+                    <button type="button" class="lg-cta lg-cta--suave chico" (click)="facturarHito(h.id)" title="Registra la factura en Finanzas · Ventas"><i class="pi pi-receipt"></i> Facturar</button>
                   }
                   @case ('facturado') {
-                    <button type="button" class="lg-chip bajo boton" (click)="cobrarHito(h.id)" title="Marcar como cobrado">Facturado · ¿cobrado?</button>
+                    @if (h.comprobanteId) {
+                      <a class="lg-chip bajo boton" routerLink="/finanzas/cuentas-cobrar" title="El cobro se registra en Cuentas por cobrar">Facturado · por cobrar</a>
+                    } @else {
+                      <button type="button" class="lg-chip bajo boton" (click)="cobrarHito(h.id)" title="Marcar como cobrado">Facturado · ¿cobrado?</button>
+                    }
                   }
                   @case ('cobrado') {
                     <span class="lg-chip ok">Cobrado</span>
@@ -182,7 +187,7 @@
           @if (e.exigirAdelanto) {
             <p class="nota"><i class="pi pi-lock"></i> No se programa el trabajo hasta cobrar el primer adelanto.</p>
           }
-          <p class="nota">Cada adelanto se factura al recibirlo (con IGV y detracción si pasa S/ 700); la factura final descuenta los adelantos.</p>
+          <p class="nota">Cada adelanto se factura en Ventas (con IGV, detracción si pasa S/ 700 y su asiento); al registrar el cobro en Caja, aquí pasa a "Cobrado" solo.</p>
         </section>
       }
 
@@ -240,7 +245,7 @@
             <button type="submit" class="lg-cta"><i class="pi pi-plus"></i></button>
           </div>
         </form>
-        <p class="nota">En la versión real, "Pedido al proveedor" crea la orden de compra en Logística.</p>
+        <p class="nota">Para pedir al proveedor con orden de compra formal, créala en <a routerLink="/logistica/ordenes-compra">Logística · Órdenes de compra</a>.</p>
       </section>
     </div>
   </div>
@@ -253,7 +258,7 @@
       <p class="asunto">{{ t.asunto }}</p>
       <span class="lbl">Mensaje</span>
       <pre>{{ t.cuerpo }}</pre>
-      <p class="nota">Adjunta las constancias de SCTR de cada técnico. En la versión real se adjuntan solas y se envía desde la app.</p>
+      <p class="nota">Adjunta las constancias de SCTR de cada técnico al enviar el correo.</p>
       <div class="lg-pie-dialogo">
         <button type="button" class="lg-cta lg-cta--suave" (click)="correo.set(false)">Cerrar</button>
         <button type="button" class="lg-cta" (click)="copiarCorreo()"><i class="pi pi-copy"></i> Copiar correo</button>
@@ -263,3 +268,5 @@
 } @else {
   <div class="lg-vacio"><i class="pi pi-search"></i><h4>No encontramos ese expediente</h4><p><a routerLink="/proyectos">Volver</a></p></div>
 }
+
+<app-comprobante-dialogo operacion="venta" [(visible)]="dialogoVenta" [prellenar]="prellenado()" (registrado)="ventaRegistrada($event)" />

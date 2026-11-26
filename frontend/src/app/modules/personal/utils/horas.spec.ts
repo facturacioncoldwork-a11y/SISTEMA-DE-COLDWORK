@@ -10,7 +10,7 @@ const H: Horario = {
   refrigerioHasta: '15:00',
   tolerancia: 10,
   jornada: 480,
-  metodos: { gps: true, qr: true, manual: true },
+  metodos: { gps: true, codigo: true, manual: true },
   radioOficina: 150,
   selfie: true,
   oficina: null,

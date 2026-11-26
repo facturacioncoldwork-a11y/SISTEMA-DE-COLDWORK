@@ -2,12 +2,12 @@ import { Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
-import { AvisoSimulacion } from '../../../../shared/components/aviso-simulacion/aviso-simulacion';
+import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 
-/** Contenedor de Personal (asistencia). */
+/** Contenedor de Personal (asistencia). Las pestañas de gestión solo las ve quien gestiona Personal. */
 @Component({
   selector: 'app-personal',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, AvisoSimulacion],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="lg">
       <header class="lg-hero">
@@ -18,15 +18,16 @@ import { AvisoSimulacion } from '../../../../shared/components/aviso-simulacion/
             <p class="lg-hero__sub">{{ datos().sub ?? '' }}</p>
           </div>
         </div>
-        <nav class="lg-nav no-imprimir" aria-label="Asistencia">
-          <a routerLink="/personal" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }"><i class="pi pi-th-large"></i> Hoy</a>
-          <a routerLink="/personal/marcar" routerLinkActive="activo"><i class="pi pi-mobile"></i> Marcar</a>
-          <a routerLink="/personal/registro" routerLinkActive="activo"><i class="pi pi-calendar"></i> Registro mensual</a>
-          <a routerLink="/personal/horario" routerLinkActive="activo"><i class="pi pi-cog"></i> Horario y métodos</a>
-        </nav>
+        @if (empresa.puede('personal')) {
+          <nav class="lg-nav no-imprimir" aria-label="Asistencia">
+            <a routerLink="/personal" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }"><i class="pi pi-th-large"></i> Hoy</a>
+            <a routerLink="/personal/marcar" routerLinkActive="activo"><i class="pi pi-mobile"></i> Marcar</a>
+            <a routerLink="/personal/registro" routerLinkActive="activo"><i class="pi pi-calendar"></i> Registro mensual</a>
+            <a routerLink="/personal/horario" routerLinkActive="activo"><i class="pi pi-cog"></i> Horario y métodos</a>
+          </nav>
+        }
       </header>
       <div class="lg-cuerpo">
-        <app-aviso-simulacion />
         <router-outlet />
       </div>
     </div>
@@ -34,6 +35,7 @@ import { AvisoSimulacion } from '../../../../shared/components/aviso-simulacion/
 })
 export class Personal {
   private readonly router = inject(Router);
+  protected readonly empresa = inject(EmpresaActualService);
   protected readonly datos = toSignal(
     this.router.events.pipe(
       filter((e) => e instanceof NavigationEnd),

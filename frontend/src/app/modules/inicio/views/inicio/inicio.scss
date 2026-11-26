@@ -322,43 +322,40 @@
 
 .areas {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
   gap: 1rem;
   perspective: 900px;
 }
 .area {
-  position: relative;
-  overflow: hidden;
   display: grid;
-  gap: 0.25rem;
   align-content: start;
-  padding: 1.1rem 1.15rem 1.2rem;
   border-radius: 1.2rem;
-  min-height: 9.5rem;
-  text-decoration: none;
-  color: #fff;
-  background: linear-gradient(140deg, var(--c1), var(--c2));
+  overflow: hidden;
+  background: var(--p-content-background);
+  border: 1px solid var(--p-content-border-color);
   transform: rotateX(var(--rx, 0)) rotateY(var(--ry, 0));
-  transition:
-    transform 0.15s ease-out,
-    box-shadow 0.2s;
-  box-shadow: 0 14px 28px -20px var(--c2);
+  transition: transform 0.15s ease-out, box-shadow 0.2s;
+  box-shadow: 0 14px 28px -24px var(--c2);
   &:hover {
-    box-shadow: 0 22px 38px -18px var(--c2);
+    box-shadow: 0 22px 38px -20px var(--c2);
   }
   &:hover .sticker-area {
     transform: scale(1.12) rotate(-6deg);
   }
-  &.equipo {
-    --c1: #0f172a;
-    --c2: #334155;
-  }
+}
+.cabeza {
+  display: grid;
+  gap: 0.2rem;
+  padding: 1rem 1.1rem;
+  color: #fff;
+  text-decoration: none;
+  background: linear-gradient(140deg, var(--c1), var(--c2));
   b {
     font-size: 1.02rem;
-    margin-top: 0.35rem;
+    margin-top: 0.3rem;
   }
   small {
-    opacity: 0.9;
+    opacity: 0.92;
     font-size: 0.8rem;
     line-height: 1.35;
   }
@@ -368,18 +365,60 @@
   transition: transform 0.25s;
   filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.2));
 }
-.estado {
-  position: absolute;
-  right: 0.9rem;
-  top: 0.9rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.25);
+.sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.75rem 0.9rem 0.9rem;
+  a {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    padding: 0.32rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    text-decoration: none;
+    color: inherit;
+    background: color-mix(in srgb, var(--c1) 9%, white);
+    &:hover {
+      background: color-mix(in srgb, var(--c1) 18%, white);
+    }
+    i {
+      font-size: 0.75rem;
+      color: var(--c2);
+    }
+  }
 }
 .sin-areas {
   color: var(--p-text-muted-color);
+}
+.vinculos ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+.vinculos li {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.86rem;
+}
+.pasos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  i {
+    font-size: 0.65rem;
+    color: var(--p-text-muted-color);
+  }
+}
+.paso {
+  padding: 0.25rem 0.55rem;
+  border-radius: 0.5rem;
+  background: var(--p-surface-100);
+  font-size: 0.78rem;
 }
 
 .consejos {

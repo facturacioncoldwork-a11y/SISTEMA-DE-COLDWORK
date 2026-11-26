@@ -3,7 +3,8 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
-import { AREAS, NOMBRE_ROL, veTodo, type Area } from '../../../../core/permisos/areas';
+import { AREAS, NOMBRE_ROL, veTodo } from '../../../../core/permisos/areas';
+import { MENU } from '../../../../layout/shell/menu';
 import { Contador } from '../../../../shared/components/contador/contador';
 import { Emoji } from '../../../../shared/components/emoji/emoji';
 import type { NombreIcono } from '../../../../shared/components/emoji/iconos';
@@ -12,51 +13,22 @@ import { colorLlegada, seguimiento } from '../../../logistica/models/plazos';
 import { OrdenesCompraService } from '../../../logistica/services/ordenes-compra.service';
 import { ProductosService } from '../../../logistica/services/productos.service';
 
-interface TarjetaArea {
-  clave: Area;
-  nombre: string;
-  descripcion: string;
-  sticker: NombreIcono;
-  ruta: string;
-  colores: [string, string];
-  lista: boolean;
-}
-
-/** Datos visuales por área (color, sticker y a dónde lleva). */
-const VISUAL: Record<Area, Omit<TarjetaArea, 'clave' | 'nombre' | 'descripcion'>> = {
-  logistica: { sticker: 'caja', ruta: '/logistica', colores: ['#06b6d4', '#6366f1'], lista: true },
-  contabilidad: {
-    sticker: 'libro',
-    ruta: '/contabilidad',
-    colores: ['#8b5cf6', '#d946ef'],
-    lista: false,
-  },
-  finanzas: {
-    sticker: 'dinero',
-    ruta: '/caja-bancos',
-    colores: ['#10b981', '#059669'],
-    lista: false,
-  },
-  ventas: { sticker: 'grafico', ruta: '/ventas', colores: ['#f97316', '#ef4444'], lista: false },
-  administracion: {
-    sticker: 'edificio',
-    ruta: '/terceros',
-    colores: ['#0ea5e9', '#2563eb'],
-    lista: false,
-  },
-  tecnica: {
-    sticker: 'herramienta',
-    ruta: '/servicios',
-    colores: ['#f59e0b', '#ea580c'],
-    lista: false,
-  },
-  personal: {
-    sticker: 'persona',
-    ruta: '/personal',
-    colores: ['#ec4899', '#f43f5e'],
-    lista: false,
-  },
+/** Aspecto de cada sección del menú en Inicio (mismo orden y nombres que el menú lateral). */
+const GRUPOS: Record<string, { descripcion: string; sticker: NombreIcono; colores: [string, string] }> = {
+  Finanzas: { descripcion: 'Caja y bancos, ventas, compras, cobros y pagos', sticker: 'dinero', colores: ['#10b981', '#059669'] },
+  Contabilidad: { descripcion: 'Asientos, libros y estados financieros', sticker: 'libro', colores: ['#8b5cf6', '#d946ef'] },
+  'Almacén y logística': { descripcion: 'Inventario, llegadas, salidas y órdenes de compra', sticker: 'caja', colores: ['#06b6d4', '#6366f1'] },
+  'Servicios y proyectos': { descripcion: 'Cotizaciones y cada servicio de principio a fin', sticker: 'grafico', colores: ['#f97316', '#ef4444'] },
+  Operaciones: { descripcion: 'Órdenes de trabajo, informes técnicos y asistencia', sticker: 'herramienta', colores: ['#f59e0b', '#ea580c'] },
+  Sistema: { descripcion: 'Equipo, accesos y datos de la empresa', sticker: 'estrella', colores: ['#0f172a', '#334155'] },
 };
+
+/** Cómo pasa la información de un área a otra (sin volver a escribirla). */
+const FLUJOS: { titulo: string; pasos: string[] }[] = [
+  { titulo: 'De la cotización al cobro', pasos: ['Cotización aprobada', 'Servicio con su forma de pago', 'Orden de trabajo e informe firmado', 'Factura en Ventas', 'Cobro en Caja', 'Asiento contable'] },
+  { titulo: 'De la compra al pago', pasos: ['Orden de compra', 'Llegada al almacén (kardex)', 'Factura en Compras', 'Pago en Caja', 'Asiento contable'] },
+  { titulo: 'Del personal a la planilla', pasos: ['Marca con GPS o código de tablet', 'Registro mensual', 'Horas extra y tardanzas', 'Planilla (PLAME)'] },
+];
 
 const CONSEJOS: {
   sticker: NombreIcono;
@@ -135,21 +107,25 @@ export class Inicio implements OnInit {
     return this.empresa.puede('logistica');
   });
 
-  /** Solo las áreas a las que la persona tiene acceso. */
-  protected readonly areas = computed<TarjetaArea[]>(() => {
+  /** Las mismas secciones del menú, solo con lo que la persona puede abrir. */
+  protected readonly grupos = computed(() => {
     this.empresa.actual();
-    return AREAS.filter((a) => this.empresa.puede(a.clave)).map((a) => ({
-      clave: a.clave,
-      nombre: a.nombre,
-      descripcion: a.descripcion,
-      ...VISUAL[a.clave],
-    }));
+    return MENU.filter((g) => GRUPOS[g.titulo])
+      .map((g) => ({
+        titulo: g.titulo,
+        ...GRUPOS[g.titulo],
+        items: g.items.filter((i) =>
+          i.soloDueno ? this.empresa.esDueno() : i.soloAdmin ? this.empresa.esAdmin() : !i.area || this.empresa.puede(i.area),
+        ),
+      }))
+      .filter((g) => g.items.length > 0);
   });
+  protected readonly flujos = FLUJOS;
   protected readonly misAreas = computed(() => {
     const e = this.empresa.actual();
     return !e || veTodo(e.rol)
       ? 'todas las áreas'
-      : this.areas()
+      : AREAS.filter((a) => this.empresa.puede(a.clave))
           .map((a) => a.nombre)
           .join(', ') || 'ninguna todavía';
   });

@@ -30,6 +30,16 @@ export class SupabaseService {
     });
   }
 
+  /**
+   * Cliente SIN usuario (rol anon). Solo para lo poco que se usa sin sesión, como la tablet de
+   * asistencia: la base de datos solo le deja ejecutar esas funciones y exige un token válido.
+   */
+  publico(): SupabaseClient {
+    return createClient(this.url, this.key, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+  }
+
   /** ¿Responde Supabase? (para /health/ready) */
   async disponible(timeoutMs = 8000): Promise<boolean> {
     try {
