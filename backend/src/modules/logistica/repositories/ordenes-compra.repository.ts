@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { datosOError } from '../../../common/index.js';
 import { SupabaseService } from '../../../database/supabase/supabase.service.js';
 import {
+  COLUMNAS_PROYECTO_OC,
   SELECT_ORDEN_COMPRA,
+  SELECT_ORDEN_COMPRA_SIN_PROYECTO,
   type EstadoOc,
   type FilaOrdenCompra,
   type CambiosOrdenCompra,
@@ -19,13 +21,18 @@ export class OrdenesCompraRepository {
     empresaId: string,
     estado?: EstadoOc,
   ): Promise<FilaOrdenCompra[]> {
-    let q = this.supabase
-      .paraUsuario(token)
-      .from('ordenes_compra')
-      .select(SELECT_ORDEN_COMPRA)
-      .eq('empresa_id', empresaId);
-    if (estado) q = q.eq('estado', estado);
-    const r = await q.order('numero', { ascending: false }).limit(300);
+    const consultar = (columnas: string) => {
+      let q = this.supabase
+        .paraUsuario(token)
+        .from('ordenes_compra')
+        .select(columnas)
+        .eq('empresa_id', empresaId);
+      if (estado) q = q.eq('estado', estado);
+      return q.order('numero', { ascending: false }).limit(300);
+    };
+    let r = await consultar(SELECT_ORDEN_COMPRA);
+    if (columnaFaltante(r.error))
+      r = await consultar(SELECT_ORDEN_COMPRA_SIN_PROYECTO);
     return (datosOError(r) as unknown as FilaOrdenCompra[] | null) ?? [];
   }
 
@@ -34,13 +41,17 @@ export class OrdenesCompraRepository {
     empresaId: string,
     id: string,
   ): Promise<FilaOrdenCompra> {
-    const r = await this.supabase
-      .paraUsuario(token)
-      .from('ordenes_compra')
-      .select(SELECT_ORDEN_COMPRA)
-      .eq('empresa_id', empresaId)
-      .eq('id', id)
-      .single();
+    const consultar = (columnas: string) =>
+      this.supabase
+        .paraUsuario(token)
+        .from('ordenes_compra')
+        .select(columnas)
+        .eq('empresa_id', empresaId)
+        .eq('id', id)
+        .single();
+    let r = await consultar(SELECT_ORDEN_COMPRA);
+    if (columnaFaltante(r.error))
+      r = await consultar(SELECT_ORDEN_COMPRA_SIN_PROYECTO);
     return datosOError(r) as unknown as FilaOrdenCompra;
   }
 
@@ -104,16 +115,24 @@ export class OrdenesCompraRepository {
     id: string,
     cambios: CambiosOrdenCompra,
   ): Promise<void> {
-    datosOError(
-      await this.supabase
+    const guardar = (c: CambiosOrdenCompra) =>
+      this.supabase
         .paraUsuario(token)
         .from('ordenes_compra')
-        .update(cambios)
+        .update(c)
         .eq('empresa_id', empresaId)
         .eq('id', id)
         .select('id')
-        .single(),
-    );
+        .single();
+    let r = await guardar(cambios);
+    // Base sin la migración de pagos: se guarda lo demás y se omite proyecto / fecha de aprobación
+    if (columnaFaltante(r.error)) {
+      const resto: CambiosOrdenCompra = { ...cambios };
+      for (const k of COLUMNAS_PROYECTO_OC) delete resto[k];
+      if (!Object.keys(resto).length) return;
+      r = await guardar(resto);
+    }
+    datosOError(r);
   }
 
   /** Solo en borrador (lo valida la función SQL). */
@@ -131,4 +150,11 @@ export class OrdenesCompraRepository {
       }),
     );
   }
+}
+
+/** Columna inexistente (falta ejecutar su migración): 42703 en SELECT, PGRST204 en UPDATE. */
+export function columnaFaltante(
+  error: { code?: string } | null | undefined,
+): boolean {
+  return error?.code === '42703' || error?.code === 'PGRST204';
 }

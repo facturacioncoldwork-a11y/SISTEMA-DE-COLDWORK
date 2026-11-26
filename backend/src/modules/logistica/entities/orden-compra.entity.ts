@@ -58,6 +58,18 @@ export const SELECT_ORDEN_COMPRA = `id, numero, estado, fecha, plazo_texto, entr
   items:ordenes_compra_items(id, producto_id, cantidad, cantidad_recibida, costo_unitario,
     producto:productos(sku, nombre, unidad))`;
 
+/**
+ * El mismo SELECT sin proyecto ni fecha de aprobación: lo usa la API si la base aún no tiene
+ * la migración 20261129000001_oc_pagos.sql (así las órdenes de compra siguen funcionando).
+ */
+export const SELECT_ORDEN_COMPRA_SIN_PROYECTO = SELECT_ORDEN_COMPRA.replace(
+  'proyecto_id, proyecto_codigo, proyecto_nombre, fecha_aprobado,',
+  '',
+);
+
+/** Columnas que agrega la migración de pagos (se omiten si la base aún no las tiene). */
+export const COLUMNAS_PROYECTO_OC = ['proyecto_id', 'fecha_aprobado'] as const;
+
 /** Columnas de la cabecera que se pueden editar (UPDATE directo). */
 export interface CambiosOrdenCompra {
   proveedor_id?: string;
