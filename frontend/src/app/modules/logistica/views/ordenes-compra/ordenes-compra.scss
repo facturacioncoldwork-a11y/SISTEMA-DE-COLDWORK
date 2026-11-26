@@ -290,3 +290,12 @@ h4 {
 .lg-oc {
   min-width: 0;
 }
+
+.cotiz-det {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--lg-muted);
+  b {
+    color: var(--lg-ink);
+  }
+}

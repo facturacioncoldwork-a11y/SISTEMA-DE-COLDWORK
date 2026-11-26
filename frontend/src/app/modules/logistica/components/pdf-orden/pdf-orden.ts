@@ -27,6 +27,7 @@ export function datosPdfDe(
     solicitadoPor: o.solicitadoPor,
     lugarEntrega: o.lugarEntrega,
     cotizacionRef: o.cotizacionRef,
+    cotizacionFecha: o.cotizacionFecha ?? null,
     proyecto: o.proyecto?.codigo ?? null,
     items: o.items.map((i) => ({
       codigo: i.sku,

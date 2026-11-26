@@ -72,6 +72,10 @@ export class OrdenDialogo {
   /** Proyecto de Operaciones al que pertenece la compra. */
   protected readonly proyectoId = signal<string | null>(null);
   protected readonly fechaAprobado = signal('');
+  /** Cotización del proveedor de la que sale la compra. */
+  protected readonly cotizacionRef = signal('');
+  protected readonly cotizacionFecha = signal('');
+  protected readonly hoy = hoyISO();
   protected readonly proyectos = signal<(ProyectoCompra & { etiqueta: string })[]>([]);
   protected readonly compromiso = signal('');
   protected readonly notas = signal('');
@@ -136,6 +140,8 @@ export class OrdenDialogo {
           this.cliente.set(o.cliente ?? '');
           this.proyectoId.set(o.proyecto?.id ?? null);
           this.fechaAprobado.set(o.fechaAprobado ?? '');
+          this.cotizacionRef.set(o.cotizacionRef ?? '');
+          this.cotizacionFecha.set(o.cotizacionFecha ?? '');
           this.compromiso.set(o.compromisoCliente ?? '');
           this.notas.set(o.notas ?? '');
           this.moneda.set(o.moneda);
@@ -158,6 +164,8 @@ export class OrdenDialogo {
           this.cliente.set('');
           this.proyectoId.set(null);
           this.fechaAprobado.set(hoyISO());
+          this.cotizacionRef.set('');
+          this.cotizacionFecha.set('');
           this.compromiso.set('');
           this.notas.set('');
           this.moneda.set('PEN');
@@ -219,6 +227,8 @@ export class OrdenDialogo {
       notas: this.notas().trim(),
       ...(this.editaTodo() ? { moneda: this.moneda() } : {}),
       fechaAprobado: this.fechaAprobado() || null,
+      cotizacionRef: this.cotizacionRef().trim(),
+      cotizacionFecha: this.cotizacionFecha() || null,
       // Al editar, null quita el proyecto; al crear solo se envía si se eligió
       ...(this.orden() || this.proyectoId() ? { proyectoId: this.proyectoId() } : {}),
     };

@@ -102,6 +102,9 @@
             @if (r.numero) {
               de la cotización <b>{{ r.numero }}</b>
             }
+            @if (r.fecha) {
+              del <b>{{ r.fecha + 'T12:00:00' | date: 'd MMM y' }}</b>
+            }
             @if (r.proveedor.razonSocial) {
               de <b>{{ r.proveedor.razonSocial }}</b>
             }
@@ -181,6 +184,17 @@
           placeholder="HC 1724"
           [ngModel]="cotizacionRef()"
           (ngModelChange)="cotizacionRef.set($event)"
+        />
+      </div>
+      <div>
+        <label for="ic-fecha">Fecha de la cotización</label>
+        <input
+          id="ic-fecha"
+          type="date"
+          class="p-inputtext"
+          [max]="hoy"
+          [ngModel]="cotizacionFecha()"
+          (ngModelChange)="cotizacionFecha.set($event)"
         />
       </div>
       <div>

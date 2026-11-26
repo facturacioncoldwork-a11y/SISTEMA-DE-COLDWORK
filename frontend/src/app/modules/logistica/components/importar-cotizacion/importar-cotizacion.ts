@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import {
   Component,
   computed,
@@ -68,6 +68,7 @@ let secuencia = 0;
   selector: 'app-importar-cotizacion',
   imports: [
     FormsModule,
+    DatePipe,
     DecimalPipe,
     DialogModule,
     SelectModule,
@@ -116,6 +117,9 @@ export class ImportarCotizacion {
   protected readonly nuevaRazon = signal('');
   protected readonly moneda = signal<Moneda>('USD');
   protected readonly cotizacionRef = signal('');
+  /** Fecha de la cotización del proveedor (se lee del PDF si la trae). */
+  protected readonly cotizacionFecha = signal('');
+  protected readonly hoy = hoyISO();
   protected readonly condiciones = signal<string>(DOCUMENTO_OC.condicionesPorDefecto);
   protected readonly atencion = signal('');
   protected readonly solicitado = signal('');
@@ -192,6 +196,7 @@ export class ImportarCotizacion {
     this.nuevaRazon.set('');
     this.moneda.set('USD');
     this.cotizacionRef.set('');
+    this.cotizacionFecha.set('');
     this.condiciones.set(DOCUMENTO_OC.condicionesPorDefecto);
     this.atencion.set('');
     this.solicitado.set(this.auth.nombre());
@@ -276,6 +281,7 @@ export class ImportarCotizacion {
     this.lectura.set(r);
     this.moneda.set(r.moneda);
     this.cotizacionRef.set(r.numero ?? '');
+    this.cotizacionFecha.set(r.fecha ?? '');
     if (r.formaPago) this.condiciones.set(r.formaPago);
     const prov = r.proveedor.ruc
       ? this.store.proveedores().find((p) => p.numeroDocumento === r.proveedor.ruc)
@@ -398,6 +404,7 @@ export class ImportarCotizacion {
       solicitadoPor: this.solicitado() || null,
       lugarEntrega: this.lugar() || null,
       cotizacionRef: this.cotizacionRef() || null,
+      cotizacionFecha: this.cotizacionFecha() || null,
       items: this.elegidas().map((f) => ({
         codigo: f.codigo,
         descripcion: f.descripcion,
@@ -465,6 +472,7 @@ export class ImportarCotizacion {
         enviar,
         moneda: this.moneda(),
         cotizacionRef: this.cotizacionRef(),
+        cotizacionFecha: this.cotizacionFecha() || null,
         condicionesPago: this.condiciones(),
         atencion: this.atencion(),
         solicitadoPor: this.solicitado(),

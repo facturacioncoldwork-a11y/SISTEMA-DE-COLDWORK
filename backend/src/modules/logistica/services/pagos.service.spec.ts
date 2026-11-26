@@ -36,3 +36,12 @@ describe('plan de pagos de una OC', () => {
     ).toBe(0);
   });
 });
+
+describe('fecha de la cotización del proveedor', () => {
+  it('no acepta fechas futuras', async () => {
+    const { noFutura } = await import('./ordenes-compra.service.js');
+    expect(() => noFutura('2020-01-01', 'x')).not.toThrow();
+    expect(() => noFutura(null, 'x')).not.toThrow();
+    expect(() => noFutura('2999-01-01', 'futura')).toThrow('futura');
+  });
+});

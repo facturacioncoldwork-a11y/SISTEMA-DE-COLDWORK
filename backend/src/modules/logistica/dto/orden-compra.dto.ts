@@ -133,6 +133,15 @@ class PlazoOrdenDto {
   proyectoId?: string | null;
 
   @ApiPropertyOptional({
+    example: '2026-11-20',
+    nullable: true,
+    description: 'Fecha de la cotización del proveedor',
+  })
+  @IsOptional()
+  @IsDateString()
+  cotizacionFecha?: string | null;
+
+  @ApiPropertyOptional({
     example: '2026-10-07',
     nullable: true,
     description: 'Fecha en que se aprobó la compra',
@@ -248,6 +257,8 @@ export class OrdenCompraDto {
   proyecto!: { id: string | null; codigo: string; nombre: string } | null;
   @ApiPropertyOptional({ nullable: true, type: String }) fechaAprobado!:
     string | null;
+  @ApiPropertyOptional({ nullable: true, type: String }) cotizacionFecha!:
+    string | null;
   @ApiProperty() proveedor!: {
     id: string;
     razonSocial: string;
@@ -310,6 +321,7 @@ export class OrdenCompraDto {
           }
         : null,
       fechaAprobado: f.fecha_aprobado ?? null,
+      cotizacionFecha: f.cotizacion_fecha ?? null,
       proveedor: {
         id: f.proveedor?.id ?? '',
         razonSocial: f.proveedor?.razon_social ?? '',

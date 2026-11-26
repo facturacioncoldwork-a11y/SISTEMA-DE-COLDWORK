@@ -149,6 +149,8 @@ export interface OrdenCompra {
   solicitadoPor: string | null;
   /** N° de la cotización del proveedor de la que salió ("HC 1724"). */
   cotizacionRef: string | null;
+  /** Fecha de la cotización del proveedor. */
+  cotizacionFecha: string | null;
   /** Proyecto de Operaciones (cotización aprobada o enviada) al que pertenece la compra. */
   proyecto: { id: string | null; codigo: string; nombre: string } | null;
   /** Fecha en que se aprobó la compra. */
@@ -182,6 +184,7 @@ export interface PlazoOrden {
   atencion?: string;
   solicitadoPor?: string;
   cotizacionRef?: string;
+  cotizacionFecha?: string | null;
   /** null quita el proyecto. */
   proyectoId?: string | null;
   fechaAprobado?: string | null;

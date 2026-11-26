@@ -131,6 +131,8 @@ describe('contrato de la API de logística', () => {
       almacenId: uuid,
       proyectoId: uuid,
       fechaAprobado: '2026-10-07',
+      cotizacionRef: 'HC 1724',
+      cotizacionFecha: '2026-10-05',
       items: [{ productoId: uuid, cantidad: 1, costoUnitario: 12921 }],
     };
     expect(await errores(CrearOrdenCompraDto, cuerpo)).toEqual([]);

@@ -22,6 +22,8 @@ export interface DatosOrdenPdf {
   solicitadoPor: string | null;
   lugarEntrega: string | null;
   cotizacionRef: string | null;
+  /** Fecha de la cotización del proveedor (YYYY-MM-DD). */
+  cotizacionFecha?: string | null;
   /** Código del proyecto (Operaciones), ej. YG-PROY20260010. */
   proyecto?: string | null;
   items: {
@@ -142,7 +144,16 @@ export async function crearPdfOrden(
     ['R.U.C.', d.proveedor.ruc],
     ['FECHA', fechaPe(d.fecha)],
     ['FECHA DE ENTREGA', fechaPe(d.fechaEntrega)],
-    ...(d.cotizacionRef ? ([['COTIZACIÓN', d.cotizacionRef]] as [string, string][]) : []),
+    ...(d.cotizacionRef || d.cotizacionFecha
+      ? ([
+          [
+            'COTIZACIÓN',
+            [d.cotizacionRef, d.cotizacionFecha ? `del ${fechaPe(d.cotizacionFecha)}` : '']
+              .filter(Boolean)
+              .join(' '),
+          ],
+        ] as [string, string][])
+      : []),
     ...(d.proyecto ? ([['COD. PROYECTO', d.proyecto]] as [string, string][]) : []),
   ];
   der.forEach(([k, v], i) => {

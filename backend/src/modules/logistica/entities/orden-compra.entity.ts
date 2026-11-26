@@ -25,6 +25,7 @@ export interface FilaOrdenCompra {
   atencion: string | null;
   solicitado_por: string | null;
   cotizacion_ref: string | null;
+  cotizacion_fecha: string | null;
   proyecto_id: string | null;
   proyecto_codigo: string | null;
   proyecto_nombre: string | null;
@@ -52,7 +53,7 @@ export interface FilaOrdenCompra {
 export const SELECT_ORDEN_COMPRA = `id, numero, estado, fecha, plazo_texto, entrega_desde, entrega_hasta, fecha_llegada_real,
   cliente, compromiso_cliente, entregado_cliente, moneda, notas, creado_en,
   condiciones_pago, lugar_entrega, atencion, solicitado_por, cotizacion_ref,
-  proyecto_id, proyecto_codigo, proyecto_nombre, fecha_aprobado,
+  proyecto_id, proyecto_codigo, proyecto_nombre, fecha_aprobado, cotizacion_fecha,
   proveedor:terceros!ordenes_compra_proveedor_id_fkey(id, razon_social, numero_documento, direccion, dias_credito),
   almacen:almacenes!ordenes_compra_almacen_id_fkey(id, nombre, codigo),
   items:ordenes_compra_items(id, producto_id, cantidad, cantidad_recibida, costo_unitario,
@@ -63,12 +64,16 @@ export const SELECT_ORDEN_COMPRA = `id, numero, estado, fecha, plazo_texto, entr
  * la migración 20261129000001_oc_pagos.sql (así las órdenes de compra siguen funcionando).
  */
 export const SELECT_ORDEN_COMPRA_SIN_PROYECTO = SELECT_ORDEN_COMPRA.replace(
-  'proyecto_id, proyecto_codigo, proyecto_nombre, fecha_aprobado,',
+  'proyecto_id, proyecto_codigo, proyecto_nombre, fecha_aprobado, cotizacion_fecha,',
   '',
 );
 
 /** Columnas que agrega la migración de pagos (se omiten si la base aún no las tiene). */
-export const COLUMNAS_PROYECTO_OC = ['proyecto_id', 'fecha_aprobado'] as const;
+export const COLUMNAS_PROYECTO_OC = [
+  'proyecto_id',
+  'fecha_aprobado',
+  'cotizacion_fecha',
+] as const;
 
 /** Columnas de la cabecera que se pueden editar (UPDATE directo). */
 export interface CambiosOrdenCompra {
@@ -89,6 +94,7 @@ export interface CambiosOrdenCompra {
   cotizacion_ref?: string | null;
   proyecto_id?: string | null;
   fecha_aprobado?: string | null;
+  cotizacion_fecha?: string | null;
 }
 
 /** Proyecto de Operaciones que se puede elegir al comprar (RPC proyectos_para_compras). */

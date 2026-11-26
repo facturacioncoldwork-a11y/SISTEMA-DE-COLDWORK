@@ -44,12 +44,19 @@ export class OrdenesCompraService {
   ): Promise<OrdenCompraDto> {
     sinRepetidos(dto.items);
     ventanaValida(dto.entregaDesde, dto.entregaHasta);
+    noFutura(
+      dto.cotizacionFecha,
+      'La fecha de la cotización no puede ser futura',
+    );
     const id = await this.repo.crear(u.token, e.id, dto);
     // El proyecto y la fecha de aprobación se guardan aparte (la BD copia código y nombre)
-    if (dto.proyectoId || dto.fechaAprobado) {
+    if (dto.proyectoId || dto.fechaAprobado || dto.cotizacionFecha) {
       await this.repo.actualizar(u.token, e.id, id, {
         ...(dto.proyectoId ? { proyecto_id: dto.proyectoId } : {}),
         ...(dto.fechaAprobado ? { fecha_aprobado: dto.fechaAprobado } : {}),
+        ...(dto.cotizacionFecha
+          ? { cotizacion_fecha: dto.cotizacionFecha }
+          : {}),
       });
     }
     return this.obtener(u, e, id);
@@ -115,6 +122,13 @@ export class OrdenesCompraService {
     if (dto.moneda !== undefined) c.moneda = dto.moneda;
     if (dto.proyectoId !== undefined) c.proyecto_id = dto.proyectoId;
     if (dto.fechaAprobado !== undefined) c.fecha_aprobado = dto.fechaAprobado;
+    if (dto.cotizacionFecha !== undefined) {
+      noFutura(
+        dto.cotizacionFecha,
+        'La fecha de la cotización no puede ser futura',
+      );
+      c.cotizacion_fecha = dto.cotizacionFecha;
+    }
 
     if (Object.keys(c).length) await this.repo.actualizar(u.token, e.id, id, c);
     if (dto.items) {
@@ -169,6 +183,13 @@ export class OrdenesCompraService {
       'Esta orden ya tiene llegadas registradas. Elimina primero esas llegadas o anúlala.',
     );
   }
+}
+
+/** Fecha (yyyy-mm-dd) que no puede pasar de mañana (hora de Lima, con un día de margen). */
+export function noFutura(fecha: string | null | undefined, mensaje: string) {
+  if (!fecha) return;
+  const manana = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  if (fecha.slice(0, 10) > manana) throw new BadRequestException(mensaje);
 }
 
 function sinRepetidos(items: { productoId: string }[]) {

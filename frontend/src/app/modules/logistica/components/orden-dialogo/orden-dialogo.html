@@ -86,6 +86,29 @@
           />
         </div>
         <div>
+          <label for="oc-cotref">N° de cotización del proveedor <small>(opcional)</small></label>
+          <input
+            id="oc-cotref"
+            type="text"
+            class="p-inputtext"
+            placeholder="HC 1724"
+            maxlength="40"
+            [ngModel]="cotizacionRef()"
+            (ngModelChange)="cotizacionRef.set($event)"
+          />
+        </div>
+        <div>
+          <label for="oc-cotfecha">Fecha de la cotización</label>
+          <input
+            id="oc-cotfecha"
+            type="date"
+            class="p-inputtext"
+            [max]="hoy"
+            [ngModel]="cotizacionFecha()"
+            (ngModelChange)="cotizacionFecha.set($event)"
+          />
+        </div>
+        <div>
           <label for="oc-aprob">Fecha de aprobación de la compra</label>
           <input
             id="oc-aprob"

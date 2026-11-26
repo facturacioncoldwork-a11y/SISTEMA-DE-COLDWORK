@@ -162,6 +162,15 @@
         }}</span>
         <span>{{ o.avance }}% recibido</span>
       </div>
+      @if (o.cotizacionRef || o.cotizacionFecha) {
+        <p class="cotiz-det">
+          <i class="pi pi-file"></i> Cotización del proveedor
+          <b>{{ o.cotizacionRef || 's/n' }}</b>
+          @if (o.cotizacionFecha) {
+            del <b>{{ o.cotizacionFecha + 'T12:00:00' | date: 'd MMM y' }}</b>
+          }
+        </p>
+      }
       @if (o.proyecto) {
         <div class="proyecto-det">
           <i class="pi pi-briefcase"></i>
