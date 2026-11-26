@@ -1,0 +1,330 @@
+<!-- Barra: equipo, búsqueda, recargar y Excel -->
+<div class="lg-toolbar">
+  <div class="lg-seg" role="tablist" aria-label="Equipo">
+    <button type="button" [class.on]="equipo() === 'logistica'" (click)="equipo.set('logistica')">
+      <i class="pi pi-warehouse"></i> Equipo de almacén
+    </button>
+    <button type="button" [class.on]="equipo() === 'todos'" (click)="equipo.set('todos')">
+      <i class="pi pi-users"></i> Todo el personal
+    </button>
+  </div>
+  <label class="lg-buscar">
+    <i class="pi pi-search"></i>
+    <input
+      type="text"
+      placeholder="Buscar persona"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+      aria-label="Buscar persona"
+    />
+  </label>
+  <span class="espacio"></span>
+  <button
+    type="button"
+    class="lg-cta lg-cta--suave"
+    (click)="recargar()"
+    pTooltip="Actualizar"
+    aria-label="Actualizar"
+  >
+    <i class="pi pi-refresh" [class.pi-spin]="asis.cargando()"></i>
+  </button>
+  <button type="button" class="lg-cta lg-cta--suave" (click)="exportar()">
+    <i class="pi pi-file-excel"></i> Registro del mes
+  </button>
+</div>
+
+<!-- Tira de días del mes -->
+<div class="lg-card tira">
+  <div class="tira__cab">
+    <strong>{{ fecha() + 'T12:00:00' | date: "EEEE d 'de' MMMM" }}</strong>
+    @if (!esHoy()) {
+      <button type="button" class="lnk" (click)="fecha.set(hoy())">Volver a hoy</button>
+    }
+  </div>
+  <div class="tira__dias" role="tablist" aria-label="Días del mes">
+    @for (d of dias(); track d) {
+      <button
+        type="button"
+        class="dia"
+        [class.on]="d === fecha()"
+        [class.hoy]="d === hoy()"
+        [class.domingo]="inicialDia(d) === 'D'"
+        [disabled]="d > hoy()"
+        (click)="fecha.set(d)"
+        [attr.aria-label]="'Ver el día ' + numero(d)"
+      >
+        <small>{{ inicialDia(d) }}</small>
+        <b>{{ numero(d) }}</b>
+      </button>
+    }
+  </div>
+</div>
+
+<!-- Indicadores del día -->
+<section class="lg-kpis">
+  <div class="lg-kpi" style="--c: #059669">
+    <span class="icono"><i class="pi pi-check-circle"></i></span>
+    <small>Asistieron</small>
+    <strong>{{ delDia().asistencias }}</strong>
+    <div class="anillo" [style.--p]="delDia().porcentaje">
+      <span>{{ delDia().porcentaje }}%</span>
+    </div>
+    <span class="pie"
+      >{{ delDia().trabajando }} trabajando ahora{{ esHoy() ? '' : ' (ese día)' }}</span
+    >
+  </div>
+  <div class="lg-kpi" style="--c: #d97706">
+    <span class="icono"><i class="pi pi-clock"></i></span>
+    <small>Tardanzas</small>
+    <strong>{{ delDia().tardanzas }}</strong>
+    <span class="pie">{{ delDia().minutosTarde }} min en total</span>
+  </div>
+  <div class="lg-kpi" style="--c: #dc2626">
+    <span class="icono"><i class="pi pi-times-circle"></i></span>
+    <small>Faltas</small>
+    <strong>{{ delDia().faltas }}</strong>
+    <span class="pie">{{
+      delDia().porLlegar ? delDia().porLlegar + ' aún pueden llegar' : 'sin justificar'
+    }}</span>
+  </div>
+  <div class="lg-kpi" style="--c: #7c3aed">
+    <span class="icono"><i class="pi pi-hourglass"></i></span>
+    <small>Por aprobar</small>
+    <strong>{{ delDia().pendientes }}</strong>
+    <span class="pie">{{ delDia().justificados }} justificados</span>
+  </div>
+</section>
+
+@if (!personas().length) {
+  <div class="lg-card lg-vacio">
+    <i class="pi pi-users"></i>
+    <h4>
+      {{
+        equipo() === 'logistica'
+          ? 'Aún no hay nadie con el área Logística'
+          : 'Ningún trabajador coincide'
+      }}
+    </h4>
+    <p>
+      La asistencia es de las personas invitadas en
+      <a routerLink="/equipo">Equipo y accesos</a>. Cada una marca con su celular o con la tablet de
+      la oficina.
+    </p>
+    @if (equipo() === 'logistica') {
+      <button type="button" class="lg-cta" (click)="equipo.set('todos')">
+        <i class="pi pi-users"></i> Ver todo el personal
+      </button>
+    }
+  </div>
+} @else {
+  <!-- Tarjetas del día -->
+  <div class="personas">
+    @for (p of personas(); track p.id) {
+      @let d = dia(p);
+      <article class="persona lg-card" [style.--c]="color(d.estado)">
+        <div class="arriba">
+          <span class="avatar">{{ iniciales(p.nombre) }}</span>
+          <div class="quien">
+            <strong>{{ p.nombre }}</strong>
+            <small>{{ p.cargo }}</small>
+          </div>
+          <span class="estado" [class.vivo]="d.trabajando"
+            ><i [class]="estados[d.estado].icono"></i> {{ textoEstado(d) }}</span
+          >
+        </div>
+
+        <div class="horas">
+          <div>
+            <small>Entrada</small>
+            <b>{{ d.marca?.entrada ?? '—' }}</b>
+            @if (d.marca && d.marca.metodo === 'manual') {
+              <i class="pi pi-pencil manual" pTooltip="Registrada a mano: {{ d.marca.motivo }}"></i>
+            }
+          </div>
+          <div>
+            <small>Salida</small>
+            <b>{{ d.marca?.salida ?? (d.trabajando ? 'trabajando' : '—') }}</b>
+            @if (d.marca?.salidaEnCampo) {
+              <i class="pi pi-map-marker manual" pTooltip="Salida marcada en campo"></i>
+            }
+          </div>
+          <div>
+            <small>Horas</small>
+            <b>{{ d.trabajados ? aHoras(d.trabajados) : '—' }}</b>
+          </div>
+        </div>
+        @if (d.marca && d.marca.lugar && d.marca.lugar !== 'Oficina') {
+          <p class="lugar"><i class="pi pi-map-marker"></i> {{ d.marca.lugar }}</p>
+        }
+
+        <div class="acciones">
+          @if (d.estado === 'pendiente') {
+            <button type="button" class="lg-cta mini" (click)="aprobar(p)">
+              <i class="pi pi-check"></i> Aprobar marca
+            </button>
+          }
+          @if (esHoy() && !d.marca?.salida && d.estado !== 'justificado') {
+            <button type="button" class="lg-cta lg-cta--suave mini" (click)="abrirManual(p)">
+              <i class="pi pi-sign-in"></i>
+              {{ d.marca?.entrada ? 'Registrar salida' : 'Registrar entrada' }}
+            </button>
+          }
+          @if (!d.marca?.entrada && d.estado !== 'justificado' && d.estado !== 'futuro') {
+            <button type="button" class="lg-cta lg-cta--suave mini" (click)="abrirJustificar(p)">
+              <i class="pi pi-file-check"></i> Justificar
+            </button>
+          }
+        </div>
+      </article>
+    }
+  </div>
+
+  <!-- Calendario del mes -->
+  <section class="lg-card mes">
+    <div class="lg-card__head">
+      <div>
+        <h3>Asistencia del mes</h3>
+        <p>Toca un día para verlo arriba. Pasa el mouse para ver las horas.</p>
+      </div>
+      <div class="leyenda">
+        @for (e of leyenda; track e) {
+          <span><i [style.background]="color(e)"></i>{{ estados[e].nombre }}</span>
+        }
+      </div>
+    </div>
+    <div class="lg-scroll">
+      <table class="grilla">
+        <thead>
+          <tr>
+            <th class="nombre">Persona</th>
+            @for (dd of dias(); track dd) {
+              <th [class.on]="dd === fecha()" [class.domingo]="inicialDia(dd) === 'D'">
+                <small>{{ inicialDia(dd) }}</small>{{ numero(dd) }}
+              </th>
+            }
+            <th class="tot" pTooltip="Asistencias">A</th>
+            <th class="tot" pTooltip="Tardanzas">T</th>
+            <th class="tot" pTooltip="Faltas">F</th>
+            <th class="tot" pTooltip="Horas trabajadas">Horas</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of personas(); track p.id) {
+            @let t = totalesMes(p);
+            <tr>
+              <td class="nombre">
+                <span class="avatar sm">{{ iniciales(p.nombre) }}</span> {{ p.nombre }}
+              </td>
+              @for (dd of dias(); track dd) {
+                @let e = dia(p, dd).estado;
+                <td [class.on]="dd === fecha()">
+                  <button
+                    type="button"
+                    class="celda"
+                    [class.vacia]="e === 'futuro' || e === 'por_llegar'"
+                    [style.background]="e === 'futuro' || e === 'por_llegar' ? null : color(e)"
+                    [disabled]="e === 'futuro'"
+                    (click)="fecha.set(dd)"
+                    [pTooltip]="ayudaCelda(p, dd)"
+                    [attr.aria-label]="ayudaCelda(p, dd)"
+                  ></button>
+                </td>
+              }
+              <td class="tot">
+                <b>{{ t.asistencias }}</b>
+              </td>
+              <td class="tot" [class.alerta]="t.tardanzas">{{ t.tardanzas }}</td>
+              <td class="tot" [class.alerta]="t.faltas">{{ t.faltas }}</td>
+              <td class="tot">{{ aHoras(t.minutosTrabajados) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="nota">
+      <i class="pi pi-shield"></i> Cada trabajador marca su propia entrada y salida (DS
+      004-2006-TR). Las marcas no se editan ni se borran; lo registrado a mano queda con su motivo.
+      Horario: {{ asis.horario().entrada }}–{{ asis.horario().salida }}, tolerancia
+      {{ asis.horario().tolerancia }} min ·
+      <a routerLink="/personal/horario">cambiar horario</a>
+    </p>
+  </section>
+}
+
+<!-- Diálogo: marca manual -->
+<p-dialog
+  [visible]="!!manualPara()"
+  (visibleChange)="!$event && manualPara.set(null)"
+  [modal]="true"
+  [header]="'Registrar marca de ' + (manualPara()?.nombre ?? '')"
+  [style]="{ width: 'min(30rem, 94vw)' }"
+>
+  <p class="ayuda-dlg">
+    Se registra con la hora de <b>ahora</b> (la pone el servidor). Úsalo solo si la persona no pudo
+    marcar: queda en el registro con tu nombre y el motivo.
+  </p>
+  <label for="motivo-manual">Motivo</label>
+  <div class="chips">
+    @for (m of motivos; track m) {
+      <button type="button" [class.on]="motivo() === m" (click)="motivo.set(m)">{{ m }}</button>
+    }
+  </div>
+  <textarea
+    id="motivo-manual"
+    rows="2"
+    class="campo"
+    placeholder="Escribe el motivo"
+    [ngModel]="motivo()"
+    (ngModelChange)="motivo.set($event)"
+  ></textarea>
+  @if (error(); as e) {
+    <p class="error"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
+  }
+  <div class="lg-pie-dialogo">
+    <button type="button" class="lg-cta lg-cta--suave" (click)="manualPara.set(null)">
+      Cancelar
+    </button>
+    <button type="button" class="lg-cta" (click)="registrarManual()" [disabled]="guardando()">
+      <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"></i> Registrar
+    </button>
+  </div>
+</p-dialog>
+
+<!-- Diálogo: justificar -->
+<p-dialog
+  [visible]="!!justificarPara()"
+  (visibleChange)="!$event && justificarPara.set(null)"
+  [modal]="true"
+  [header]="'Justificar ausencia de ' + (justificarPara()?.nombre ?? '')"
+  [style]="{ width: 'min(30rem, 94vw)' }"
+>
+  <p class="ayuda-dlg">
+    Día: <b>{{ fecha() + 'T12:00:00' | date: "EEEE d 'de' MMMM" }}</b>
+  </p>
+  <div class="tipos">
+    @for (j of justificaciones; track j.clave) {
+      <button type="button" [class.on]="tipo() === j.clave" (click)="tipo.set(j.clave)">
+        <i [class]="j.icono"></i> {{ j.nombre }}
+      </button>
+    }
+  </div>
+  <label for="sustento">Sustento <small>(opcional: n° de certificado, documento…)</small></label>
+  <input
+    id="sustento"
+    type="text"
+    class="campo"
+    [ngModel]="sustento()"
+    (ngModelChange)="sustento.set($event)"
+  />
+  @if (error(); as e) {
+    <p class="error"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
+  }
+  <div class="lg-pie-dialogo">
+    <button type="button" class="lg-cta lg-cta--suave" (click)="justificarPara.set(null)">
+      Cancelar
+    </button>
+    <button type="button" class="lg-cta" (click)="justificar()" [disabled]="guardando()">
+      <i [class]="guardando() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"></i> Justificar
+    </button>
+  </div>
+</p-dialog>

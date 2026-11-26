@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { conArea } from '../../core/permisos/permisos.guards';
+import { conArea, soloDueno } from '../../core/permisos/permisos.guards';
 
 /**
  * Rutas del módulo Almacén y logística (dentro del shell). Área: logística.
@@ -68,6 +68,16 @@ export const LOGISTICA_ROUTES: Routes = [
           sub: 'Almacén principal, unidades móviles de técnicos y obras.',
         },
         loadComponent: () => import('./views/almacenes/almacenes').then((m) => m.Almacenes),
+      },
+      {
+        path: 'asistencia',
+        canActivate: [soloDueno],
+        data: {
+          titulo: 'Asistencia del equipo',
+          sub: 'Quién llegó, tardanzas y faltas del personal de almacén. Lo supervisa el CEO.',
+        },
+        loadComponent: () =>
+          import('./views/asistencia/asistencia').then((m) => m.AsistenciaLogistica),
       },
     ],
   },

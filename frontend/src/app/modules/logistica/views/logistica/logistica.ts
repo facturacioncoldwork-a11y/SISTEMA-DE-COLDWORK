@@ -28,7 +28,7 @@ export class Logistica {
   private readonly empresa = inject(EmpresaActualService);
   protected readonly store = inject(LogisticaStore);
 
-  protected readonly pestanas: Pestana[] = [
+  private readonly base: Pestana[] = [
     { ruta: '/logistica', etiqueta: 'Panel', icono: 'pi pi-th-large', exacta: true },
     { ruta: '/logistica/inventario', etiqueta: 'Inventario', icono: 'pi pi-box' },
     { ruta: '/logistica/llegadas', etiqueta: 'Llegadas', icono: 'pi pi-download' },
@@ -37,6 +37,15 @@ export class Logistica {
     { ruta: '/logistica/proveedores', etiqueta: 'Proveedores', icono: 'pi pi-truck' },
     { ruta: '/logistica/almacenes', etiqueta: 'Almacenes', icono: 'pi pi-warehouse' },
   ];
+  /** Asistencia del equipo: solo la ve el dueño (CEO), que es quien la supervisa. */
+  protected readonly pestanas = computed<Pestana[]>(() =>
+    this.empresa.esDueno()
+      ? [
+          ...this.base,
+          { ruta: '/logistica/asistencia', etiqueta: 'Asistencia', icono: 'pi pi-id-card' },
+        ]
+      : this.base,
+  );
 
   /** Título y subtítulo de la vista hija actual (data de la ruta). */
   private readonly datos = toSignal(

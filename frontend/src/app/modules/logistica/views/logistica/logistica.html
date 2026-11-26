@@ -17,7 +17,7 @@
     </div>
 
     <nav class="lg-nav" aria-label="Secciones de logística">
-      @for (p of pestanas; track p.ruta) {
+      @for (p of pestanas(); track p.ruta) {
         <a
           [routerLink]="p.ruta"
           routerLinkActive="activo"
