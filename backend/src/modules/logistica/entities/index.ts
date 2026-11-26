@@ -4,3 +4,4 @@ export * from './tercero.entity.js';
 export * from './orden-compra.entity.js';
 export * from './documento.entity.js';
 export * from './ajustes.entity.js';
+export * from './pago.entity.js';

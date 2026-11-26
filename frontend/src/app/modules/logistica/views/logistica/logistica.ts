@@ -7,6 +7,7 @@ import { filter, map, startWith } from 'rxjs';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { nivelStock } from '../../models/logistica.model';
 import { LogisticaStore } from '../../services/logistica-store.service';
+import { PagosService } from '../../services/pagos.service';
 
 interface Pestana {
   ruta: string;
@@ -27,6 +28,7 @@ export class Logistica {
   private readonly router = inject(Router);
   private readonly empresa = inject(EmpresaActualService);
   protected readonly store = inject(LogisticaStore);
+  private readonly pagos = inject(PagosService);
 
   private readonly base: Pestana[] = [
     { ruta: '/logistica', etiqueta: 'Panel', icono: 'pi pi-th-large', exacta: true },
@@ -37,15 +39,18 @@ export class Logistica {
     { ruta: '/logistica/proveedores', etiqueta: 'Proveedores', icono: 'pi pi-truck' },
     { ruta: '/logistica/almacenes', etiqueta: 'Almacenes', icono: 'pi pi-warehouse' },
   ];
-  /** Asistencia del equipo: solo la ve el dueño (CEO), que es quien la supervisa. */
+  /** Pagos a proveedores y asistencia: solo los ve el dueño (CEO). */
   protected readonly pestanas = computed<Pestana[]>(() =>
     this.empresa.esDueno()
       ? [
           ...this.base,
+          { ruta: '/logistica/pagos', etiqueta: 'Pagos', icono: 'pi pi-wallet' },
           { ruta: '/logistica/asistencia', etiqueta: 'Asistencia', icono: 'pi pi-id-card' },
         ]
       : this.base,
   );
+  /** Cuotas vencidas o que vencen hoy: globo rojo en "Pagos". */
+  protected readonly pagosUrgentes = this.pagos.urgentes;
 
   /** Título y subtítulo de la vista hija actual (data de la ruta). */
   private readonly datos = toSignal(
@@ -80,6 +85,11 @@ export class Logistica {
       this.empresa.id();
       this.store.limpiar();
       void this.store.asegurar();
+    });
+    // El CEO ve el globo de pagos vencidos desde cualquier pestaña
+    effect(() => {
+      if (this.empresa.esDueno() && this.empresa.id())
+        void this.pagos.recargar().catch(() => undefined);
     });
   }
 

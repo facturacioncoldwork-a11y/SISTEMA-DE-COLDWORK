@@ -32,6 +32,7 @@ import {
   ActualizarOrdenCompraDto,
   CrearOrdenCompraDto,
   OrdenCompraDto,
+  ProyectoCompraDto,
 } from '../dto/index.js';
 import { EstadoOc } from '../entities/index.js';
 import { OrdenesCompraService } from '../services/index.js';
@@ -58,6 +59,13 @@ export class OrdenesCompraController {
     estado?: EstadoOc,
   ) {
     return this.ordenes.listar(u, e, estado);
+  }
+
+  /** Proyectos de Operaciones para elegir en la OC (va antes de :id). */
+  @Get('proyectos')
+  @ApiOkResponse({ type: [ProyectoCompraDto] })
+  proyectos(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual) {
+    return this.ordenes.proyectos(u, e);
   }
 
   @Get(':id')

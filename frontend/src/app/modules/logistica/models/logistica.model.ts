@@ -149,7 +149,18 @@ export interface OrdenCompra {
   solicitadoPor: string | null;
   /** N° de la cotización del proveedor de la que salió ("HC 1724"). */
   cotizacionRef: string | null;
-  proveedor: { id: string; razonSocial: string; numeroDocumento: string; direccion: string | null };
+  /** Proyecto de Operaciones (cotización aprobada o enviada) al que pertenece la compra. */
+  proyecto: { id: string | null; codigo: string; nombre: string } | null;
+  /** Fecha en que se aprobó la compra. */
+  fechaAprobado: string | null;
+  proveedor: {
+    id: string;
+    razonSocial: string;
+    numeroDocumento: string;
+    direccion: string | null;
+    /** Días de crédito que da el proveedor (0 = contado). */
+    diasCredito: number;
+  };
   almacen: { id: string; nombre: string };
   items: ItemOrden[];
   subtotal: number;
@@ -171,6 +182,51 @@ export interface PlazoOrden {
   atencion?: string;
   solicitadoPor?: string;
   cotizacionRef?: string;
+  /** null quita el proyecto. */
+  proyectoId?: string | null;
+  fechaAprobado?: string | null;
+}
+
+/** Proyecto de Operaciones que se puede elegir al comprar. */
+export interface ProyectoCompra {
+  id: string;
+  codigo: string;
+  proyecto: string;
+  cliente: string | null;
+  estado: 'aprobada' | 'enviada';
+  fecha: string;
+}
+
+/** Una cuota del plan de pagos de una OC (solo la ve el CEO). */
+export interface Pago {
+  id: string;
+  ordenId: string;
+  concepto: string;
+  porcentaje: number | null;
+  /** En la moneda de la OC. */
+  monto: number;
+  vence: string;
+  pagadoEn: string | null;
+  referencia: string | null;
+  notas: string | null;
+}
+
+export interface GuardarPago {
+  ordenId: string;
+  concepto: string;
+  porcentaje?: number | null;
+  monto: number;
+  vence: string;
+  notas?: string;
+}
+
+/** OC con su plan de pagos (GET /logistica/pagos). */
+export interface OrdenConPagos extends OrdenCompra {
+  pagos: Pago[];
+  pagado: number;
+  pendiente: number;
+  /** Total de la OC que todavía no tiene cuota en el plan. */
+  sinPlan: number;
 }
 
 export interface CrearOrdenCompra extends PlazoOrden {

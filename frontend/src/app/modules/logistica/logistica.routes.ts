@@ -70,6 +70,15 @@ export const LOGISTICA_ROUTES: Routes = [
         loadComponent: () => import('./views/almacenes/almacenes').then((m) => m.Almacenes),
       },
       {
+        path: 'pagos',
+        canActivate: [soloDueno],
+        data: {
+          titulo: 'Pagos a proveedores',
+          sub: 'Lo comprado por proyecto, cuándo llega y cuánto debemos: adelantos, saldos y créditos.',
+        },
+        loadComponent: () => import('./views/pagos/pagos').then((m) => m.PagosProveedores),
+      },
+      {
         path: 'asistencia',
         canActivate: [soloDueno],
         data: {

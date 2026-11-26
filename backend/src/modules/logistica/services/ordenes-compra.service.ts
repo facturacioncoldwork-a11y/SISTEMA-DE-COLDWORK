@@ -4,6 +4,7 @@ import {
   ActualizarOrdenCompraDto,
   CrearOrdenCompraDto,
   OrdenCompraDto,
+  ProyectoCompraDto,
 } from '../dto/index.js';
 import { EstadoOc, type CambiosOrdenCompra } from '../entities/index.js';
 import { OrdenesCompraRepository } from '../repositories/index.js';
@@ -44,6 +45,13 @@ export class OrdenesCompraService {
     sinRepetidos(dto.items);
     ventanaValida(dto.entregaDesde, dto.entregaHasta);
     const id = await this.repo.crear(u.token, e.id, dto);
+    // El proyecto y la fecha de aprobación se guardan aparte (la BD copia código y nombre)
+    if (dto.proyectoId || dto.fechaAprobado) {
+      await this.repo.actualizar(u.token, e.id, id, {
+        ...(dto.proyectoId ? { proyecto_id: dto.proyectoId } : {}),
+        ...(dto.fechaAprobado ? { fecha_aprobado: dto.fechaAprobado } : {}),
+      });
+    }
     return this.obtener(u, e, id);
   }
 
@@ -105,6 +113,8 @@ export class OrdenesCompraService {
     if (dto.cotizacionRef !== undefined)
       c.cotizacion_ref = texto(dto.cotizacionRef);
     if (dto.moneda !== undefined) c.moneda = dto.moneda;
+    if (dto.proyectoId !== undefined) c.proyecto_id = dto.proyectoId;
+    if (dto.fechaAprobado !== undefined) c.fecha_aprobado = dto.fechaAprobado;
 
     if (Object.keys(c).length) await this.repo.actualizar(u.token, e.id, id, c);
     if (dto.items) {
@@ -112,6 +122,21 @@ export class OrdenesCompraService {
       await this.repo.reemplazarItems(u.token, e.id, id, dto.items);
     }
     return this.obtener(u, e, id);
+  }
+
+  /** Proyectos de Operaciones (aprobados o enviados) que se pueden elegir al comprar. */
+  async proyectos(
+    u: UsuarioActual,
+    e: EmpresaActual,
+  ): Promise<ProyectoCompraDto[]> {
+    return (await this.repo.proyectos(u.token, e.id)).map((p) => ({
+      id: p.id,
+      codigo: p.codigo,
+      proyecto: p.proyecto,
+      cliente: p.cliente,
+      estado: p.estado,
+      fecha: p.fecha,
+    }));
   }
 
   async enviar(

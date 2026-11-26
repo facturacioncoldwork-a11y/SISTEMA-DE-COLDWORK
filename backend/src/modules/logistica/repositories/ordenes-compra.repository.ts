@@ -6,6 +6,7 @@ import {
   type EstadoOc,
   type FilaOrdenCompra,
   type CambiosOrdenCompra,
+  type FilaProyectoCompra,
 } from '../entities/index.js';
 
 /** Acceso a datos de órdenes de compra. Las escrituras van por RPC (atómicas en SQL). */
@@ -52,6 +53,18 @@ export class OrdenesCompraRepository {
       .paraUsuario(token)
       .rpc('crear_orden_compra', { p_empresa: empresaId, p_datos: datos });
     return datosOError(r) as string;
+  }
+
+  async proyectos(
+    token: string,
+    empresaId: string,
+  ): Promise<FilaProyectoCompra[]> {
+    const r = await this.supabase
+      .paraUsuario(token)
+      .rpc('proyectos_para_compras', { p_empresa: empresaId });
+    // Sin la migración de pagos/proyectos todavía: lista vacía en vez de error
+    if (r.error?.code === 'PGRST202' || r.error?.code === '42883') return [];
+    return (datosOError(r) as FilaProyectoCompra[] | null) ?? [];
   }
 
   async cambiarEstado(

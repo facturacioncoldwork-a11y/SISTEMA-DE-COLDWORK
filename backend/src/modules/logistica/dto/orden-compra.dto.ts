@@ -121,6 +121,25 @@ class PlazoOrdenDto {
   @IsString()
   @MaxLength(40)
   cotizacionRef?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    nullable: true,
+    description:
+      'Proyecto de Operaciones (cotización aprobada o enviada); null lo quita',
+  })
+  @IsOptional()
+  @IsUUID()
+  proyectoId?: string | null;
+
+  @ApiPropertyOptional({
+    example: '2026-10-07',
+    nullable: true,
+    description: 'Fecha en que se aprobó la compra',
+  })
+  @IsOptional()
+  @IsDateString()
+  fechaAprobado?: string | null;
 }
 
 /** Body de POST /api/v1/logistica/ordenes-compra */
@@ -222,11 +241,19 @@ export class OrdenCompraDto {
     string | null;
   @ApiPropertyOptional({ nullable: true, type: String }) cotizacionRef!:
     string | null;
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Proyecto de Operaciones',
+  })
+  proyecto!: { id: string | null; codigo: string; nombre: string } | null;
+  @ApiPropertyOptional({ nullable: true, type: String }) fechaAprobado!:
+    string | null;
   @ApiProperty() proveedor!: {
     id: string;
     razonSocial: string;
     numeroDocumento: string;
     direccion: string | null;
+    diasCredito: number;
   };
   @ApiProperty() almacen!: { id: string; nombre: string };
   @ApiProperty({ type: [ItemOrdenRespuestaDto] })
@@ -275,11 +302,20 @@ export class OrdenCompraDto {
       atencion: f.atencion,
       solicitadoPor: f.solicitado_por,
       cotizacionRef: f.cotizacion_ref,
+      proyecto: f.proyecto_codigo
+        ? {
+            id: f.proyecto_id,
+            codigo: f.proyecto_codigo,
+            nombre: f.proyecto_nombre ?? f.proyecto_codigo,
+          }
+        : null,
+      fechaAprobado: f.fecha_aprobado ?? null,
       proveedor: {
         id: f.proveedor?.id ?? '',
         razonSocial: f.proveedor?.razon_social ?? '',
         numeroDocumento: f.proveedor?.numero_documento ?? '',
         direccion: f.proveedor?.direccion ?? null,
+        diasCredito: Number(f.proveedor?.dias_credito ?? 0),
       },
       almacen: { id: f.almacen?.id ?? '', nombre: f.almacen?.nombre ?? '' },
       items,
@@ -289,4 +325,16 @@ export class OrdenCompraDto {
       avance: pedido ? Math.round((recibido / pedido) * 100) : 0,
     };
   }
+}
+
+/** Proyecto de Operaciones para elegir al comprar. */
+export class ProyectoCompraDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ example: 'YG-PROY20260010' }) codigo!: string;
+  @ApiProperty({ example: 'Pedregal - Arequipa' }) proyecto!: string;
+  @ApiPropertyOptional({ nullable: true, type: String }) cliente!:
+    string | null;
+  @ApiProperty({ enum: ['aprobada', 'enviada'] }) estado!:
+    'aprobada' | 'enviada';
+  @ApiProperty() fecha!: string;
 }

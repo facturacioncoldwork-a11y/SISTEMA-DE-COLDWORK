@@ -4,3 +4,4 @@ export * from './proveedores.controller.js';
 export * from './ordenes-compra.controller.js';
 export * from './movimientos.controller.js';
 export * from './ajustes.controller.js';
+export * from './pagos.controller.js';

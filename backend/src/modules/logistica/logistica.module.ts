@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import {
   AjustesController,
+  PagosController,
   AlmacenesController,
   MovimientosController,
   OrdenesCompraController,
@@ -9,6 +10,7 @@ import {
 } from './controllers/index.js';
 import {
   AjustesRepository,
+  PagosRepository,
   AlmacenesRepository,
   MovimientosRepository,
   OrdenesCompraRepository,
@@ -17,6 +19,7 @@ import {
 } from './repositories/index.js';
 import {
   AjustesService,
+  PagosService,
   AlmacenesService,
   MovimientosService,
   OrdenesCompraService,
@@ -36,6 +39,7 @@ import {
     OrdenesCompraController,
     MovimientosController,
     AjustesController,
+    PagosController,
   ],
   providers: [
     ProductosService,
@@ -44,12 +48,14 @@ import {
     OrdenesCompraService,
     MovimientosService,
     AjustesService,
+    PagosService,
     ProductosRepository,
     AlmacenesRepository,
     ProveedoresRepository,
     OrdenesCompraRepository,
     MovimientosRepository,
     AjustesRepository,
+    PagosRepository,
   ],
 })
 export class LogisticaModule {}

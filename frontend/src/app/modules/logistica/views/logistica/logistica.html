@@ -24,6 +24,13 @@
           [routerLinkActiveOptions]="{ exact: !!p.exacta }"
         >
           <i [class]="p.icono"></i> {{ p.etiqueta }}
+          @if (p.etiqueta === 'Pagos' && pagosUrgentes() > 0) {
+            <span
+              class="lg-nav__badge"
+              [attr.aria-label]="pagosUrgentes() + ' pagos vencidos o que vencen hoy'"
+              >{{ pagosUrgentes() }}</span
+            >
+          }
           @if (p.etiqueta === 'Inventario' && alertas() > 0) {
             <span class="lg-nav__badge" [attr.aria-label]="alertas() + ' productos por reponer'">{{
               alertas()

@@ -6,3 +6,4 @@ export * from './llegada.dto.js';
 export * from './salida.dto.js';
 export * from './resumen.dto.js';
 export * from './ajustes.dto.js';
+export * from './pago.dto.js';

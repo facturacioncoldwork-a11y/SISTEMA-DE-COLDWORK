@@ -16,7 +16,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { desdeBase } from '../../../../core/utils/montos';
-import type { OrdenCompra, Producto } from '../../models/logistica.model';
+import type { OrdenCompra, Producto, ProyectoCompra } from '../../models/logistica.model';
 import { colorCliente, hoyISO, seguimiento } from '../../models/plazos';
 import { LogisticaStore, mensajeError } from '../../services/logistica-store.service';
 import { OrdenesCompraService } from '../../services/ordenes-compra.service';
@@ -69,6 +69,10 @@ export class OrdenDialogo {
   });
   protected readonly plazoInicial = signal<ValorPlazo | null>(null);
   protected readonly cliente = signal('');
+  /** Proyecto de Operaciones al que pertenece la compra. */
+  protected readonly proyectoId = signal<string | null>(null);
+  protected readonly fechaAprobado = signal('');
+  protected readonly proyectos = signal<(ProyectoCompra & { etiqueta: string })[]>([]);
   protected readonly compromiso = signal('');
   protected readonly notas = signal('');
   protected readonly moneda = signal<'PEN' | 'USD'>('PEN');
@@ -115,6 +119,7 @@ export class OrdenDialogo {
       this.orden();
       this.sugeridos();
       untracked(() => {
+        void this.cargarProyectos();
         const o = this.orden();
         const porId = this.store.productoPorId();
         this.error.set(null);
@@ -129,6 +134,8 @@ export class OrdenDialogo {
           this.plazoInicial.set(ini);
           this.plazo.set(ini);
           this.cliente.set(o.cliente ?? '');
+          this.proyectoId.set(o.proyecto?.id ?? null);
+          this.fechaAprobado.set(o.fechaAprobado ?? '');
           this.compromiso.set(o.compromisoCliente ?? '');
           this.notas.set(o.notas ?? '');
           this.moneda.set(o.moneda);
@@ -149,6 +156,8 @@ export class OrdenDialogo {
           this.plazoInicial.set(null);
           this.plazo.set({ plazoTexto: '', entregaDesde: null, entregaHasta: null });
           this.cliente.set('');
+          this.proyectoId.set(null);
+          this.fechaAprobado.set(hoyISO());
           this.compromiso.set('');
           this.notas.set('');
           this.moneda.set('PEN');
@@ -163,6 +172,23 @@ export class OrdenDialogo {
         }
       });
     });
+  }
+
+  private async cargarProyectos() {
+    const lista = await this.api.proyectos().catch(() => []);
+    this.proyectos.set(
+      lista.map((p) => ({
+        ...p,
+        etiqueta: `${p.codigo} · ${p.proyecto}${p.cliente ? ' · ' + p.cliente : ''}${p.estado === 'enviada' ? ' (por aprobar)' : ''}`,
+      })),
+    );
+  }
+
+  /** Al elegir el proyecto, si no hay cliente se completa con el del proyecto. */
+  protected elegirProyecto(id: string | null) {
+    this.proyectoId.set(id);
+    const p = this.proyectos().find((x) => x.id === id);
+    if (p?.cliente && !this.cliente().trim()) this.cliente.set(`${p.cliente} – ${p.proyecto}`);
   }
 
   protected agregar(p: Producto) {
@@ -192,6 +218,9 @@ export class OrdenDialogo {
       compromisoCliente: this.compromiso() || null,
       notas: this.notas().trim(),
       ...(this.editaTodo() ? { moneda: this.moneda() } : {}),
+      fechaAprobado: this.fechaAprobado() || null,
+      // Al editar, null quita el proyecto; al crear solo se envía si se eligió
+      ...(this.orden() || this.proyectoId() ? { proyectoId: this.proyectoId() } : {}),
     };
     const items = this.lineas().map((l) => ({
       productoId: l.producto.id,

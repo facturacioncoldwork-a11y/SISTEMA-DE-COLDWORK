@@ -90,6 +90,17 @@ El almacén guarda sobrantes de proyectos: no siempre se repone, pero hay que sa
 - **Para no pedir de más:** al armar una orden de compra o importar una cotización, cada producto muestra *Ya tienes X en almacén* (en rojo si lo que hay es antiguo).
 - **Stock mínimo:** es opcional. Con 0 no hay aviso de reposición, y quedarse sin stock se muestra en gris (*Sin stock*) en vez de rojo (*Agotado*).
 
+## Pagos a proveedores (solo el CEO)
+
+Pestaña **Pagos** de Logística: lo comprado por proyecto, cuándo llega y **cuánto se debe** a cada proveedor, para no olvidar ningún vencimiento. Incluye los adelantos que se pagan antes de recibir la factura (Finanzas → Cuentas por pagar empieza con la factura).
+
+- **Proyecto en cada OC:** al crear o editar la orden se elige el proyecto de Operaciones (cotizaciones aprobadas o enviadas). El código y el nombre se copian solos (`proyecto_codigo`, `proyecto_nombre`); también se guarda la **fecha de aprobación**.
+- **Plan de pagos** (tabla `oc_pagos`): cada OC tiene sus cuotas con monto, vencimiento y si ya se pagó (fecha y n° de operación). Hay plantillas: contado, adelanto y saldo (ej. 50 % / 50 %), crédito a N días de la llegada (por defecto los días de crédito del proveedor) y adelanto + crédito. También se puede armar a mano.
+- **Recordatorio:** número rojo en la pestaña con lo vencido o que vence hoy, y aviso arriba con lo vencido, lo que vence en 7 días y las órdenes que aún no tienen plan.
+- **Quién lo ve:** solo el dueño (RLS). El encargado de logística elige el proyecto en la OC, pero no ve montos adeudados ni pagos.
+- Una OC con pagos ya hechos **no se puede eliminar** (se anula).
+- Migración: `20261129000001_oc_pagos.sql` (necesita antes la de Operaciones `20261128000001_operaciones.sql`).
+
 ## Eliminar (CRUD)
 
 | Qué | Qué pasa en la BD |

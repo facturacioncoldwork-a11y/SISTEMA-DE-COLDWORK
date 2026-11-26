@@ -64,6 +64,42 @@
 
     <fieldset class="full bloque">
       <legend>
+        <i class="pi pi-briefcase"></i> ¿Para qué proyecto es?
+        <small>de las cotizaciones de Operaciones: así se agrupan las compras y sus pagos</small>
+      </legend>
+      <div class="lg-form" style="margin: 0">
+        <div>
+          <label for="oc-proy">Proyecto</label>
+          <p-select
+            inputId="oc-proy"
+            [options]="proyectos()"
+            optionLabel="etiqueta"
+            optionValue="id"
+            [filter]="true"
+            filterBy="etiqueta"
+            [showClear]="true"
+            placeholder="Sin proyecto"
+            emptyMessage="Aún no hay cotizaciones aprobadas en Operaciones"
+            appendTo="body"
+            [ngModel]="proyectoId()"
+            (ngModelChange)="elegirProyecto($event)"
+          />
+        </div>
+        <div>
+          <label for="oc-aprob">Fecha de aprobación de la compra</label>
+          <input
+            id="oc-aprob"
+            type="date"
+            class="p-inputtext"
+            [ngModel]="fechaAprobado()"
+            (ngModelChange)="fechaAprobado.set($event)"
+          />
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="full bloque">
+      <legend>
         <i class="pi pi-user"></i> ¿Es para un cliente?
         <small>opcional: para saber si llegamos a tiempo</small>
       </legend>

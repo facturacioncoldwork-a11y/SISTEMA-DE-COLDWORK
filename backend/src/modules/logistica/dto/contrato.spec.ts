@@ -7,6 +7,9 @@ import {
   CrearOrdenCompraDto,
   CrearSalidaDto,
   GuardarAjustesLogisticaDto,
+  CrearPagoDto,
+  ActualizarPagoDto,
+  PagarDto,
 } from './index.js';
 
 /**
@@ -120,5 +123,52 @@ describe('contrato de la API de logística', () => {
     expect(
       await errores(GuardarAjustesLogisticaDto, { mesesAntiguedad: 18.5 }),
     ).toContain('mesesAntiguedad');
+  });
+
+  it('orden de compra con proyecto de Operaciones y fecha de aprobación', async () => {
+    const cuerpo = {
+      proveedorId: uuid,
+      almacenId: uuid,
+      proyectoId: uuid,
+      fechaAprobado: '2026-10-07',
+      items: [{ productoId: uuid, cantidad: 1, costoUnitario: 12921 }],
+    };
+    expect(await errores(CrearOrdenCompraDto, cuerpo)).toEqual([]);
+    expect(
+      await errores(ActualizarOrdenCompraDto, { proyectoId: null }),
+    ).toEqual([]);
+  });
+
+  it('plan de pagos: cuota, edición y marcar pagado', async () => {
+    expect(
+      await errores(CrearPagoDto, {
+        ordenId: uuid,
+        concepto: 'Adelanto 50 %',
+        porcentaje: 50,
+        monto: 6460.5,
+        vence: '2026-10-08',
+        notas: 'Antes del despacho',
+      }),
+    ).toEqual([]);
+    expect(
+      await errores(CrearPagoDto, {
+        ordenId: uuid,
+        concepto: 'X',
+        monto: 0,
+        vence: 'mañana',
+      }),
+    ).toEqual(expect.arrayContaining(['concepto', 'monto', 'vence']));
+    expect(
+      await errores(ActualizarPagoDto, { monto: 100, vence: '2026-11-01' }),
+    ).toEqual([]);
+    expect(await errores(ActualizarPagoDto, { ordenId: uuid })).toContain(
+      'ordenId',
+    );
+    expect(
+      await errores(PagarDto, {
+        pagadoEn: '2026-10-08',
+        referencia: 'OP 778812',
+      }),
+    ).toEqual([]);
   });
 });

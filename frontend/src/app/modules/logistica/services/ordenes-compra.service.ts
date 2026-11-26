@@ -4,6 +4,7 @@ import type {
   ActualizarOrdenCompra,
   CrearOrdenCompra,
   OrdenCompra,
+  ProyectoCompra,
 } from '../models/logistica.model';
 
 /** /api/v1/logistica/ordenes-compra */
@@ -11,6 +12,10 @@ import type {
 export class OrdenesCompraService {
   private readonly api = inject(ApiService);
 
+  /** Proyectos de Operaciones (aprobados o enviados) para elegir en la OC. */
+  proyectos(): Promise<ProyectoCompra[]> {
+    return this.api.get('/logistica/ordenes-compra/proyectos');
+  }
   listar(): Promise<OrdenCompra[]> {
     return this.api.get('/logistica/ordenes-compra');
   }
