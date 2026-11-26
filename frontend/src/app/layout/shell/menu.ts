@@ -69,7 +69,8 @@ export const MENU: GrupoMenu[] = [
     titulo: 'Operaciones',
     items: [
       { etiqueta: 'Área técnica', icono: 'pi pi-wrench', ruta: '/servicios', area: 'tecnica' },
-      { etiqueta: 'Asistencia', icono: 'pi pi-id-card', ruta: '/personal', area: 'personal' },
+      { etiqueta: 'Asistencia', icono: 'pi pi-id-card', ruta: '/personal', area: 'personal', exacta: true },
+      { etiqueta: 'Marcar asistencia', icono: 'pi pi-mobile', ruta: '/personal/marcar' },
     ],
   },
   {

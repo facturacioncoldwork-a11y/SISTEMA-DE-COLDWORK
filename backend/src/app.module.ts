@@ -10,6 +10,7 @@ import { HealthModule } from './modules/health/health.module.js';
 import { EmpresasModule } from './modules/empresas/empresas.module.js';
 import { EquipoModule } from './modules/equipo/equipo.module.js';
 import { ContabilidadModule } from './modules/contabilidad/contabilidad.module.js';
+import { AsistenciaModule } from './modules/asistencia/asistencia.module.js';
 import { FinanzasModule } from './modules/finanzas/finanzas.module.js';
 import { LogisticaModule } from './modules/logistica/logistica.module.js';
 
@@ -68,6 +69,7 @@ import { LogisticaModule } from './modules/logistica/logistica.module.js';
     LogisticaModule,
     ContabilidadModule,
     FinanzasModule,
+    AsistenciaModule,
   ],
 })
 export class AppModule {}

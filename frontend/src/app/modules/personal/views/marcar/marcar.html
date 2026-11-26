@@ -1,14 +1,18 @@
 @let h = sim.horario();
 
 <div class="lg-toolbar">
-  <div class="como">
-    <label for="sim-trab">Marcar como</label>
-    <p-select inputId="sim-trab" [options]="opciones()" optionLabel="etiqueta" optionValue="id" appendTo="body" [ngModel]="trabajadorId()" (ngModelChange)="elegirTrabajador($event)" />
-  </div>
+  @if (metodo() === 'manual') {
+    <div class="como">
+      <label for="sim-trab">Registrar a</label>
+      <p-select inputId="sim-trab" [options]="opciones()" optionLabel="etiqueta" optionValue="id" appendTo="body" [ngModel]="trabajadorId()" (ngModelChange)="elegirTrabajador($event)" />
+    </div>
+  }
   <div class="lg-seg" role="group" aria-label="Forma de marcar">
-    <button type="button" [class.on]="metodo() === 'gps'" [disabled]="!h.metodos.gps" (click)="metodo.set('gps')"><i class="pi pi-map-marker"></i> Celular + GPS</button>
-    <button type="button" [class.on]="metodo() === 'qr'" [disabled]="!h.metodos.qr" (click)="metodo.set('qr')"><i class="pi pi-qrcode"></i> Código de oficina</button>
-    <button type="button" [class.on]="metodo() === 'manual'" [disabled]="!h.metodos.manual" (click)="metodo.set('manual')"><i class="pi pi-user-edit"></i> Manual</button>
+    <button type="button" [class.on]="metodo() === 'gps'" [disabled]="!h.metodos.gps" (click)="elegirForma('gps')"><i class="pi pi-map-marker"></i> Celular + GPS</button>
+    <button type="button" [class.on]="metodo() === 'codigo'" [disabled]="!h.metodos.codigo" (click)="elegirForma('codigo')"><i class="pi pi-qrcode"></i> Código de oficina</button>
+    @if (sim.esGestor()) {
+      <button type="button" [class.on]="metodo() === 'manual'" [disabled]="!h.metodos.manual" (click)="elegirForma('manual')"><i class="pi pi-user-edit"></i> Manual</button>
+    }
   </div>
 </div>
 
@@ -45,24 +49,6 @@
                 </button>              </div>
             </div>
           </div>
-          @if (h.selfie) {
-            <div class="paso">
-              <span class="n">2</span>
-              <div class="crece">
-                <strong>Selfie</strong>
-                <small>Confirma que eres tú (evita que otro marque por ti).</small>
-                <div class="selfie">
-                  @if (selfie(); as s) {
-                    <img [src]="s" alt="Selfie" />
-                  }
-                  <label class="lg-cta lg-cta--suave chico">
-                    <i class="pi pi-camera"></i> {{ selfie() ? 'Repetir' : 'Tomar selfie' }}
-                    <input type="file" accept="image/*" capture="user" (change)="tomarSelfie($event)" />
-                  </label>
-                </div>
-              </div>
-            </div>
-          }
           @if (sinGps()) {
             <div class="paso sin-gps">
               <span class="n">!</span>
@@ -74,7 +60,7 @@
                   <input type="text" placeholder="¿Qué pasó? (ej. sin señal en planta)" [(ngModel)]="motivoDeclarado" aria-label="Motivo" />
                 </div>
                 <div class="botones">
-                  <button type="button" class="lg-cta chico" (click)="marcarSinGps()">Enviar {{ accion() === 'salida' ? 'salida' : 'entrada' }}</button>
+                  <button type="button" class="lg-cta chico" [disabled]="enviando()" (click)="marcarSinGps()">Enviar {{ accion() === 'salida' ? 'salida' : 'entrada' }}</button>
                   <button type="button" class="lg-cta lg-cta--suave chico" (click)="sinGps.set(false)">Cancelar</button>
                 </div>
               </div>
@@ -83,7 +69,7 @@
             @if (accion() === 'salida' && trabajador()?.campo) {
               <p class="pista"><i class="pi pi-info-circle"></i> ¿Terminaste en la planta o vas directo a tu casa? Marca tu salida desde donde estés: queda como "salida en campo".</p>
             }
-            <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya'" (click)="marcarGps()">
+            <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya' || enviando()" (click)="marcarGps()">
               {{ accion() === 'ya' ? 'Jornada completa' : accion() === 'salida' ? 'Marcar salida' : 'Marcar entrada' }}
             </button>
             @if (accion() !== 'ya') {
@@ -92,7 +78,7 @@
           }
           <p class="pista suave"><i class="pi pi-clock"></i> Refrigerio de {{ h.refrigerio }} min, a la hora que te toque (entre {{ h.refrigerioDesde }} y {{ h.refrigerioHasta }}): se descuenta solo, no hace falta marcar.</p>
         }
-        @case ('qr') {
+        @case ('codigo') {
           <div class="paso">
             <span class="n">1</span>
             <div class="crece">
@@ -101,7 +87,7 @@
               <input class="codigo-in" type="text" inputmode="numeric" maxlength="6" placeholder="000000" [(ngModel)]="codigoEscrito" />
             </div>
           </div>
-          <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya'" (click)="marcarCodigo()">
+          <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya' || enviando()" (click)="marcarCodigo()">
             {{ accion() === 'ya' ? 'Jornada completa' : accion() === 'salida' ? 'Marcar salida' : 'Marcar entrada' }}
           </button>
         }
@@ -114,7 +100,7 @@
               <textarea rows="3" placeholder="Motivo (ej. celular sin batería)" [(ngModel)]="motivoManual"></textarea>
             </div>
           </div>
-          <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya'" (click)="marcarManual()">
+          <button type="button" class="marcar" [class.salida]="accion() === 'salida'" [disabled]="accion() === 'ya' || enviando()" (click)="marcarManual()">
             {{ accion() === 'ya' ? 'Jornada completa' : accion() === 'salida' ? 'Registrar salida' : 'Registrar entrada' }}
           </button>
         }
@@ -124,10 +110,10 @@
 
   <!-- Explicación / tablet -->
   <div class="lado">
-    @if (metodo() === 'qr') {
+    @if (metodo() === 'codigo' && sim.esGestor() && codigo(); as c) {
       <div class="tablet">
         <small>Pantalla para la tablet de la oficina</small>
-        <span class="codigo lg-mono">{{ codigo().slice(0, 3) }} {{ codigo().slice(3) }}</span>
+        <span class="codigo lg-mono">{{ c.slice(0, 3) }} {{ c.slice(3) }}</span>
         <span class="cuenta">Cambia en {{ segundos() }} s</span>
         <div class="anillo"><span [style.width.%]="(segundos() / 30) * 100"></span></div>
       </div>
@@ -135,11 +121,11 @@
     <section class="lg-card">
       <div class="lg-card__head"><div><h3>Por qué así</h3><p>Ventajas y cuándo usar cada forma</p></div></div>
       <ul class="puntos">
-        <li><i class="pi pi-map-marker"></i><span><b>Celular + GPS + selfie:</b> ideal para técnicos que empiezan el día en la obra del cliente. Sin aparatos extra. La selfie evita que un compañero marque por otro.</span></li>
+        <li><i class="pi pi-map-marker"></i><span><b>Celular + GPS:</b> ideal para técnicos que empiezan el día en la obra del cliente. Sin aparatos extra. La distancia la valida el servidor y la hora es la del servidor (no la del celular).</span></li>
         <li><i class="pi pi-qrcode"></i><span><b>Código de oficina:</b> una tablet barata en la entrada. Como el número cambia cada 30 s, no sirve mandarlo por WhatsApp para marcar desde la casa.</span></li>
         <li><i class="pi pi-user-edit"></i><span><b>Manual:</b> respaldo para casos excepcionales; siempre con motivo y nombre del supervisor.</span></li>
         <li><i class="pi pi-mobile"></i><span><b>Sin GPS:</b> si el celular falla, el trabajador indica la hora y el motivo; queda "por aprobar" hasta que el supervisor lo confirme.</span></li>
-        <li><i class="pi pi-wifi"></i><span><b>Datos móviles:</b> cada marca pesa menos de 2 KB (la selfie se comprime a ~40 KB). Un mes entero gasta menos que mandar una foto por WhatsApp.</span></li>
+        <li><i class="pi pi-wifi"></i><span><b>Datos móviles:</b> cada marca pesa menos de 2 KB. Un mes entero gasta menos que mandar una foto por WhatsApp.</span></li>
         <li><i class="pi pi-bolt"></i><span><b>Detección automática al llegar:</b> en la web, al abrir la app ya sabe si estás en la oficina y marcas con un toque. Que se marque sola sin abrirla necesita la app instalada en el celular (Android), que se puede hacer después.</span></li>
       </ul>
     </section>
