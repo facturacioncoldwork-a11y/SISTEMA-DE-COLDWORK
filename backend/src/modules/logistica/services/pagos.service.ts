@@ -121,6 +121,8 @@ function aFila(dto: ActualizarPagoDto): CambiosPago {
   if (dto.monto !== undefined) f.monto = dto.monto;
   if (dto.vence !== undefined) f.vence = dto.vence;
   if (dto.notas !== undefined) f.notas = dto.notas.trim() || null;
+  if (dto.diasTrasLlegada !== undefined)
+    f.dias_tras_llegada = dto.diasTrasLlegada;
   return f;
 }
 

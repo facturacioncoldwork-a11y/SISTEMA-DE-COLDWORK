@@ -140,11 +140,20 @@ export function fechasDe(
   return { aprobado, llegada };
 }
 
+export interface CuotaPlan {
+  concepto: string;
+  porcentaje: number;
+  monto: number;
+  vence: string;
+  /** Se fija con la llegada real del equipo (0 = al llegar). */
+  diasTrasLlegada: number | null;
+}
+
 /** Cuotas que propone la plantilla (montos en céntimos exactos: la última absorbe el redondeo). */
 export function planDe(
   o: Pick<OrdenConPagos, 'fecha' | 'fechaAprobado' | 'entregaHasta' | 'fechaLlegadaReal' | 'total'>,
   op: OpcionesPlan,
-): { concepto: string; porcentaje: number; monto: number; vence: string }[] {
+): CuotaPlan[] {
   const { aprobado, llegada } = fechasDe(o);
   const total = Math.round(o.total * 100);
   const pct = Math.min(100, Math.max(1, Math.round(op.adelanto)));
@@ -153,7 +162,13 @@ export function planDe(
   switch (op.plantilla) {
     case 'contado':
       return [
-        { concepto: 'Pago al contado', porcentaje: 100, monto: total / 100, vence: aprobado },
+        {
+          concepto: 'Pago al contado',
+          porcentaje: 100,
+          monto: total / 100,
+          vence: aprobado,
+          diasTrasLlegada: null,
+        },
       ];
     case 'credito':
       return [
@@ -162,14 +177,21 @@ export function planDe(
           porcentaje: 100,
           monto: total / 100,
           vence: sumar(llegada, dias, 'dias'),
+          diasTrasLlegada: dias,
         },
       ];
     case 'adelanto':
     case 'adelanto_credito': {
       const a = parte(pct);
       const saldoVence = op.plantilla === 'adelanto' ? llegada : sumar(llegada, dias, 'dias');
-      const cuotas = [
-        { concepto: `Adelanto ${pct} %`, porcentaje: pct, monto: a / 100, vence: aprobado },
+      const cuotas: CuotaPlan[] = [
+        {
+          concepto: `Adelanto ${pct} %`,
+          porcentaje: pct,
+          monto: a / 100,
+          vence: aprobado,
+          diasTrasLlegada: null,
+        },
       ];
       if (pct < 100) {
         cuotas.push({
@@ -180,6 +202,7 @@ export function planDe(
           porcentaje: 100 - pct,
           monto: (total - a) / 100,
           vence: saldoVence,
+          diasTrasLlegada: op.plantilla === 'adelanto' ? 0 : dias,
         });
       }
       return cuotas;
@@ -189,4 +212,56 @@ export function planDe(
 
 export function formatoMonto(n: number, moneda: Moneda): string {
   return `${moneda === 'USD' ? 'US$' : 'S/'} ${n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// ─── Cuotas que dependen de la llegada del equipo ──────────────────
+
+/** "al llegar", "30 días después de llegar" o null si es fecha fija. */
+export function textoAlLlegar(p: Pick<Pago, 'diasTrasLlegada'>): string | null {
+  if (p.diasTrasLlegada === null || p.diasTrasLlegada === undefined) return null;
+  return p.diasTrasLlegada === 0 ? 'al llegar' : `${p.diasTrasLlegada} días después de llegar`;
+}
+
+/**
+ * El equipo ya llegó y esta cuota (que dependía de la llegada) está por pagar o vencida:
+ * "Llegó: toca pagar el saldo".
+ */
+export function tocaPagarPorLlegada(
+  o: Pick<OrdenConPagos, 'fechaLlegadaReal'>,
+  p: Pick<Pago, 'diasTrasLlegada' | 'vence' | 'pagadoEn'>,
+  hoy: string,
+): boolean {
+  if (p.pagadoEn || !o.fechaLlegadaReal || p.diasTrasLlegada === null) return false;
+  return diasEntre(hoy, p.vence) <= DIAS_PRONTO;
+}
+
+const ORDINAL = ['1er', '2do', '3er', '4to', '5to', '6to', '7mo', '8vo', '9no', '10mo'];
+/** "1er pago", "2do pago"… */
+export function ordinalPago(i: number): string {
+  return `${ORDINAL[i] ?? `${i + 1}°`} pago`;
+}
+
+/**
+ * Forma de pago en una línea, sacada del plan: "50 % al aprobar + 50 % al llegar".
+ * Sin plan, lo que dice la OC (condiciones de pago).
+ */
+export function formaDePago(
+  o: Pick<
+    OrdenConPagos,
+    'pagos' | 'condicionesPago' | 'fecha' | 'fechaAprobado' | 'entregaHasta' | 'fechaLlegadaReal'
+  >,
+): string {
+  if (!o.pagos.length) return o.condicionesPago?.trim() || 'Sin forma de pago';
+  const { aprobado } = fechasDe(o);
+  if (o.pagos.length === 1 && o.pagos[0].vence === aprobado && o.pagos[0].diasTrasLlegada === null)
+    return 'Contado';
+  return o.pagos
+    .map((p) => {
+      const cuanto = p.porcentaje ? `${Math.round(p.porcentaje)} %` : p.concepto;
+      const cuando =
+        textoAlLlegar(p) ??
+        (p.vence === aprobado ? 'al aprobar' : `el ${p.vence.slice(8, 10)}/${p.vence.slice(5, 7)}`);
+      return `${cuanto} ${cuando}`;
+    })
+    .join(' + ');
 }

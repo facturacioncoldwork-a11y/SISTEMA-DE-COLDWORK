@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { OrdenConPagos, Pago } from './logistica.model';
-import { estadoCuota, planDe, resumenPagos, textoVence } from './pagos';
+import {
+  estadoCuota,
+  formaDePago,
+  ordinalPago,
+  planDe,
+  resumenPagos,
+  textoVence,
+  tocaPagarPorLlegada,
+} from './pagos';
 
 const HOY = '2026-11-26';
 const pago = (monto: number, vence: string, pagadoEn: string | null = null): Pago => ({
@@ -13,6 +21,7 @@ const pago = (monto: number, vence: string, pagadoEn: string | null = null): Pag
   pagadoEn,
   referencia: null,
   notas: null,
+  diasTrasLlegada: null,
 });
 const oc = (o: Partial<OrdenConPagos>): OrdenConPagos =>
   ({
@@ -75,5 +84,40 @@ describe('pagos a proveedores', () => {
     });
     expect(c.vence).toBe('2026-12-05');
     expect(c.monto).toBe(12921);
+    expect(c.diasTrasLlegada).toBe(30);
+  });
+
+  it('el saldo queda "al llegar" para fijarse con la llegada real', () => {
+    const [adelanto, saldo] = planDe(oc({}), { plantilla: 'adelanto', adelanto: 50, dias: 0 });
+    expect(adelanto.diasTrasLlegada).toBeNull();
+    expect(saldo.diasTrasLlegada).toBe(0);
+    const [, credito] = planDe(oc({}), { plantilla: 'adelanto_credito', adelanto: 30, dias: 15 });
+    expect(credito.diasTrasLlegada).toBe(15);
+  });
+
+  it('"Llegó: toca pagar el saldo" solo si llegó y la cuota dependía de la llegada', () => {
+    const saldo = { ...pago(6460, '2026-11-25'), diasTrasLlegada: 0 };
+    expect(tocaPagarPorLlegada(oc({ fechaLlegadaReal: '2026-11-25' }), saldo, HOY)).toBe(true);
+    expect(tocaPagarPorLlegada(oc({}), saldo, HOY)).toBe(false); // aún no llega
+    expect(
+      tocaPagarPorLlegada(oc({ fechaLlegadaReal: '2026-11-25' }), pago(1, '2026-11-25'), HOY),
+    ).toBe(false); // fecha fija
+    const credito = { ...pago(1, '2026-12-25'), diasTrasLlegada: 30 };
+    expect(tocaPagarPorLlegada(oc({ fechaLlegadaReal: '2026-11-25' }), credito, HOY)).toBe(false); // falta un mes
+    expect(
+      tocaPagarPorLlegada(oc({ fechaLlegadaReal: '2026-11-25' }), { ...saldo, pagadoEn: HOY }, HOY),
+    ).toBe(false);
+  });
+
+  it('forma de pago en una línea y 1er / 2do pago', () => {
+    const pagos = [
+      { ...pago(50, '2026-10-07', '2026-10-07'), porcentaje: 50 },
+      { ...pago(50, '2026-11-01'), porcentaje: 50, diasTrasLlegada: 0 },
+    ];
+    expect(formaDePago(oc({ pagos }))).toBe('50 % al aprobar + 50 % al llegar');
+    expect(formaDePago(oc({ pagos: [pago(1, '2026-10-07')] }))).toBe('Contado');
+    expect(formaDePago(oc({ condicionesPago: 'Crédito 30 días' }))).toBe('Crédito 30 días');
+    expect(formaDePago(oc({ condicionesPago: null }))).toBe('Sin forma de pago');
+    expect([0, 1, 2].map(ordinalPago)).toEqual(['1er pago', '2do pago', '3er pago']);
   });
 });

@@ -97,6 +97,7 @@
                 <span class="lg-chip sub-chip" [style.--c]="estado(e.orden.estado).color">{{
                   estado(e.orden.estado).nombre
                 }}</span>
+                <app-estado-pago [ordenId]="e.orden.id" />
               </td>
               <td>
                 <span class="lg-eta" [style.--c]="colorLlegada(s.llegada)"

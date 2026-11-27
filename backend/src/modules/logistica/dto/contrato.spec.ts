@@ -179,6 +179,15 @@ describe('contrato de la API de logística', () => {
     expect(
       await errores(ActualizarPagoDto, { monto: 100, vence: '2026-11-01' }),
     ).toEqual([]);
+    // Saldo "al llegar" (0) o crédito tras la llegada (30); null = fecha fija
+    for (const diasTrasLlegada of [0, 30, null]) {
+      expect(await errores(ActualizarPagoDto, { diasTrasLlegada })).toEqual([]);
+    }
+    for (const diasTrasLlegada of [-1, 400, 2.5]) {
+      expect(await errores(ActualizarPagoDto, { diasTrasLlegada })).toContain(
+        'diasTrasLlegada',
+      );
+    }
     expect(await errores(ActualizarPagoDto, { ordenId: uuid })).toContain(
       'ordenId',
     );

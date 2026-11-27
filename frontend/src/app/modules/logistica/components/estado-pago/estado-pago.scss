@@ -1,0 +1,116 @@
+:host {
+  display: contents;
+}
+.chip-pago {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  padding: 0.14rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  i {
+    font-size: 0.68rem;
+  }
+}
+.pago-det {
+  margin: 0.8rem 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--c) 30%, #e2e8f0);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--c) 5%, #fff);
+  header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    > i {
+      color: var(--c);
+      font-size: 1.1rem;
+    }
+    div {
+      flex: 1;
+      min-width: 0;
+      display: grid;
+    }
+    small {
+      font-size: 0.7rem;
+      color: #64748b;
+    }
+    b {
+      color: var(--c);
+      font-size: 0.92rem;
+    }
+  }
+  .solo-ceo {
+    margin-left: 0.3rem;
+    padding: 0 0.35rem;
+    border-radius: 999px;
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 0.62rem;
+    font-weight: 700;
+  }
+  .ir {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .barra {
+    height: 0.35rem;
+    margin: 0.6rem 0 0.5rem;
+    border-radius: 999px;
+    background: #edf2f7;
+    overflow: hidden;
+    span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #34d399, #059669);
+    }
+  }
+  .forma {
+    margin: 0 0 0.4rem;
+    font-size: 0.78rem;
+    color: #475569;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.3rem;
+  }
+  li {
+    display: grid;
+    grid-template-columns: 3.6rem minmax(0, 1fr) auto;
+    gap: 0 0.5rem;
+    align-items: baseline;
+    padding: 0.35rem 0.5rem;
+    border-left: 3px solid var(--e);
+    border-radius: 0.4rem;
+    background: #fff;
+    font-size: 0.78rem;
+    .n {
+      font-weight: 700;
+      color: #334155;
+    }
+    .q {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    small {
+      grid-column: 2 / -1;
+      color: var(--e);
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+  }
+}

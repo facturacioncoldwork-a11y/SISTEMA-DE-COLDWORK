@@ -128,6 +128,7 @@
               @if (o.estado === 'parcial' || o.estado === 'enviada') {
                 <div class="avance"><span [style.width.%]="o.avance"></span></div>
               }
+              <app-estado-pago [ordenId]="o.id" />
               <div class="meta">
                 <span>{{ o.plazoTexto || 'Sin plazo' }}</span>
                 <span class="monto">{{ simbolo[o.moneda] }} {{ o.total | number: '1.0-0' }}</span>
@@ -186,6 +187,7 @@
           }
         </div>
       }
+      <app-estado-pago [ordenId]="o.id" [detalle]="true" />
       <ol class="linea-estados">
         @for (e of columnas; track e; let i = $index) {
           <li [class.on]="columnas.indexOf(o.estado) >= i && o.estado !== 'anulada'">

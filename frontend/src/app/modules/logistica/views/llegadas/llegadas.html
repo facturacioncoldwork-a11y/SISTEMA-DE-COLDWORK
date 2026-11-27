@@ -73,6 +73,7 @@
             <span class="tags">
               @if (l.orden) {
                 <span class="lg-chip sin-punto" style="--c: #6366f1">{{ l.orden.codigo }}</span>
+                <app-estado-pago [ordenId]="l.orden.id" />
               }
               @if (l.guiaRemision) {
                 <span class="lg-chip sin-punto">GR {{ l.guiaRemision }}</span>

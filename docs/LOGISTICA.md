@@ -100,6 +100,10 @@ Pestaña **Pagos** de Logística: lo comprado por proyecto, cuándo llega y **cu
 - **Quién lo ve:** solo el dueño (RLS). El encargado de logística elige el proyecto en la OC, pero no ve montos adeudados ni pagos.
 - Una OC con pagos ya hechos **no se puede eliminar** (se anula).
 - Migración: `20261129000001_oc_pagos.sql` (necesita antes la de Operaciones `20261128000001_operaciones.sql`).
+- **Cuadros por compra** (vista por defecto): un cuadro por OC, agrupado por proyecto, con el equipo, el proyecto, la fecha de aprobación → llegada aproximada (o real), la forma de pago y el **1er pago / 2do pago…** (monto, si se pagó o cuándo vence). La vista **Tabla** sigue disponible. Desde el cuadro se **asigna el proyecto** a una compra que no lo tenía (también en OC enviadas).
+- **Cuotas "al llegar"** (`oc_pagos.dias_tras_llegada`): el saldo contra entrega (0) o el crédito desde la llegada (N días) se marcan así. Mientras el equipo no llega vencen con la fecha estimada; cuando la OC se recibe completa, un trigger fija `vence = fecha_llegada_real + N` y la pestaña avisa **"Llegó: toca pagar el saldo"**. La migración reconoce las cuotas que ya existían por su concepto ("Saldo…", "Crédito N días").
+- **Estado de pago en OC y Llegadas:** el CEO ve en cada orden (tablero, detalle, "Por proyecto") y en cada llegada un chip "50 % pagado · falta US$ X", "Llegó: toca pagar" o "Sin plan". Para cualquier otro rol no se muestra nada (y la API de pagos no le responde).
+- Migración: `20261202000001_oc_pagos_al_llegar.sql` (una columna, sin tablas nuevas).
 
 ## Eliminar (CRUD)
 

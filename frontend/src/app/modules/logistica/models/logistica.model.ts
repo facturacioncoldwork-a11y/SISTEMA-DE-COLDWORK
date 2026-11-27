@@ -216,6 +216,8 @@ export interface Pago {
   pagadoEn: string | null;
   referencia: string | null;
   notas: string | null;
+  /** null = fecha fija; 0 = al llegar el equipo; N = N días después de que llega. */
+  diasTrasLlegada: number | null;
 }
 
 export interface GuardarPago {
@@ -225,6 +227,7 @@ export interface GuardarPago {
   monto: number;
   vence: string;
   notas?: string;
+  diasTrasLlegada?: number | null;
 }
 
 /** OC con su plan de pagos (GET /logistica/pagos). */

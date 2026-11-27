@@ -12,11 +12,13 @@ import { LogisticaStore } from '../../services/logistica-store.service';
 import { MovimientosService } from '../../services/movimientos.service';
 import { OrdenesCompraService } from '../../services/ordenes-compra.service';
 import { DineroPipe } from '../../pipes/dinero.pipe';
+import { EstadoPago } from '../../components/estado-pago/estado-pago';
 
 /** Vista: LLEGADA DE PRODUCTO (historial + asistente de registro). */
 @Component({
   selector: 'app-llegadas',
   imports: [
+    EstadoPago,
     DineroPipe,
     FormsModule,
     DatePipe,

@@ -19,6 +19,7 @@ import { colorCliente, colorLlegada, hoyISO, seguimiento } from '../../models/pl
 import { usarConfirmacion } from '../../services/confirmar';
 import { LogisticaStore } from '../../services/logistica-store.service';
 import { OrdenesCompraService } from '../../services/ordenes-compra.service';
+import { EstadoPago } from '../../components/estado-pago/estado-pago';
 
 /**
  * Vista: ÓRDENES DE COMPRA.
@@ -29,6 +30,7 @@ import { OrdenesCompraService } from '../../services/ordenes-compra.service';
 @Component({
   selector: 'app-ordenes-compra',
   imports: [
+    EstadoPago,
     ProyectosOc,
     FormsModule,
     DatePipe,

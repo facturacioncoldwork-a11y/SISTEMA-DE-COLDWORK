@@ -1,0 +1,41 @@
+@if (info(); as i) {
+  @if (!detalle()) {
+    <span class="chip-pago" [style.--c]="i.color" [title]="i.forma">
+      <i [class]="i.icono"></i> {{ i.texto }}
+    </span>
+  } @else {
+    <section class="pago-det" [style.--c]="i.color">
+      <header>
+        <i [class]="i.icono"></i>
+        <div>
+          <small>Pago al proveedor <span class="solo-ceo">solo tú lo ves</span></small>
+          <b>{{ i.texto }}</b>
+        </div>
+        <a routerLink="/logistica/pagos" class="ir">Ver pagos <i class="pi pi-arrow-right"></i></a>
+      </header>
+      <div class="barra"><span [style.width.%]="i.pct"></span></div>
+      <p class="forma"><i class="pi pi-credit-card"></i> {{ i.forma }}</p>
+      @if (i.o.pagos.length) {
+        <ul>
+          @for (p of i.o.pagos; track p.id; let n = $index) {
+            @let e = estadoDe(p);
+            <li [style.--e]="estados[e].color">
+              <span class="n">{{ ordinal(n) }}</span>
+              <span class="q">{{ p.concepto }}</span>
+              <b>{{ monto(p.monto, i.o.moneda) }}</b>
+              <small>
+                @if (p.pagadoEn) {
+                  <i class="pi pi-check"></i> pagado {{ p.pagadoEn + 'T12:00:00' | date: 'd MMM' }}
+                } @else if (alLlegar(p) && !i.o.fechaLlegadaReal) {
+                  {{ alLlegar(p) }} (~{{ p.vence + 'T12:00:00' | date: 'd MMM' }})
+                } @else {
+                  {{ estados[e].nombre }} · {{ p.vence + 'T12:00:00' | date: 'd MMM' }}
+                }
+              </small>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+}

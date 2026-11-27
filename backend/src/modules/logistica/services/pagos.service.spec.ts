@@ -16,6 +16,7 @@ const pago = (
   pagadoEn,
   referencia: null,
   notas: null,
+  diasTrasLlegada: null,
 });
 
 describe('plan de pagos de una OC', () => {

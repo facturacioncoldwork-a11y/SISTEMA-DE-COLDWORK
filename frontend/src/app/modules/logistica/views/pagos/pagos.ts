@@ -4,26 +4,33 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
 import { DrawerModule } from 'primeng/drawer';
+import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
-import type { Moneda, OrdenConPagos, Pago } from '../../models/logistica.model';
+import type { Moneda, OrdenConPagos, Pago, ProyectoCompra } from '../../models/logistica.model';
 import {
   ESTADOS_CUOTA,
   estadoCuota,
   fechasDe,
+  formaDePago,
   formatoMonto,
+  ordinalPago,
   planDe,
   PLANTILLAS,
   resumenPagos,
+  textoAlLlegar,
   textoVence,
+  tocaPagarPorLlegada,
   type EstadoCuota,
   type Plantilla,
 } from '../../models/pagos';
-import { hoyISO } from '../../models/plazos';
+import { hoyISO, sumar } from '../../models/plazos';
 import { usarConfirmacion } from '../../services/confirmar';
 import { LogisticaStore, mensajeError } from '../../services/logistica-store.service';
+import { OrdenesCompraService } from '../../services/ordenes-compra.service';
 import { PagosService } from '../../services/pagos.service';
 
 type Filtro = 'deuda' | 'todas' | 'pagadas';
+type Vista = 'cuadros' | 'tabla';
 
 interface Grupo {
   clave: string;
@@ -46,14 +53,23 @@ interface Cuota extends Pago {
  */
 @Component({
   selector: 'app-pagos-proveedores',
-  imports: [DatePipe, DecimalPipe, FormsModule, DialogModule, DrawerModule, TooltipModule],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    FormsModule,
+    DialogModule,
+    DrawerModule,
+    SelectModule,
+    TooltipModule,
+  ],
   templateUrl: './pagos.html',
-  styleUrl: './pagos.scss',
+  styleUrls: ['./pagos.scss', './pagos-cuadros.scss'],
 })
 export class PagosProveedores implements OnInit {
   protected readonly api = inject(PagosService);
   private readonly store = inject(LogisticaStore);
   private readonly router = inject(Router);
+  private readonly ocs = inject(OrdenesCompraService);
   private readonly confirmar = usarConfirmacion();
 
   protected readonly estados = ESTADOS_CUOTA;
@@ -63,8 +79,14 @@ export class PagosProveedores implements OnInit {
   }));
   protected readonly monto = formatoMonto;
   protected readonly textoVence = textoVence;
+  protected readonly alLlegar = textoAlLlegar;
+  protected readonly ordinal = ordinalPago;
+  protected readonly forma = formaDePago;
   protected readonly hoy = hoyISO();
 
+  protected readonly vista = signal<Vista>(
+    (localStorage.getItem('cw.pagos.vista') as Vista | null) ?? 'cuadros',
+  );
   protected readonly filtro = signal<Filtro>('deuda');
   protected readonly texto = signal('');
 
@@ -86,6 +108,14 @@ export class PagosProveedores implements OnInit {
   protected readonly fMonto = signal<number | null>(null);
   protected readonly fVence = signal('');
   protected readonly fNotas = signal('');
+  /** La cuota vence N días después de que llega el equipo (0 = al llegar). */
+  protected readonly fAlLlegar = signal(false);
+  protected readonly fDias = signal(0);
+
+  // Asignar proyecto a una compra
+  protected readonly asignando = signal<OrdenConPagos | null>(null);
+  protected readonly proyectos = signal<(ProyectoCompra & { etiqueta: string })[]>([]);
+  protected readonly fProyecto = signal<string | null>(null);
 
   // Marcar pagado
   protected readonly pagando = signal<Cuota | Pago | null>(null);
@@ -108,6 +138,18 @@ export class PagosProveedores implements OnInit {
   }
 
   protected readonly resumen = computed(() => resumenPagos(this.api.ordenes(), this.hoy));
+
+  /** Llegó el equipo y toca pagar el saldo (cuotas que dependían de la llegada). */
+  protected readonly porLlegada = computed<Cuota[]>(() =>
+    this.api
+      .ordenes()
+      .flatMap((o) =>
+        o.pagos
+          .filter((p) => tocaPagarPorLlegada(o, p, this.hoy))
+          .map((p) => ({ ...p, orden: o, estado: estadoCuota(p, this.hoy) })),
+      )
+      .sort((a, b) => a.vence.localeCompare(b.vence)),
+  );
 
   /** Todas las cuotas pendientes, la más urgente primero. */
   protected readonly proximas = computed<Cuota[]>(() =>
@@ -158,6 +200,41 @@ export class PagosProveedores implements OnInit {
   });
 
   // ─── Ayudas para la plantilla ─────────────────────────────────────
+  protected cambiarVista(v: Vista) {
+    this.vista.set(v);
+    localStorage.setItem('cw.pagos.vista', v);
+  }
+  protected tocaPagar(o: OrdenConPagos) {
+    return o.pagos.some((p) => tocaPagarPorLlegada(o, p, this.hoy));
+  }
+  /** Color del borde del cuadro: rojo vencido, naranja llegó y toca pagar, verde pagado. */
+  protected colorCuadro(o: OrdenConPagos) {
+    if (o.pendiente + o.sinPlan <= 0) return '#059669';
+    if (o.pagos.some((p) => estadoCuota(p, this.hoy) === 'vencido')) return '#dc2626';
+    if (this.tocaPagar(o)) return '#ea580c';
+    if (!o.pagos.length) return '#d97706';
+    return '#2563eb';
+  }
+  /** Nombre del equipo principal (el de más valor) y cuántos más trae la OC. */
+  protected equipo(o: OrdenConPagos) {
+    const [p, ...resto] = [...o.items].sort(
+      (a, b) => b.cantidad * b.costoUnitario - a.cantidad * a.costoUnitario,
+    );
+    return {
+      nombre: p ? p.nombre : 'Sin productos',
+      cantidad: p ? `${p.cantidad} ${p.unidad}` : '',
+      mas: resto.length,
+      todos: this.productos(o),
+    };
+  }
+  /** Texto de la cuota en el cuadro: pagado, "al llegar (~20 dic)", "vence en 3 días". */
+  protected cuandoCuota(o: OrdenConPagos, p: Pago) {
+    if (p.pagadoEn) return 'Pagado';
+    const al = textoAlLlegar(p);
+    if (al && !o.fechaLlegadaReal) return al.charAt(0).toUpperCase() + al.slice(1) + ' (aprox.)';
+    if (tocaPagarPorLlegada(o, p, this.hoy)) return 'Llegó: toca pagar';
+    return textoVence(p, this.hoy).replace(/^v/, 'V');
+  }
   protected estadoDe(p: Pago) {
     return estadoCuota(p, this.hoy);
   }
@@ -222,6 +299,8 @@ export class PagosProveedores implements OnInit {
     this.fMonto.set(o ? Math.max(0, Math.round(o.sinPlan * 100) / 100) || null : null);
     this.fVence.set(o ? fechasDe(o).llegada : hoyISO());
     this.fNotas.set('');
+    this.fAlLlegar.set(false);
+    this.fDias.set(0);
     this.error.set(null);
   }
 
@@ -231,6 +310,8 @@ export class PagosProveedores implements OnInit {
     this.fMonto.set(p.monto);
     this.fVence.set(p.vence);
     this.fNotas.set(p.notas ?? '');
+    this.fAlLlegar.set(p.diasTrasLlegada !== null);
+    this.fDias.set(p.diasTrasLlegada ?? 0);
     this.error.set(null);
   }
 
@@ -240,12 +321,18 @@ export class PagosProveedores implements OnInit {
     if (!o || !e) return;
     const monto = Number(this.fMonto());
     if (!(monto > 0)) return this.error.set('Pon un monto mayor que cero.');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(this.fVence()))
+    const alLlegar = this.fAlLlegar();
+    const dias = Math.round(Number(this.fDias()) || 0);
+    if (alLlegar && (dias < 0 || dias > 365))
+      return this.error.set('Los días después de la llegada van de 0 a 365.');
+    if (!alLlegar && !/^\d{4}-\d{2}-\d{2}$/.test(this.fVence()))
       return this.error.set('Elige la fecha de vencimiento.');
     const datos = {
       concepto: this.fConcepto().trim() || 'Pago',
       monto: Math.round(monto * 100) / 100,
-      vence: this.fVence(),
+      // "Al llegar": vence con la llegada (real si ya llegó, si no la estimada) y se ajusta sola
+      vence: alLlegar ? sumar(fechasDe(o).llegada, dias, 'dias') : this.fVence(),
+      diasTrasLlegada: alLlegar ? dias : null,
       notas: this.fNotas().trim(),
     };
     await this.ejecutar(async () => {
@@ -268,6 +355,36 @@ export class PagosProveedores implements OnInit {
     await this.ejecutar(async () => {
       await this.api.eliminar(p.id);
       await this.api.recargar();
+    });
+  }
+
+  protected async elegirProyecto(o: OrdenConPagos) {
+    this.asignando.set(o);
+    this.fProyecto.set(o.proyecto?.id ?? null);
+    this.error.set(null);
+    if (!this.proyectos().length) {
+      const lista = await this.ocs.proyectos().catch(() => []);
+      this.proyectos.set(
+        lista.map((p) => ({
+          ...p,
+          etiqueta: `${p.codigo} · ${p.proyecto}${p.cliente ? ' · ' + p.cliente : ''}`,
+        })),
+      );
+    }
+  }
+
+  protected async guardarProyecto() {
+    const o = this.asignando();
+    if (!o) return;
+    await this.ejecutar(async () => {
+      await this.ocs.actualizar(o.id, { proyectoId: this.fProyecto() });
+      await this.api.recargar();
+      const p = this.proyectos().find((x) => x.id === this.fProyecto());
+      this.store.ok(
+        p ? 'Compra asignada al proyecto' : 'Compra sin proyecto',
+        p ? `${o.codigo} → ${p.codigo} · ${p.proyecto}` : o.codigo,
+      );
+      this.asignando.set(null);
     });
   }
 

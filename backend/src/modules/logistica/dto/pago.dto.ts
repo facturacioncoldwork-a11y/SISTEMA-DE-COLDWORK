@@ -7,6 +7,7 @@ import {
 import { Transform } from 'class-transformer';
 import {
   IsDateString,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -58,6 +59,18 @@ export class CrearPagoDto {
   @IsDateString()
   vence!: string;
 
+  @ApiPropertyOptional({
+    example: 0,
+    nullable: true,
+    description:
+      'Vence N días después de que llega el equipo (0 = al llegar). Al recibirse la OC, `vence` se fija con la fecha real.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(365)
+  diasTrasLlegada?: number | null;
+
   @ApiPropertyOptional()
   @IsOptional()
   @Transform(recortar)
@@ -99,6 +112,8 @@ export class PagoDto {
   @ApiPropertyOptional({ nullable: true, type: String }) referencia!:
     string | null;
   @ApiPropertyOptional({ nullable: true, type: String }) notas!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: Number }) diasTrasLlegada!:
+    number | null;
 
   static desde(f: FilaPago): PagoDto {
     return {
@@ -111,6 +126,7 @@ export class PagoDto {
       pagadoEn: f.pagado_en,
       referencia: f.referencia,
       notas: f.notas,
+      diasTrasLlegada: f.dias_tras_llegada ?? null,
     };
   }
 }

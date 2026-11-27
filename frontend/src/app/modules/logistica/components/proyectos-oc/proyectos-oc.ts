@@ -2,6 +2,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, input, output, signal } from '@angular/core';
 import { ESTADOS_OC, SIMBOLO, type EstadoOc, type OrdenCompra } from '../../models/logistica.model';
 import { colorLlegada, seguimiento } from '../../models/plazos';
+import { EstadoPago } from '../estado-pago/estado-pago';
 
 interface Equipo {
   orden: OrdenCompra;
@@ -32,7 +33,7 @@ interface Proyecto {
  */
 @Component({
   selector: 'app-proyectos-oc',
-  imports: [DatePipe, DecimalPipe],
+  imports: [DatePipe, DecimalPipe, EstadoPago],
   templateUrl: './proyectos-oc.html',
   styleUrl: './proyectos-oc.scss',
 })
