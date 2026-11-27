@@ -71,6 +71,8 @@ export const SELECT_ORDEN_COMPRA_SIN_PROYECTO = SELECT_ORDEN_COMPRA.replace(
 /** Columnas que agrega la migración de pagos (se omiten si la base aún no las tiene). */
 export const COLUMNAS_PROYECTO_OC = [
   'proyecto_id',
+  'proyecto_codigo',
+  'proyecto_nombre',
   'fecha_aprobado',
   'cotizacion_fecha',
 ] as const;
@@ -93,6 +95,8 @@ export interface CambiosOrdenCompra {
   solicitado_por?: string | null;
   cotizacion_ref?: string | null;
   proyecto_id?: string | null;
+  proyecto_codigo?: string | null;
+  proyecto_nombre?: string | null;
   fecha_aprobado?: string | null;
   cotizacion_fecha?: string | null;
 }

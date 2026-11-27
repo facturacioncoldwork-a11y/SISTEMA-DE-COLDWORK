@@ -50,9 +50,14 @@ export class OrdenesCompraService {
     );
     const id = await this.repo.crear(u.token, e.id, dto);
     // El proyecto y la fecha de aprobación se guardan aparte (la BD copia código y nombre)
-    if (dto.proyectoId || dto.fechaAprobado || dto.cotizacionFecha) {
+    const proyecto = cambiosProyecto(dto);
+    if (
+      Object.keys(proyecto).length ||
+      dto.fechaAprobado ||
+      dto.cotizacionFecha
+    ) {
       await this.repo.actualizar(u.token, e.id, id, {
-        ...(dto.proyectoId ? { proyecto_id: dto.proyectoId } : {}),
+        ...proyecto,
         ...(dto.fechaAprobado ? { fecha_aprobado: dto.fechaAprobado } : {}),
         ...(dto.cotizacionFecha
           ? { cotizacion_fecha: dto.cotizacionFecha }
@@ -120,7 +125,7 @@ export class OrdenesCompraService {
     if (dto.cotizacionRef !== undefined)
       c.cotizacion_ref = texto(dto.cotizacionRef);
     if (dto.moneda !== undefined) c.moneda = dto.moneda;
-    if (dto.proyectoId !== undefined) c.proyecto_id = dto.proyectoId;
+    Object.assign(c, cambiosProyecto(dto));
     if (dto.fechaAprobado !== undefined) c.fecha_aprobado = dto.fechaAprobado;
     if (dto.cotizacionFecha !== undefined) {
       noFutura(
@@ -204,4 +209,26 @@ function ventanaValida(desde?: string | null, hasta?: string | null) {
       'La fecha "desde" no puede ser posterior a "hasta"',
     );
   }
+}
+
+/**
+ * Proyecto de la OC: elegido de Operaciones (la BD copia código y nombre) o escrito a mano
+ * (código y nombre sin enlace). Al quitarlo se limpian también el código y el nombre.
+ */
+export function cambiosProyecto(dto: {
+  proyectoId?: string | null;
+  proyectoCodigo?: string | null;
+  proyectoNombre?: string | null;
+}): CambiosOrdenCompra {
+  if (dto.proyectoId) return { proyecto_id: dto.proyectoId };
+  const codigo = dto.proyectoCodigo?.trim();
+  if (codigo)
+    return {
+      proyecto_id: null,
+      proyecto_codigo: codigo,
+      proyecto_nombre: dto.proyectoNombre?.trim() || null,
+    };
+  if (dto.proyectoId === null || dto.proyectoCodigo !== undefined)
+    return { proyecto_id: null, proyecto_codigo: null, proyecto_nombre: null };
+  return {};
 }

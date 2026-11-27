@@ -363,3 +363,66 @@
     display: block;
   }
 }
+
+// ---------- Proyecto que se abre al tocarlo ----------
+.proyecto__cab.clic {
+  cursor: pointer;
+  border-radius: 0.8rem;
+  &:hover,
+  &:focus-visible {
+    background: var(--lg-soft);
+    outline: none;
+  }
+  .flecha {
+    color: var(--lg-muted);
+    transition: transform 0.2s;
+  }
+}
+.proyecto:not(.abierto) .proyecto__cab {
+  border-bottom: 0;
+}
+.proyecto.abierto .flecha {
+  transform: rotate(180deg);
+}
+.cod-proy {
+  display: inline-block;
+  margin-bottom: 0.15rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.4rem;
+  background: #eef2ff;
+  color: #4338ca;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  &.sin {
+    background: #fef3c7;
+    color: #b45309;
+    font-family: inherit;
+  }
+}
+.productos-proy,
+.tit-pagos {
+  margin: 0.8rem 0.3rem 0;
+}
+.productos-proy h4,
+.tit-pagos {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  margin-bottom: 0.4rem;
+}
+.sugerido {
+  margin: 0 0 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.6rem;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.8rem;
+}
+.modo-proy {
+  margin-bottom: 0.7rem;
+}
+.dlg label input {
+  width: 100%;
+}

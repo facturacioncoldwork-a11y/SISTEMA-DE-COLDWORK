@@ -68,23 +68,54 @@
         <small>de las cotizaciones de Operaciones: así se agrupan las compras y sus pagos</small>
       </legend>
       <div class="lg-form" style="margin: 0">
-        <div>
-          <label for="oc-proy">Proyecto</label>
-          <p-select
-            inputId="oc-proy"
-            [options]="proyectos()"
-            optionLabel="etiqueta"
-            optionValue="id"
-            [filter]="true"
-            filterBy="etiqueta"
-            [showClear]="true"
-            placeholder="Sin proyecto"
-            emptyMessage="Aún no hay cotizaciones aprobadas en Operaciones"
-            appendTo="body"
-            [ngModel]="proyectoId()"
-            (ngModelChange)="elegirProyecto($event)"
-          />
-        </div>
+        @if (!proyManual()) {
+          <div>
+            <label for="oc-proy">Proyecto</label>
+            <p-select
+              inputId="oc-proy"
+              [options]="proyectos()"
+              optionLabel="etiqueta"
+              optionValue="id"
+              [filter]="true"
+              filterBy="etiqueta"
+              [showClear]="true"
+              placeholder="Sin proyecto"
+              emptyMessage="Aún no hay cotizaciones aprobadas en Operaciones"
+              appendTo="body"
+              [ngModel]="proyectoId()"
+              (ngModelChange)="elegirProyecto($event)"
+            />
+            <button type="button" class="lnk-proy" (click)="proyManual.set(true)">
+              ¿No está en la lista? Escribir el código
+            </button>
+          </div>
+        } @else {
+          <div>
+            <label for="oc-proy-cod">Código de proyecto</label>
+            <input
+              id="oc-proy-cod"
+              type="text"
+              class="p-inputtext"
+              placeholder="YG-PROY20260010"
+              maxlength="40"
+              [ngModel]="proyCodigo()"
+              (ngModelChange)="proyCodigo.set($event)"
+            />
+            <input
+              type="text"
+              class="p-inputtext"
+              style="margin-top: 0.4rem"
+              placeholder="Nombre del proyecto (opcional)"
+              maxlength="300"
+              aria-label="Nombre del proyecto"
+              [ngModel]="proyNombre()"
+              (ngModelChange)="proyNombre.set($event)"
+            />
+            <button type="button" class="lnk-proy" (click)="proyManual.set(false)">
+              Elegir de la lista de Operaciones
+            </button>
+          </div>
+        }
         <div>
           <label for="oc-cotref">N° de cotización del proveedor <small>(opcional)</small></label>
           <input

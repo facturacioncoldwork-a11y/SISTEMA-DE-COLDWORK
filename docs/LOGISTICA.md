@@ -104,6 +104,8 @@ Pestaña **Pagos** de Logística: lo comprado por proyecto, cuándo llega y **cu
 - **Cuotas "al llegar"** (`oc_pagos.dias_tras_llegada`): el saldo contra entrega (0) o el crédito desde la llegada (N días) se marcan así. Mientras el equipo no llega vencen con la fecha estimada; cuando la OC se recibe completa, un trigger fija `vence = fecha_llegada_real + N` y la pestaña avisa **"Llegó: toca pagar el saldo"**. La migración reconoce las cuotas que ya existían por su concepto ("Saldo…", "Crédito N días").
 - **Estado de pago en OC y Llegadas:** el CEO ve en cada orden (tablero, detalle, "Por proyecto") y en cada llegada un chip "50 % pagado · falta US$ X", "Llegó: toca pagar" o "Sin plan". Para cualquier otro rol no se muestra nada (y la API de pagos no le responde).
 - Migración: `20261202000001_oc_pagos_al_llegar.sql` (una columna, sin tablas nuevas).
+- **Proyecto por código:** en Pagos (vista Cuadros) cada proyecto muestra su código y, al tocarlo, se abren los **productos que se compran** para él (de todas sus OC: llegó / pedido, proveedor, OC, llegada) y los cuadros de pago.
+- **Código escrito a mano:** si el proyecto no está en Operaciones, en la OC o en "Asignar proyecto" se elige "Escribir el código" (y nombre opcional). Se guarda en `proyecto_codigo` / `proyecto_nombre` sin enlace (`proyecto_id` nulo); las compras con el mismo código se agrupan juntas. Si las notas, el cliente o la referencia de la OC ya traen el código de un proyecto conocido, se deja elegido solo. Quitar el proyecto limpia también el código y el nombre. No necesita migración.
 
 ## Eliminar (CRUD)
 

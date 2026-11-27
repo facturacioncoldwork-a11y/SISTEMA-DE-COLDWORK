@@ -191,6 +191,9 @@ export interface PlazoOrden {
   cotizacionFecha?: string | null;
   /** null quita el proyecto. */
   proyectoId?: string | null;
+  /** Código de proyecto escrito a mano (no está en Operaciones). */
+  proyectoCodigo?: string;
+  proyectoNombre?: string;
   fechaAprobado?: string | null;
 }
 

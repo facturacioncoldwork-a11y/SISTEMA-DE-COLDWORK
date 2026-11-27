@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
@@ -131,6 +131,31 @@ class PlazoOrdenDto {
   @IsOptional()
   @IsUUID()
   proyectoId?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'YG-PROY20260010',
+    nullable: true,
+    description:
+      'Código de proyecto escrito a mano (si no está en Operaciones). Se ignora si viene proyectoId; vacío o null lo quita',
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @MaxLength(40, {
+    message: 'El código de proyecto tiene máximo 40 caracteres',
+  })
+  proyectoCodigo?: string | null;
+
+  @ApiPropertyOptional({ example: 'Pedregal - Arequipa', nullable: true })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @MaxLength(300)
+  proyectoNombre?: string | null;
 
   @ApiPropertyOptional({
     example: '2026-11-20',

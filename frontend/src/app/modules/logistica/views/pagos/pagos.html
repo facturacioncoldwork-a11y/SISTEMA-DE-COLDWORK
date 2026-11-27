@@ -187,15 +187,22 @@
       </div>
     } @else {
       @for (g of grupos(); track g.clave) {
-        <article class="lg-card proyecto">
-          <header class="proyecto__cab">
+        @let abierto = estaAbierto(g);
+        <article class="lg-card proyecto" [class.abierto]="abierto">
+          <header
+            class="proyecto__cab clic"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="abierto"
+            (click)="alternar(g)"
+            (keydown.enter)="alternar(g)"
+          >
             <span class="sello"><i class="pi pi-briefcase"></i></span>
             <div class="quien">
+              <span class="cod-proy" [class.sin]="!g.codigo">{{ g.codigo ?? 'Sin código' }}</span>
               <h3>{{ g.nombre }}</h3>
               <small>
-                @if (g.codigo) {
-                  <span class="lg-mono">{{ g.codigo }}</span> ·
-                }
+                {{ g.equipos.length }} {{ g.equipos.length === 1 ? 'producto' : 'productos' }} ·
                 {{ g.ordenes.length }} {{ g.ordenes.length === 1 ? 'compra' : 'compras' }} ·
                 comprado {{ monedas(g.comprado) }}
               </small>
@@ -206,233 +213,284 @@
                 >
               }
             </div>
+            @if (g.tocaPagar) {
+              <span class="toca-chip"><i class="pi pi-bell"></i> Llegó: toca pagar</span>
+            }
             <div class="debe">
               <small>Debemos</small>
               <strong>{{ monedas(g.debemos) }}</strong>
             </div>
+            <i class="pi pi-chevron-down flecha"></i>
           </header>
 
-          @if (vista() === 'cuadros') {
-            <div class="cuadros">
-              @for (o of g.ordenes; track o.id) {
-                @let eq = equipo(o);
-                @let ll = llegada(o);
-                <article
-                  class="cuadro"
-                  [class.toca]="tocaPagar(o)"
-                  [style.--c]="colorCuadro(o)"
-                  (click)="abrir(o)"
-                  (keydown.enter)="abrir(o)"
-                  tabindex="0"
-                  [attr.aria-label]="'Pagos de ' + eq.nombre"
-                >
-                  <div class="cuadro__top">
-                    <span class="lg-mono">OC {{ o.codigo }}</span>
-                    @if (o.proyecto) {
-                      <span class="proy-chip" [title]="o.proyecto.nombre"
-                        ><i class="pi pi-briefcase"></i> {{ o.proyecto.codigo }}</span
-                      >
-                    }
-                    <span class="espacio"></span>
-                    @if (tocaPagar(o)) {
-                      <span class="toca-chip"><i class="pi pi-bell"></i> Llegó: toca pagar</span>
-                    } @else if (o.pendiente + o.sinPlan <= 0) {
-                      <span class="ok-chip"><i class="pi pi-check-circle"></i> Pagado</span>
-                    }
-                  </div>
+          @if (abierto) {
+            @if (vista() === 'cuadros') {
+              <section class="productos-proy">
+                <h4><i class="pi pi-box"></i> Productos que se compran para este proyecto</h4>
+                <div class="lg-scroll">
+                  <table class="lg-tabla">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th class="num">Llegó / pedido</th>
+                        <th>Proveedor</th>
+                        <th>OC</th>
+                        <th>Llegada</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (e of g.equipos; track e.orden.id + e.sku) {
+                        @let ll = llegada(e.orden);
+                        <tr class="clic" (click)="abrir(e.orden)">
+                          <td>
+                            <strong>{{ e.nombre }}</strong>
+                            <span class="sub lg-mono">{{ e.sku }}</span>
+                          </td>
+                          <td class="num">
+                            <b [class.verde]="e.recibida >= e.cantidad">{{
+                              e.recibida | number: '1.0-2'
+                            }}</b>
+                            / {{ e.cantidad | number: '1.0-2' }} {{ e.unidad }}
+                          </td>
+                          <td>{{ e.orden.proveedor.razonSocial }}</td>
+                          <td>
+                            <span class="lg-mono">{{ e.orden.codigo }}</span>
+                          </td>
+                          <td>
+                            <span class="llegada" [class.ok]="ll.ok">
+                              <i [class]="ll.ok ? 'pi pi-check' : 'pi pi-truck'"></i>
+                              {{ ll.ok ? 'Llegó' : 'Aprox.' }}
+                              {{ ll.fecha ? (ll.fecha + 'T12:00:00' | date: 'd MMM') : '' }}
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+              <h4 class="tit-pagos"><i class="pi pi-wallet"></i> Pagos de cada compra</h4>
+              <div class="cuadros">
+                @for (o of g.ordenes; track o.id) {
+                  @let eq = equipo(o);
+                  @let ll = llegada(o);
+                  <article
+                    class="cuadro"
+                    [class.toca]="tocaPagar(o)"
+                    [style.--c]="colorCuadro(o)"
+                    (click)="abrir(o)"
+                    (keydown.enter)="abrir(o)"
+                    tabindex="0"
+                    [attr.aria-label]="'Pagos de ' + eq.nombre"
+                  >
+                    <div class="cuadro__top">
+                      <span class="lg-mono">OC {{ o.codigo }}</span>
+                      @if (o.proyecto) {
+                        <span class="proy-chip" [title]="o.proyecto.nombre"
+                          ><i class="pi pi-briefcase"></i> {{ o.proyecto.codigo }}</span
+                        >
+                      }
+                      <span class="espacio"></span>
+                      @if (tocaPagar(o)) {
+                        <span class="toca-chip"><i class="pi pi-bell"></i> Llegó: toca pagar</span>
+                      } @else if (o.pendiente + o.sinPlan <= 0) {
+                        <span class="ok-chip"><i class="pi pi-check-circle"></i> Pagado</span>
+                      }
+                    </div>
 
-                  <div class="equipo" [title]="eq.todos">
-                    <small>Equipo</small>
-                    <h4>{{ eq.nombre }}</h4>
-                    <span
-                      >{{ eq.cantidad }}{{ eq.mas ? ' · +' + eq.mas + ' más' : '' }} ·
-                      {{ o.proveedor.razonSocial }}</span
-                    >
-                  </div>
-
-                  <div class="proyecto-fila">
-                    <i class="pi pi-briefcase"></i>
-                    @if (o.proyecto) {
+                    <div class="equipo" [title]="eq.todos">
+                      <small>Equipo</small>
+                      <h4>{{ eq.nombre }}</h4>
                       <span
-                        ><small>Proyecto</small><b>{{ o.proyecto.nombre }}</b></span
+                        >{{ eq.cantidad }}{{ eq.mas ? ' · +' + eq.mas + ' más' : '' }} ·
+                        {{ o.proveedor.razonSocial }}</span
                       >
-                    } @else {
-                      <span><small>Proyecto</small><b class="gris">Sin proyecto</b></span>
-                    }
-                    <button
-                      type="button"
-                      class="lnk"
-                      (click)="$event.stopPropagation(); elegirProyecto(o)"
-                    >
-                      {{ o.proyecto ? 'Cambiar' : 'Asignar proyecto' }}
-                    </button>
-                  </div>
-
-                  <div class="fechas">
-                    <div>
-                      <small>Aprobado</small>
-                      <b>{{
-                        o.fechaAprobado ? (o.fechaAprobado + 'T12:00:00' | date: 'd MMM y') : '—'
-                      }}</b>
                     </div>
-                    <i class="pi pi-arrow-right"></i>
-                    <div [class.verde]="ll.ok">
-                      <small>{{ ll.ok ? 'Llegó' : 'Llega aprox.' }}</small>
-                      <b>{{
-                        ll.fecha
-                          ? (ll.ok ? '' : '~') + (ll.fecha + 'T12:00:00' | date: 'd MMM y')
-                          : 'Sin fecha'
-                      }}</b>
+
+                    <div class="proyecto-fila">
+                      <i class="pi pi-briefcase"></i>
+                      @if (o.proyecto) {
+                        <span
+                          ><small>Proyecto</small><b>{{ o.proyecto.nombre }}</b></span
+                        >
+                      } @else {
+                        <span><small>Proyecto</small><b class="gris">Sin proyecto</b></span>
+                      }
+                      <button
+                        type="button"
+                        class="lnk"
+                        (click)="$event.stopPropagation(); elegirProyecto(o)"
+                      >
+                        {{ o.proyecto ? 'Cambiar' : 'Asignar proyecto' }}
+                      </button>
                     </div>
-                  </div>
 
-                  <div class="forma">
-                    <small>Forma de pago</small>
-                    <b>{{ forma(o) }}</b>
-                  </div>
-
-                  <div class="slots">
-                    @for (p of o.pagos; track p.id; let n = $index) {
-                      @let e = estadoDe(p);
-                      <div
-                        class="slot"
-                        [class.pagado]="!!p.pagadoEn"
-                        [class.llego]="tocaPagar(o) && !p.pagadoEn && p.diasTrasLlegada !== null"
-                        [style.--e]="estados[e].color"
-                      >
-                        <small>{{ ordinal(n) }}</small>
-                        <b>{{ monto(p.monto, o.moneda) }}</b>
-                        <span class="det">
-                          <i [class]="p.pagadoEn ? 'pi pi-check-circle' : estados[e].icono"></i>
-                          {{ cuandoCuota(o, p) }}
-                        </span>
-                        <span class="fecha">{{
-                          (p.pagadoEn ?? p.vence) + 'T12:00:00' | date: 'd MMM y'
-                        }}</span>
-                        @if (!p.pagadoEn) {
-                          <button
-                            type="button"
-                            class="pagar"
-                            (click)="$event.stopPropagation(); abrirPago(p)"
-                          >
-                            <i class="pi pi-check"></i> Pagado
-                          </button>
-                        }
-                      </div>
-                    } @empty {
-                      <div class="slot vacio">
-                        <i class="pi pi-plus-circle"></i>
-                        <b>Armar plan de pagos</b>
-                        <small>1er pago, 2do pago…</small>
-                      </div>
-                    }
-                  </div>
-
-                  <div class="pie">
-                    <div class="barra"><span [style.width.%]="porcentajePagado(o)"></span></div>
-                    <span class="pct">{{ porcentajePagado(o) }} % pagado</span>
-                    <span class="espacio"></span>
-                    @if (o.pendiente + o.sinPlan > 0) {
-                      <span class="falta"
-                        >Falta <b>{{ monto(o.pendiente + o.sinPlan, o.moneda) }}</b></span
-                      >
-                    }
-                  </div>
-                </article>
-              }
-            </div>
-          } @else {
-            <div class="lg-scroll">
-              <table class="lg-tabla">
-                <thead>
-                  <tr>
-                    <th>Proveedor · producto</th>
-                    <th>Aprobado</th>
-                    <th>Llegada</th>
-                    <th>Cliente</th>
-                    <th>Plan de pagos</th>
-                    <th class="num">Total</th>
-                    <th class="num">Pendiente</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (o of g.ordenes; track o.id) {
-                    @let ll = llegada(o);
-                    <tr class="clic" (click)="abrir(o)">
-                      <td>
-                        <strong>{{ o.proveedor.razonSocial }}</strong>
-                        <span class="sub">{{ productos(o) }}</span>
-                        <span class="sub lg-mono">OC {{ o.codigo }}</span>
-                      </td>
-                      <td>
-                        {{
-                          o.fechaAprobado ? (o.fechaAprobado + 'T12:00:00' | date: 'd MMM') : '—'
-                        }}
-                      </td>
-                      <td>
-                        <span class="llegada" [class.ok]="ll.ok">
-                          <i [class]="ll.ok ? 'pi pi-check' : 'pi pi-truck'"></i> {{ ll.texto }}
-                        </span>
-                        @if (ll.fecha) {
-                          <span class="sub">{{ ll.fecha + 'T12:00:00' | date: 'd MMM' }}</span>
-                        }
-                      </td>
-                      <td>
-                        @if (o.compromisoCliente) {
-                          <span class="sub">{{
-                            o.entregadoCliente ? 'Entregado' : 'Prometido'
-                          }}</span>
-                          {{
-                            (o.entregadoCliente ?? o.compromisoCliente) + 'T12:00:00'
-                              | date: 'd MMM'
-                          }}
-                        } @else {
-                          <span class="sub">—</span>
-                        }
-                      </td>
-                      <td>
-                        <div class="cuotas">
-                          @for (p of o.pagos; track p.id) {
-                            @let e = estadoDe(p);
-                            <span
-                              class="cuota"
-                              [style.--c]="estados[e].color"
-                              [pTooltip]="
-                                p.concepto +
-                                ' · ' +
-                                monto(p.monto, o.moneda) +
-                                ' · ' +
-                                (p.pagadoEn ? 'pagado el ' + p.pagadoEn : textoVence(p, hoy))
-                              "
-                              ><i [class]="estados[e].icono"></i
-                              >{{
-                                p.porcentaje ? (p.porcentaje | number: '1.0-0') + '%' : ''
-                              }}</span
-                            >
-                          }
-                          @if (!o.pagos.length) {
-                            <span class="sin-plan"><i class="pi pi-plus"></i> Armar plan</span>
-                          } @else if (o.sinPlan > 0) {
-                            <span class="sin-plan" pTooltip="Parte del total sin cuota"
-                              >+{{ monto(o.sinPlan, o.moneda) }}</span
-                            >
-                          }
-                        </div>
-                        <div class="barra" [attr.aria-label]="porcentajePagado(o) + '% pagado'">
-                          <span [style.width.%]="porcentajePagado(o)"></span>
-                        </div>
-                      </td>
-                      <td class="num">{{ monto(o.total, o.moneda) }}</td>
-                      <td class="num">
-                        <b [class.rojo]="o.pendiente + o.sinPlan > 0">{{
-                          monto(o.pendiente + o.sinPlan, o.moneda)
+                    <div class="fechas">
+                      <div>
+                        <small>Aprobado</small>
+                        <b>{{
+                          o.fechaAprobado ? (o.fechaAprobado + 'T12:00:00' | date: 'd MMM y') : '—'
                         }}</b>
-                      </td>
+                      </div>
+                      <i class="pi pi-arrow-right"></i>
+                      <div [class.verde]="ll.ok">
+                        <small>{{ ll.ok ? 'Llegó' : 'Llega aprox.' }}</small>
+                        <b>{{
+                          ll.fecha
+                            ? (ll.ok ? '' : '~') + (ll.fecha + 'T12:00:00' | date: 'd MMM y')
+                            : 'Sin fecha'
+                        }}</b>
+                      </div>
+                    </div>
+
+                    <div class="forma">
+                      <small>Forma de pago</small>
+                      <b>{{ forma(o) }}</b>
+                    </div>
+
+                    <div class="slots">
+                      @for (p of o.pagos; track p.id; let n = $index) {
+                        @let e = estadoDe(p);
+                        <div
+                          class="slot"
+                          [class.pagado]="!!p.pagadoEn"
+                          [class.llego]="tocaPagar(o) && !p.pagadoEn && p.diasTrasLlegada !== null"
+                          [style.--e]="estados[e].color"
+                        >
+                          <small>{{ ordinal(n) }}</small>
+                          <b>{{ monto(p.monto, o.moneda) }}</b>
+                          <span class="det">
+                            <i [class]="p.pagadoEn ? 'pi pi-check-circle' : estados[e].icono"></i>
+                            {{ cuandoCuota(o, p) }}
+                          </span>
+                          <span class="fecha">{{
+                            (p.pagadoEn ?? p.vence) + 'T12:00:00' | date: 'd MMM y'
+                          }}</span>
+                          @if (!p.pagadoEn) {
+                            <button
+                              type="button"
+                              class="pagar"
+                              (click)="$event.stopPropagation(); abrirPago(p)"
+                            >
+                              <i class="pi pi-check"></i> Pagado
+                            </button>
+                          }
+                        </div>
+                      } @empty {
+                        <div class="slot vacio">
+                          <i class="pi pi-plus-circle"></i>
+                          <b>Armar plan de pagos</b>
+                          <small>1er pago, 2do pago…</small>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="pie">
+                      <div class="barra"><span [style.width.%]="porcentajePagado(o)"></span></div>
+                      <span class="pct">{{ porcentajePagado(o) }} % pagado</span>
+                      <span class="espacio"></span>
+                      @if (o.pendiente + o.sinPlan > 0) {
+                        <span class="falta"
+                          >Falta <b>{{ monto(o.pendiente + o.sinPlan, o.moneda) }}</b></span
+                        >
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            } @else {
+              <div class="lg-scroll">
+                <table class="lg-tabla">
+                  <thead>
+                    <tr>
+                      <th>Proveedor · producto</th>
+                      <th>Aprobado</th>
+                      <th>Llegada</th>
+                      <th>Cliente</th>
+                      <th>Plan de pagos</th>
+                      <th class="num">Total</th>
+                      <th class="num">Pendiente</th>
                     </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    @for (o of g.ordenes; track o.id) {
+                      @let ll = llegada(o);
+                      <tr class="clic" (click)="abrir(o)">
+                        <td>
+                          <strong>{{ o.proveedor.razonSocial }}</strong>
+                          <span class="sub">{{ productos(o) }}</span>
+                          <span class="sub lg-mono">OC {{ o.codigo }}</span>
+                        </td>
+                        <td>
+                          {{
+                            o.fechaAprobado ? (o.fechaAprobado + 'T12:00:00' | date: 'd MMM') : '—'
+                          }}
+                        </td>
+                        <td>
+                          <span class="llegada" [class.ok]="ll.ok">
+                            <i [class]="ll.ok ? 'pi pi-check' : 'pi pi-truck'"></i> {{ ll.texto }}
+                          </span>
+                          @if (ll.fecha) {
+                            <span class="sub">{{ ll.fecha + 'T12:00:00' | date: 'd MMM' }}</span>
+                          }
+                        </td>
+                        <td>
+                          @if (o.compromisoCliente) {
+                            <span class="sub">{{
+                              o.entregadoCliente ? 'Entregado' : 'Prometido'
+                            }}</span>
+                            {{
+                              (o.entregadoCliente ?? o.compromisoCliente) + 'T12:00:00'
+                                | date: 'd MMM'
+                            }}
+                          } @else {
+                            <span class="sub">—</span>
+                          }
+                        </td>
+                        <td>
+                          <div class="cuotas">
+                            @for (p of o.pagos; track p.id) {
+                              @let e = estadoDe(p);
+                              <span
+                                class="cuota"
+                                [style.--c]="estados[e].color"
+                                [pTooltip]="
+                                  p.concepto +
+                                  ' · ' +
+                                  monto(p.monto, o.moneda) +
+                                  ' · ' +
+                                  (p.pagadoEn ? 'pagado el ' + p.pagadoEn : textoVence(p, hoy))
+                                "
+                                ><i [class]="estados[e].icono"></i
+                                >{{
+                                  p.porcentaje ? (p.porcentaje | number: '1.0-0') + '%' : ''
+                                }}</span
+                              >
+                            }
+                            @if (!o.pagos.length) {
+                              <span class="sin-plan"><i class="pi pi-plus"></i> Armar plan</span>
+                            } @else if (o.sinPlan > 0) {
+                              <span class="sin-plan" pTooltip="Parte del total sin cuota"
+                                >+{{ monto(o.sinPlan, o.moneda) }}</span
+                              >
+                            }
+                          </div>
+                          <div class="barra" [attr.aria-label]="porcentajePagado(o) + '% pagado'">
+                            <span [style.width.%]="porcentajePagado(o)"></span>
+                          </div>
+                        </td>
+                        <td class="num">{{ monto(o.total, o.moneda) }}</td>
+                        <td class="num">
+                          <b [class.rojo]="o.pendiente + o.sinPlan > 0">{{
+                            monto(o.pendiente + o.sinPlan, o.moneda)
+                          }}</b>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           }
         </article>
       } @empty {
@@ -777,25 +835,65 @@
         <b>{{ equipo(o).nombre }}</b><br />
         <small>OC {{ o.codigo }} · {{ o.proveedor.razonSocial }} · {{ productos(o) }}</small>
       </p>
-      <label for="asig-proy">Proyecto</label>
-      <p-select
-        inputId="asig-proy"
-        [options]="proyectos()"
-        optionLabel="etiqueta"
-        optionValue="id"
-        [filter]="true"
-        filterBy="etiqueta"
-        [showClear]="true"
-        placeholder="Elige el proyecto (de Operaciones)"
-        appendTo="body"
-        styleClass="w-full"
-        [ngModel]="fProyecto()"
-        (ngModelChange)="fProyecto.set($event)"
-      />
-      <p class="nota-fin">
-        <i class="pi pi-info-circle"></i> Salen los proyectos aprobados de Operaciones. El código
-        del proyecto queda en la orden de compra y en su PDF.
-      </p>
+      @if (sugerido(); as sg) {
+        <p class="sugerido">
+          <i class="pi pi-sparkles"></i> En la orden dice <b>{{ sg }}</b>: ya lo dejé elegido.
+        </p>
+      }
+      <div class="lg-seg modo-proy" role="tablist" aria-label="Cómo indicar el proyecto">
+        <button type="button" [class.on]="!fManual()" (click)="fManual.set(false)">
+          De la lista
+        </button>
+        <button type="button" [class.on]="fManual()" (click)="fManual.set(true)">
+          Escribir el código
+        </button>
+      </div>
+      @if (!fManual()) {
+        <label for="asig-proy">Proyecto</label>
+        <p-select
+          inputId="asig-proy"
+          [options]="proyectos()"
+          optionLabel="etiqueta"
+          optionValue="id"
+          [filter]="true"
+          filterBy="etiqueta"
+          [showClear]="true"
+          placeholder="Elige el proyecto (de Operaciones)"
+          emptyMessage="No hay proyectos en Operaciones: usa «Escribir el código»"
+          appendTo="body"
+          styleClass="w-full"
+          [ngModel]="fProyecto()"
+          (ngModelChange)="fProyecto.set($event)"
+        />
+        <p class="nota-fin">
+          <i class="pi pi-info-circle"></i> Salen las cotizaciones aprobadas o enviadas de
+          Operaciones. El código queda en la orden de compra y en su PDF.
+        </p>
+      } @else {
+        <label
+          >Código de proyecto
+          <input
+            type="text"
+            maxlength="40"
+            placeholder="YG-PROY20260010"
+            [ngModel]="fCodigo()"
+            (ngModelChange)="fCodigo.set($event)"
+        /></label>
+        <label
+          >Nombre del proyecto <small>(opcional)</small>
+          <input
+            type="text"
+            maxlength="300"
+            placeholder="Pedregal - Arequipa"
+            [ngModel]="fNombreProy()"
+            (ngModelChange)="fNombreProy.set($event)"
+        /></label>
+        <p class="nota-fin">
+          <i class="pi pi-info-circle"></i> Para cuando el proyecto no está en Operaciones (por
+          ejemplo, el código que viene en la orden). Las compras con el mismo código se agrupan
+          juntas.
+        </p>
+      }
       @if (error(); as e) {
         <p class="error"><i class="pi pi-exclamation-circle"></i> {{ e }}</p>
       }

@@ -155,6 +155,18 @@ describe('contrato de la API de logística', () => {
     expect(
       await errores(ActualizarOrdenCompraDto, { proyectoId: null }),
     ).toEqual([]);
+    // Código de proyecto escrito a mano (no está en Operaciones)
+    expect(
+      await errores(ActualizarOrdenCompraDto, {
+        proyectoCodigo: 'YG-PROY20260010',
+        proyectoNombre: 'Pedregal - Arequipa',
+      }),
+    ).toEqual([]);
+    expect(
+      await errores(ActualizarOrdenCompraDto, {
+        proyectoCodigo: 'X'.repeat(41),
+      }),
+    ).toContain('proyectoCodigo');
   });
 
   it('plan de pagos: cuota, edición y marcar pagado', async () => {

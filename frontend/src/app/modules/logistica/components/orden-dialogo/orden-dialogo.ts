@@ -22,6 +22,7 @@ import { LogisticaStore, mensajeError } from '../../services/logistica-store.ser
 import { OrdenesCompraService } from '../../services/ordenes-compra.service';
 import { PlazoEntrega, type ValorPlazo } from '../plazo-entrega/plazo-entrega';
 import { SelectorProducto } from '../selector-producto/selector-producto';
+import { datosProyecto, eleccionDe } from '../../models/proyecto-oc';
 
 interface LineaOc {
   producto: Producto;
@@ -48,6 +49,7 @@ interface LineaOc {
     PlazoEntrega,
   ],
   templateUrl: './orden-dialogo.html',
+  styleUrl: './orden-dialogo.scss',
 })
 export class OrdenDialogo {
   private readonly api = inject(OrdenesCompraService);
@@ -71,6 +73,10 @@ export class OrdenDialogo {
   protected readonly cliente = signal('');
   /** Proyecto de Operaciones al que pertenece la compra. */
   protected readonly proyectoId = signal<string | null>(null);
+  /** El proyecto no está en Operaciones: se escribe el código (y nombre) a mano. */
+  protected readonly proyManual = signal(false);
+  protected readonly proyCodigo = signal('');
+  protected readonly proyNombre = signal('');
   protected readonly fechaAprobado = signal('');
   /** Cotización del proveedor de la que sale la compra. */
   protected readonly cotizacionRef = signal('');
@@ -138,7 +144,11 @@ export class OrdenDialogo {
           this.plazoInicial.set(ini);
           this.plazo.set(ini);
           this.cliente.set(o.cliente ?? '');
-          this.proyectoId.set(o.proyecto?.id ?? null);
+          const ep = eleccionDe(o);
+          this.proyectoId.set(ep.id);
+          this.proyManual.set(ep.manual);
+          this.proyCodigo.set(ep.codigo);
+          this.proyNombre.set(ep.nombre);
           this.fechaAprobado.set(o.fechaAprobado ?? '');
           this.cotizacionRef.set(o.cotizacionRef ?? '');
           this.cotizacionFecha.set(o.cotizacionFecha ?? '');
@@ -163,6 +173,9 @@ export class OrdenDialogo {
           this.plazo.set({ plazoTexto: '', entregaDesde: null, entregaHasta: null });
           this.cliente.set('');
           this.proyectoId.set(null);
+          this.proyManual.set(false);
+          this.proyCodigo.set('');
+          this.proyNombre.set('');
           this.fechaAprobado.set(hoyISO());
           this.cotizacionRef.set('');
           this.cotizacionFecha.set('');
@@ -230,8 +243,16 @@ export class OrdenDialogo {
       fechaAprobado: this.fechaAprobado() || null,
       cotizacionRef: this.cotizacionRef().trim(),
       cotizacionFecha: this.cotizacionFecha() || null,
-      // Al editar, null quita el proyecto; al crear solo se envía si se eligió
-      ...(this.orden() || this.proyectoId() ? { proyectoId: this.proyectoId() } : {}),
+      // Al editar, null quita el proyecto; al crear solo se envía si se eligió o escribió
+      ...datosProyecto(
+        {
+          manual: this.proyManual(),
+          id: this.proyectoId(),
+          codigo: this.proyCodigo(),
+          nombre: this.proyNombre(),
+        },
+        !!this.orden(),
+      ),
     };
     const items = this.lineas().map((l) => ({
       productoId: l.producto.id,

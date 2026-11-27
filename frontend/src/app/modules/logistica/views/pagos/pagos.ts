@@ -27,16 +27,30 @@ import { hoyISO, sumar } from '../../models/plazos';
 import { usarConfirmacion } from '../../services/confirmar';
 import { LogisticaStore, mensajeError } from '../../services/logistica-store.service';
 import { OrdenesCompraService } from '../../services/ordenes-compra.service';
+import { codigoEnTexto, datosProyecto, eleccionDe } from '../../models/proyecto-oc';
 import { PagosService } from '../../services/pagos.service';
 
 type Filtro = 'deuda' | 'todas' | 'pagadas';
 type Vista = 'cuadros' | 'tabla';
+
+interface Equipo {
+  orden: OrdenConPagos;
+  sku: string;
+  nombre: string;
+  unidad: string;
+  cantidad: number;
+  recibida: number;
+}
 
 interface Grupo {
   clave: string;
   codigo: string | null;
   nombre: string;
   ordenes: OrdenConPagos[];
+  /** Productos que se compran para el proyecto (de todas sus OC). */
+  equipos: Equipo[];
+  /** Compras que ya llegaron y toca pagar el saldo. */
+  tocaPagar: number;
   debemos: Record<Moneda, number>;
   comprado: Record<Moneda, number>;
 }
@@ -116,6 +130,14 @@ export class PagosProveedores implements OnInit {
   protected readonly asignando = signal<OrdenConPagos | null>(null);
   protected readonly proyectos = signal<(ProyectoCompra & { etiqueta: string })[]>([]);
   protected readonly fProyecto = signal<string | null>(null);
+  protected readonly fManual = signal(false);
+  protected readonly fCodigo = signal('');
+  protected readonly fNombreProy = signal('');
+  /** Código de proyecto que ya venía escrito en la OC (notas, cliente…). */
+  protected readonly sugerido = signal<string | null>(null);
+
+  // Proyectos abiertos en la vista de cuadros
+  private readonly abiertos = signal<ReadonlySet<string>>(new Set());
 
   // Marcar pagado
   protected readonly pagando = signal<Cuota | Pago | null>(null);
@@ -182,10 +204,22 @@ export class PagosProveedores implements OnInit {
           codigo: o.proyecto?.codigo ?? null,
           nombre: o.proyecto?.nombre ?? 'Sin proyecto',
           ordenes: [],
+          equipos: [],
+          tocaPagar: 0,
           debemos: { PEN: 0, USD: 0 },
           comprado: { PEN: 0, USD: 0 },
         } satisfies Grupo);
       g.ordenes.push(o);
+      for (const i of o.items)
+        g.equipos.push({
+          orden: o,
+          sku: i.sku,
+          nombre: i.nombre,
+          unidad: i.unidad,
+          cantidad: i.cantidad,
+          recibida: Math.min(i.cantidadRecibida, i.cantidad),
+        });
+      if (this.tocaPagar(o)) g.tocaPagar++;
       g.debemos[o.moneda] += o.pendiente + o.sinPlan;
       g.comprado[o.moneda] += o.total;
       mapa.set(clave, g);
@@ -200,6 +234,16 @@ export class PagosProveedores implements OnInit {
   });
 
   // ─── Ayudas para la plantilla ─────────────────────────────────────
+  /** En cuadros, cada proyecto se abre al tocarlo; en tabla o buscando, todos abiertos. */
+  protected estaAbierto(g: Grupo) {
+    return this.vista() === 'tabla' || !!this.texto().trim() || this.abiertos().has(g.clave);
+  }
+  protected alternar(g: Grupo) {
+    const s = new Set(this.abiertos());
+    if (s.has(g.clave)) s.delete(g.clave);
+    else s.add(g.clave);
+    this.abiertos.set(s);
+  }
   protected cambiarVista(v: Vista) {
     this.vista.set(v);
     localStorage.setItem('cw.pagos.vista', v);
@@ -360,7 +404,12 @@ export class PagosProveedores implements OnInit {
 
   protected async elegirProyecto(o: OrdenConPagos) {
     this.asignando.set(o);
-    this.fProyecto.set(o.proyecto?.id ?? null);
+    const ep = eleccionDe(o);
+    this.fProyecto.set(ep.id);
+    this.fManual.set(ep.manual);
+    this.fCodigo.set(ep.codigo);
+    this.fNombreProy.set(ep.nombre);
+    this.sugerido.set(null);
     this.error.set(null);
     if (!this.proyectos().length) {
       const lista = await this.ocs.proyectos().catch(() => []);
@@ -371,18 +420,40 @@ export class PagosProveedores implements OnInit {
         })),
       );
     }
+    // Si la OC ya trae escrito el código de un proyecto, se deja elegido
+    if (!o.proyecto) {
+      const cod = codigoEnTexto(
+        o,
+        this.proyectos().map((p) => p.codigo),
+      );
+      const p = this.proyectos().find((x) => x.codigo === cod);
+      if (p) {
+        this.fProyecto.set(p.id);
+        this.sugerido.set(p.codigo);
+      }
+    }
   }
 
   protected async guardarProyecto() {
     const o = this.asignando();
     if (!o) return;
+    const datos = datosProyecto(
+      {
+        manual: this.fManual(),
+        id: this.fProyecto(),
+        codigo: this.fCodigo(),
+        nombre: this.fNombreProy(),
+      },
+      true,
+    );
     await this.ejecutar(async () => {
-      await this.ocs.actualizar(o.id, { proyectoId: this.fProyecto() });
+      await this.ocs.actualizar(o.id, datos);
       await this.api.recargar();
-      const p = this.proyectos().find((x) => x.id === this.fProyecto());
+      const p = this.proyectos().find((x) => x.id === datos.proyectoId);
+      const codigo = datos.proyectoCodigo ?? p?.codigo;
       this.store.ok(
-        p ? 'Compra asignada al proyecto' : 'Compra sin proyecto',
-        p ? `${o.codigo} → ${p.codigo} · ${p.proyecto}` : o.codigo,
+        codigo ? 'Compra asignada al proyecto' : 'Compra sin proyecto',
+        codigo ? `${o.codigo} → ${codigo}` : o.codigo,
       );
       this.asignando.set(null);
     });
