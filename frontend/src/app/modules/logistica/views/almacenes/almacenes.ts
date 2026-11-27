@@ -1,14 +1,15 @@
-import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlmacenDialogo } from '../../components/almacen-dialogo/almacen-dialogo';
 import { TIPOS_ALMACEN, type Almacen } from '../../models/logistica.model';
 import { LogisticaStore } from '../../services/logistica-store.service';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 /** Vista: ALMACENES (principal, unidades móviles y obras). */
 @Component({
   selector: 'app-almacenes',
-  imports: [CurrencyPipe, DecimalPipe, AlmacenDialogo],
+  imports: [DineroPipe, DecimalPipe, AlmacenDialogo],
   templateUrl: './almacenes.html',
   styleUrl: './almacenes.scss',
 })

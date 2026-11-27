@@ -1,6 +1,7 @@
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DialogModule } from 'primeng/dialog';
 import { Router, RouterLink } from '@angular/router';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
 import { GraficoDona, type Porcion } from '../../components/grafico-dona/grafico-dona';
@@ -21,6 +22,7 @@ import { OrdenesCompraService } from '../../services/ordenes-compra.service';
 import { colorCliente, colorLlegada, seguimiento } from '../../models/plazos';
 import { NIVELES_ANTIGUEDAD, textoAntiguedad } from '../../models/antiguedad';
 import type { OrdenCompra } from '../../models/logistica.model';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 interface Actividad {
   id: string;
@@ -36,7 +38,8 @@ interface Actividad {
 @Component({
   selector: 'app-panel-logistica',
   imports: [
-    CurrencyPipe,
+    DialogModule,
+    DineroPipe,
     DatePipe,
     DecimalPipe,
     FormsModule,
@@ -54,8 +57,15 @@ export class Panel implements OnInit {
   private readonly ocApi = inject(OrdenesCompraService);
   private readonly router = inject(Router);
   protected readonly store = inject(LogisticaStore);
-  /** Solo el dueño o un admin cambian el límite de antigüedad. */
-  protected readonly puedeAjustar = inject(EmpresaActualService).esAdmin;
+  private readonly empresaActual = inject(EmpresaActualService);
+  /** Solo el dueño o un admin cambian el límite de antigüedad y el tipo de cambio referencial. */
+  protected readonly puedeAjustar = this.empresaActual.esAdmin;
+  /** Cambiar la moneda del inventario: solo el dueño. */
+  protected readonly esDueno = this.empresaActual.esDueno;
+  protected readonly monedaVisible = signal(false);
+  protected readonly tcConversion = signal<number | null>(null);
+  protected readonly tcRef = signal<number | null>(null);
+  protected readonly guardandoMoneda = signal(false);
   protected readonly nivelesEdad = NIVELES_ANTIGUEDAD;
   protected readonly textoAntiguedad = textoAntiguedad;
   protected readonly editandoLimite = signal(false);
@@ -179,6 +189,30 @@ export class Panel implements OnInit {
     this.guardandoLimite.set(true);
     if (await this.store.guardarMesesAntiguedad(m)) this.editandoLimite.set(false);
     this.guardandoLimite.set(false);
+  }
+
+  protected abrirMoneda() {
+    this.tcConversion.set(this.store.tipoCambioRef());
+    this.tcRef.set(this.store.tipoCambioRef());
+    this.monedaVisible.set(true);
+  }
+
+  /** Cambia la moneda del inventario (convierte costos) y/o guarda el tipo de cambio referencial. */
+  protected async guardarMoneda(cambiar: boolean) {
+    this.guardandoMoneda.set(true);
+    let ok = true;
+    if (cambiar) {
+      const destino = this.store.moneda() === 'USD' ? 'PEN' : 'USD';
+      ok = await this.store.cambiarMoneda(destino, this.tcConversion() || undefined);
+    }
+    const ref = this.tcRef();
+    if (ok && ref !== this.store.tipoCambioRef())
+      ok = await this.store.guardarTipoCambioRef(ref || null);
+    this.guardandoMoneda.set(false);
+    if (ok) {
+      this.monedaVisible.set(false);
+      void this.ngOnInit();
+    }
   }
 
   protected verAntiguos() {

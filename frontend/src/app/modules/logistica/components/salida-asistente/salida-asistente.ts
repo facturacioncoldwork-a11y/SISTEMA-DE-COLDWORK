@@ -1,4 +1,4 @@
-import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import {
   Component,
   computed,
@@ -23,6 +23,7 @@ import {
 import { LogisticaStore, mensajeError } from '../../services/logistica-store.service';
 import { MovimientosService } from '../../services/movimientos.service';
 import { SelectorProducto } from '../selector-producto/selector-producto';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 interface LineaSalida {
   producto: Producto;
@@ -37,8 +38,8 @@ interface LineaSalida {
 @Component({
   selector: 'app-salida-asistente',
   imports: [
+    DineroPipe,
     FormsModule,
-    CurrencyPipe,
     DecimalPipe,
     DialogModule,
     InputNumberModule,

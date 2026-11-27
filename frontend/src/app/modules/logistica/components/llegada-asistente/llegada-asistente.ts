@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import {
   Component,
   computed,
@@ -11,15 +11,17 @@ import {
   untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { DialogModule } from 'primeng/dialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import type { Llegada, OrdenCompra, Producto } from '../../models/logistica.model';
+import type { Llegada, OrdenCompra, Producto, Moneda } from '../../models/logistica.model';
 import { LogisticaStore, mensajeError } from '../../services/logistica-store.service';
 import { MovimientosService } from '../../services/movimientos.service';
 import { diasEntre, hoyISO } from '../../models/plazos';
 import { SelectorProducto } from '../selector-producto/selector-producto';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 /** Hoy → ahora mismo; otro día → ese día a mediodía (hora local). */
 function aFechaHora(dia: string): string {
@@ -41,8 +43,9 @@ interface LineaLlegada {
 @Component({
   selector: 'app-llegada-asistente',
   imports: [
+    SelectButtonModule,
+    DineroPipe,
     FormsModule,
-    CurrencyPipe,
     DatePipe,
     DecimalPipe,
     DialogModule,
@@ -74,13 +77,31 @@ export class LlegadaAsistente {
   protected readonly notas = signal('');
   /** Día en que llegó de verdad (por defecto hoy). */
   protected readonly fechaLlegada = signal(hoyISO());
-  /** Solo si la OC está en dólares: S/ por cada US$ (el inventario se lleva en soles). */
-  protected readonly tipoCambio = signal<number | null>(null);
-  protected readonly enDolares = computed(() => this.orden()?.moneda === 'USD');
-  /** Total en soles (lo que entra al inventario). */
-  protected readonly totalSoles = computed(() =>
-    this.enDolares() ? this.total() * (this.tipoCambio() ?? 0) : this.total(),
+  /** Moneda del inventario de la empresa (en ella entra el costo). */
+  protected readonly base = computed(() => this.store.moneda());
+  /** Compra directa: en qué moneda están los costos (por defecto la del inventario). */
+  protected readonly monedaDirecta = signal<Moneda>('PEN');
+  /** Moneda de lo que llegó: la de la OC o la elegida en la compra directa. */
+  protected readonly monedaCompra = computed<Moneda>(
+    () => this.orden()?.moneda ?? (this.modo() === 'directa' ? this.monedaDirecta() : this.base()),
   );
+  /** Solo se pide tipo de cambio si la compra está en otra moneda que el inventario. */
+  protected readonly necesitaTc = computed(() => this.monedaCompra() !== this.base());
+  /** S/ por cada US$ (se propone el referencial de la empresa). */
+  protected readonly tipoCambio = signal<number | null>(null);
+  protected readonly monedas: { t: string; v: Moneda }[] = [
+    { t: 'US$ Dólares', v: 'USD' },
+    { t: 'S/ Soles', v: 'PEN' },
+  ];
+  /** Cuánto vale cada unidad de la compra en la moneda del inventario. */
+  private readonly factor = computed(() => {
+    if (!this.necesitaTc()) return 1;
+    const tc = this.tipoCambio() ?? 0;
+    if (!(tc > 0)) return 0;
+    return this.base() === 'PEN' ? tc : 1 / tc;
+  });
+  /** Total en la moneda del inventario (lo que entra al inventario). */
+  protected readonly totalInventario = computed(() => this.total() * this.factor());
   protected readonly hoy = hoyISO();
   protected readonly guardando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -130,7 +151,8 @@ export class LlegadaAsistente {
         this.comprobante.set('');
         this.notas.set('');
         this.fechaLlegada.set(hoyISO());
-        this.tipoCambio.set(null);
+        this.tipoCambio.set(this.store.tipoCambioRef());
+        this.monedaDirecta.set(this.store.moneda());
         this.lineas.set([]);
         this.proveedorId.set(null);
         const ini = this.ordenInicial();
@@ -198,11 +220,13 @@ export class LlegadaAsistente {
   }
 
   async registrar() {
-    if (this.enDolares() && !(this.tipoCambio()! > 0)) {
-      this.error.set('La orden está en dólares: indica el tipo de cambio del día (S/ por US$).');
+    if (this.necesitaTc() && !(this.tipoCambio()! > 0)) {
+      this.error.set(
+        'Indica el tipo de cambio (S/ por US$): la compra está en otra moneda que el inventario.',
+      );
       return;
     }
-    const tc = this.enDolares() ? this.tipoCambio()! : 1;
+    const factor = this.factor();
     this.guardando.set(true);
     this.error.set(null);
     try {
@@ -216,12 +240,13 @@ export class LlegadaAsistente {
         comprobante: this.comprobante().trim(),
         notas: this.notas().trim(),
         fecha: aFechaHora(this.fechaLlegada()),
-        ...(this.enDolares() ? { moneda: 'USD' as const, tipoCambio: tc } : {}),
+        moneda: this.monedaCompra(),
+        ...(this.necesitaTc() ? { tipoCambio: this.tipoCambio()! } : {}),
         items: this.lineas().map((l) => ({
           productoId: l.producto.id,
           cantidad: l.cantidad,
-          // al inventario entra en soles
-          costoUnitario: Math.round(l.costo * tc * 10000) / 10000,
+          // al inventario entra en su moneda (soles o dólares)
+          costoUnitario: Math.round(l.costo * factor * 10000) / 10000,
         })),
       });
       await this.store.recargar();

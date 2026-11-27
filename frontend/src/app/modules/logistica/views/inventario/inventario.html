@@ -96,7 +96,7 @@
     ><b>{{ lista().length }}</b> productos</span
   >
   <span
-    >Valorizado: <b>{{ totalValor() | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b></span
+    >Valorizado: <b>{{ totalValor() | dinero: '1.2-2' }}</b></span
   >
   <span class="espacio"></span>
   <label class="chk"
@@ -214,9 +214,9 @@
                 <span class="sub">—</span>
               }
             </td>
-            <td class="num">{{ p.costoPromedio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</td>
+            <td class="num">{{ p.costoPromedio | dinero: '1.2-2' }}</td>
             <td class="num">
-              <b>{{ p.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b>
+              <b>{{ p.valorizado | dinero: '1.2-2' }}</b>
             </td>
             <td class="num">
               <div class="acciones">
@@ -265,8 +265,8 @@
           [unidad]="p.unidad"
         />
         <div class="pie">
-          <span>{{ p.costoPromedio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }} c/u</span
-          ><b>{{ p.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</b>
+          <span>{{ p.costoPromedio | dinero: '1.2-2' }} c/u</span
+          ><b>{{ p.valorizado | dinero: '1.0-0' }}</b>
         </div>
       </button>
     }

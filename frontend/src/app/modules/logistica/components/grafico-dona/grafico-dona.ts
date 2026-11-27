@@ -1,5 +1,6 @@
-import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Component, computed, input, signal } from '@angular/core';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 export interface Porcion {
   etiqueta: string;
@@ -10,7 +11,7 @@ export interface Porcion {
 /** Dona en SVG con leyenda interactiva (resalta la porción al pasar el mouse). */
 @Component({
   selector: 'app-grafico-dona',
-  imports: [CurrencyPipe, DecimalPipe],
+  imports: [DineroPipe, DecimalPipe],
   template: `
     <div class="caja">
       <svg viewBox="0 0 120 120" role="img" aria-label="Valor del inventario por tipo">
@@ -29,7 +30,7 @@ export interface Porcion {
         }
         <text x="60" y="56" text-anchor="middle" class="t1">{{ centro().titulo }}</text>
         <text x="60" y="72" text-anchor="middle" class="t2">
-          {{ centro().valor | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}
+          {{ centro().valor | dinero: '1.0-0' }}
         </text>
       </svg>
       <ul>

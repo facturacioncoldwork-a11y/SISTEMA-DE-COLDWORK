@@ -3,8 +3,7 @@
     <small>Despachos este mes</small><strong>{{ delMes().n }}</strong>
   </div>
   <div class="dato">
-    <small>Valor despachado</small
-    ><strong>{{ delMes().valor | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong>
+    <small>Valor despachado</small><strong>{{ delMes().valor | dinero: '1.0-0' }}</strong>
   </div>
   <span class="espacio"></span>
   <button type="button" class="lg-cta" (click)="abrir()">
@@ -86,7 +85,7 @@
               }
             </span>
             <span class="num"
-              ><b>{{ s.total | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b
+              ><b>{{ s.total | dinero: '1.2-2' }}</b
               ><small>{{ s.lineas.length }} productos</small></span
             >
             <i class="pi pi-chevron-down flecha"></i>
@@ -110,12 +109,10 @@
                       </td>
                       <td class="num">{{ x.cantidad | number: '1.0-3' }} {{ x.unidad }}</td>
                       <td class="num">
-                        {{ x.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-4' }}
+                        {{ x.costoUnitario | dinero: '1.2-4' }}
                       </td>
                       <td class="num">
-                        {{
-                          x.cantidad * x.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-2'
-                        }}
+                        {{ x.cantidad * x.costoUnitario | dinero: '1.2-2' }}
                       </td>
                     </tr>
                   }

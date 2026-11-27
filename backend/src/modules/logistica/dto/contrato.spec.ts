@@ -7,6 +7,7 @@ import {
   CrearOrdenCompraDto,
   CrearSalidaDto,
   GuardarAjustesLogisticaDto,
+  CambiarMonedaDto,
   CrearPagoDto,
   ActualizarPagoDto,
   PagarDto,
@@ -46,13 +47,28 @@ describe('contrato de la API de logística', () => {
     expect(await errores(CrearLlegadaDto, cuerpo)).toEqual([]);
   });
 
-  it('llegada en dólares sin tipo de cambio → error', async () => {
+  it('llegada en dólares sin tipo de cambio: se acepta (inventario en dólares o TC referencial)', async () => {
     const cuerpo = {
       almacenId: uuid,
       moneda: 'USD',
       items: [{ productoId: uuid, cantidad: 1, costoUnitario: 1 }],
     };
-    expect(await errores(CrearLlegadaDto, cuerpo)).toContain('tipoCambio');
+    expect(await errores(CrearLlegadaDto, cuerpo)).toEqual([]);
+    expect(
+      await errores(CrearLlegadaDto, { ...cuerpo, tipoCambio: -1 }),
+    ).toContain('tipoCambio');
+  });
+
+  it('ajustes: moneda del inventario y tipo de cambio referencial', async () => {
+    expect(
+      await errores(GuardarAjustesLogisticaDto, { tipoCambioRef: 3.75 }),
+    ).toEqual([]);
+    expect(
+      await errores(CambiarMonedaDto, { moneda: 'USD', tipoCambio: 3.75 }),
+    ).toEqual([]);
+    expect(await errores(CambiarMonedaDto, { moneda: 'EUR' })).toContain(
+      'moneda',
+    );
   });
 
   it('orden de compra importada de una cotización (todos los campos)', async () => {

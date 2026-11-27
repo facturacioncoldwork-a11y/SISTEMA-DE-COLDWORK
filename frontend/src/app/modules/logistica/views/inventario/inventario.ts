@@ -1,4 +1,4 @@
-import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,6 +22,7 @@ import {
 } from '../../models/logistica.model';
 import { usarEliminarProducto } from '../../services/eliminar-producto';
 import { LogisticaStore } from '../../services/logistica-store.service';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 type FiltroNivel = 'todos' | 'ok' | 'reponer' | 'sin_stock' | 'antiguos';
 type Orden = 'nombre' | 'stock' | 'valor' | 'antiguedad';
@@ -30,8 +31,8 @@ type Orden = 'nombre' | 'stock' | 'valor' | 'antiguedad';
 @Component({
   selector: 'app-inventario',
   imports: [
+    DineroPipe,
     FormsModule,
-    CurrencyPipe,
     DecimalPipe,
     SelectModule,
     TooltipModule,

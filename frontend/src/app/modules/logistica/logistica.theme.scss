@@ -1178,3 +1178,16 @@
 .tc-fila input {
   width: 8rem !important;
 }
+
+// Llegada: moneda de una compra directa
+.moneda-directa {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  .lbl {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--lg-muted);
+  }
+}

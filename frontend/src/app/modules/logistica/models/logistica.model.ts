@@ -51,6 +51,10 @@ export interface Producto {
 export interface AjustesLogistica {
   /** Meses en almacén desde los que un producto es antiguo (por defecto 24). */
   mesesAntiguedad: number;
+  /** Moneda en que se lleva el inventario (costo promedio, kardex, panel). */
+  moneda: Moneda;
+  /** S/ por US$ para compras en otra moneda (se propone solo, se puede cambiar). */
+  tipoCambioRef: number | null;
 }
 
 export interface GuardarProducto {

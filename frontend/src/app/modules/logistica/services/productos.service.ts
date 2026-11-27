@@ -34,8 +34,14 @@ export class ProductosService {
   ajustes(): Promise<AjustesLogistica> {
     return this.api.get('/logistica/ajustes');
   }
-  /** Solo dueño o admin. */
-  guardarAjustes(datos: AjustesLogistica): Promise<AjustesLogistica> {
+  /** Solo dueño o admin. Se cambia solo lo que se envía. */
+  guardarAjustes(
+    datos: Partial<Pick<AjustesLogistica, 'mesesAntiguedad' | 'tipoCambioRef'>>,
+  ): Promise<AjustesLogistica> {
     return this.api.put('/logistica/ajustes', datos);
+  }
+  /** Solo el dueño: convierte los costos ya registrados con el tipo de cambio (S/ por US$). */
+  cambiarMoneda(moneda: 'PEN' | 'USD', tipoCambio?: number): Promise<AjustesLogistica> {
+    return this.api.post('/logistica/ajustes/moneda', { moneda, tipoCambio });
   }
 }

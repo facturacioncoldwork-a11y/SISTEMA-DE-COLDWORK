@@ -1,5 +1,6 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { Component, computed, input, signal } from '@angular/core';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 export interface PuntoFlujo {
   dia: string;
@@ -14,7 +15,7 @@ export interface PuntoFlujo {
  */
 @Component({
   selector: 'app-grafico-flujo',
-  imports: [CurrencyPipe, DatePipe],
+  imports: [DineroPipe, DatePipe],
   template: `
     <div class="leyenda">
       <span><i class="e"></i> Entradas</span>
@@ -22,8 +23,8 @@ export interface PuntoFlujo {
       @if (activo(); as a) {
         <span class="detalle">
           {{ a.dia | date: "EEE d 'de' MMM" }} ·
-          <b class="lg-pos">{{ a.entradas | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</b> /
-          <b class="lg-neg">{{ a.salidas | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</b>
+          <b class="lg-pos">{{ a.entradas | dinero: '1.0-0' }}</b> /
+          <b class="lg-neg">{{ a.salidas | dinero: '1.0-0' }}</b>
         </span>
       }
     </div>

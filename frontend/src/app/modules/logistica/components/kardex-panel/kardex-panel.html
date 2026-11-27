@@ -35,8 +35,8 @@
             @if (a.nivel === 'antiguo') {
               <small
                 >{{ a.cantidadAntigua | number: '1.0-2' }} {{ p.unidad }} pasan de
-                {{ store.mesesAntiguedad() }} meses ·
-                {{ a.valorAntiguo | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }} a costo</small
+                {{ store.mesesAntiguedad() }} meses · {{ a.valorAntiguo | dinero: '1.2-2' }} a
+                costo</small
               >
             }
           </div>
@@ -47,12 +47,10 @@
       <app-medidor-stock [cantidad]="p.stockTotal" [minimo]="p.stockMinimo" [unidad]="p.unidad" />
       <div class="cifras">
         <div>
-          <small>Costo promedio</small
-          ><strong>{{ p.costoPromedio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
+          <small>Costo promedio</small><strong>{{ p.costoPromedio | dinero: '1.2-2' }}</strong>
         </div>
         <div>
-          <small>Valorizado</small
-          ><strong>{{ p.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
+          <small>Valorizado</small><strong>{{ p.valorizado | dinero: '1.2-2' }}</strong>
         </div>
       </div>
       <div class="botones">
@@ -129,7 +127,7 @@
               } @else {
                 <small
                   >Ingresó el {{ l.fecha | date: 'd MMM y' }} · {{ l.documento }} ·
-                  {{ l.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }} c/u</small
+                  {{ l.costoUnitario | dinero: '1.2-2' }} c/u</small
                 >
               }
             </div>
@@ -180,7 +178,7 @@
               {{ m.tipo === 'entrada' ? '+' : '−' }}{{ m.cantidad | number: '1.0-2' }}
               <small
                 >saldo {{ m.saldo | number: '1.0-2' }} ·
-                {{ m.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</small
+                {{ m.costoUnitario | dinero: '1.2-2' }}</small
               >
             </div>
           </li>

@@ -3,8 +3,7 @@
     <small>Llegadas este mes</small><strong>{{ delMes().n }}</strong>
   </div>
   <div class="dato">
-    <small>Valor ingresado</small
-    ><strong>{{ delMes().valor | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong>
+    <small>Valor ingresado</small><strong>{{ delMes().valor | dinero: '1.0-0' }}</strong>
   </div>
   <div class="dato">
     <small>Órdenes esperando</small><strong>{{ pendientes().length }}</strong>
@@ -80,7 +79,7 @@
               }
             </span>
             <span class="num"
-              ><b>{{ l.total | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</b
+              ><b>{{ l.total | dinero: '1.2-2' }}</b
               ><small>{{ l.lineas.length }} productos</small></span
             >
             <i class="pi pi-chevron-down flecha"></i>
@@ -104,12 +103,10 @@
                       </td>
                       <td class="num">{{ x.cantidad | number: '1.0-3' }} {{ x.unidad }}</td>
                       <td class="num">
-                        {{ x.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-4' }}
+                        {{ x.costoUnitario | dinero: '1.2-4' }}
                       </td>
                       <td class="num">
-                        {{
-                          x.cantidad * x.costoUnitario | currency: 'PEN' : 'symbol-narrow' : '1.2-2'
-                        }}
+                        {{ x.cantidad * x.costoUnitario | dinero: '1.2-2' }}
                       </td>
                     </tr>
                   }

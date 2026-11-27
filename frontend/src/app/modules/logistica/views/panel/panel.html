@@ -3,7 +3,7 @@
     <span class="icono"><i class="pi pi-wallet"></i></span>
     <small>Valor del inventario</small>
     @if (resumen(); as r) {
-      <strong>{{ r.valorInventario | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong>
+      <strong>{{ r.valorInventario | dinero: '1.0-0' }}</strong>
       <span class="pie">{{ r.productosActivos }} productos activos</span>
     } @else {
       <div class="lg-skel" style="height: 1.8rem; margin-top: 0.4rem; width: 70%"></div>
@@ -34,10 +34,7 @@
     <small>Vender pronto</small>
     <strong>{{ store.antiguos().length }}</strong>
     <span class="pie"
-      >{{ valorAntiguo() | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }} parados +{{
-        store.mesesAntiguedad()
-      }}
-      meses</span
+      >{{ valorAntiguo() | dinero: '1.0-0' }} parados +{{ store.mesesAntiguedad() }} meses</span
     >
   </a>
   <a class="lg-kpi" routerLink="/logistica/ordenes-compra" style="--c: #8b5cf6">
@@ -120,9 +117,7 @@
           </div>
           <div class="valor">
             <b>{{ x.antiguedad.cantidadAntigua | number: '1.0-2' }} {{ x.producto.unidad }}</b>
-            <small>{{
-              x.antiguedad.valorAntiguo | currency: 'PEN' : 'symbol-narrow' : '1.0-0'
-            }}</small>
+            <small>{{ x.antiguedad.valorAntiguo | dinero: '1.0-0' }}</small>
           </div>
         </li>
       } @empty {
@@ -261,7 +256,7 @@
             <strong>{{ a.codigo }} · {{ a.titulo }}</strong
             ><small>{{ a.detalle }} · {{ a.fecha | date: 'd MMM, HH:mm' }}</small>
           </div>
-          <div class="cant">{{ a.total | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</div>
+          <div class="cant">{{ a.total | dinero: '1.0-0' }}</div>
         </li>
       } @empty {
         @if (!cargando()) {
@@ -272,6 +267,32 @@
         }
       }
     </ul>
+  </section>
+
+  <section class="lg-card moneda">
+    <div class="moneda-fila">
+      <span class="moneda-ico">{{ store.moneda() === 'USD' ? 'US$' : 'S/' }}</span>
+      <div class="moneda-txt">
+        <strong
+          >El inventario se lleva en
+          {{ store.moneda() === 'USD' ? 'dólares (US$)' : 'soles (S/)' }}</strong
+        >
+        <small>
+          Las compras en {{ store.moneda() === 'USD' ? 'dólares' : 'soles' }} no piden tipo de
+          cambio.
+          @if (store.tipoCambioRef(); as tc) {
+            Tipo de cambio referencial: S/ {{ tc }} por US$.
+          } @else {
+            Sin tipo de cambio referencial.
+          }
+        </small>
+      </div>
+      @if (puedeAjustar()) {
+        <button type="button" class="lg-cta lg-cta--suave mini" (click)="abrirMoneda()">
+          <i class="pi pi-cog"></i> Moneda y tipo de cambio
+        </button>
+      }
+    </div>
   </section>
 
   <section class="lg-card almacenes">
@@ -288,10 +309,7 @@
           <i [class]="tiposAlmacen[a.tipo].icono"></i>
           <div class="info">
             <strong>{{ a.nombre }}</strong>
-            <small
-              >{{ a.productos }} productos ·
-              {{ a.valorizado | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</small
-            >
+            <small>{{ a.productos }} productos · {{ a.valorizado | dinero: '1.0-0' }}</small>
             <div class="barra">
               <span [style.width.%]="(a.valorizado / totalAlmacenes()) * 100"></span>
             </div>
@@ -302,3 +320,74 @@
     </div>
   </section>
 </div>
+
+<p-dialog
+  [visible]="monedaVisible()"
+  (visibleChange)="monedaVisible.set($event)"
+  [modal]="true"
+  header="Moneda del inventario"
+  [style]="{ width: 'min(30rem, 94vw)' }"
+>
+  <div class="dlg-moneda">
+    <p>
+      Hoy el inventario (costo promedio, kardex y valorización) se lleva en
+      <b>{{ store.moneda() === 'USD' ? 'dólares' : 'soles' }}</b>. Las compras en esa moneda nunca
+      piden tipo de cambio.
+    </p>
+    <label for="tc-ref"
+      >Tipo de cambio referencial
+      <small>(S/ por US$, se propone solo en compras de otra moneda)</small>
+      <input
+        id="tc-ref"
+        type="number"
+        min="0"
+        step="0.001"
+        placeholder="3.750"
+        [ngModel]="tcRef()"
+        (ngModelChange)="tcRef.set($event)"
+    /></label>
+    @if (esDueno()) {
+      <div class="cambiar">
+        <strong
+          >Llevar el inventario en {{ store.moneda() === 'USD' ? 'soles' : 'dólares' }}</strong
+        >
+        <small
+          >Los costos que ya están registrados se convierten una sola vez con este tipo de cambio.
+          Las órdenes de compra mantienen su moneda. La contabilidad sigue en soles.</small
+        >
+        <label for="tc-conv"
+          >Tipo de cambio para convertir (S/ por US$)
+          <input
+            id="tc-conv"
+            type="number"
+            min="0"
+            step="0.001"
+            placeholder="3.750"
+            [ngModel]="tcConversion()"
+            (ngModelChange)="tcConversion.set($event)"
+        /></label>
+        <button
+          type="button"
+          class="lg-cta"
+          (click)="guardarMoneda(true)"
+          [disabled]="guardandoMoneda()"
+        >
+          <i class="pi pi-sync"></i> Cambiar a {{ store.moneda() === 'USD' ? 'soles' : 'dólares' }}
+        </button>
+      </div>
+    }
+    <div class="lg-pie-dialogo">
+      <button type="button" class="lg-cta lg-cta--suave" (click)="monedaVisible.set(false)">
+        Cerrar
+      </button>
+      <button
+        type="button"
+        class="lg-cta lg-cta--suave"
+        (click)="guardarMoneda(false)"
+        [disabled]="guardandoMoneda()"
+      >
+        <i class="pi pi-check"></i> Guardar tipo de cambio
+      </button>
+    </div>
+  </div>
+</p-dialog>

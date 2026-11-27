@@ -95,6 +95,18 @@
 
     @case (2) {
       @if (modo() === 'directa') {
+        <div class="moneda-directa">
+          <span class="lbl">Los costos están en</span>
+          <p-selectbutton
+            [options]="monedas"
+            optionLabel="t"
+            optionValue="v"
+            [allowEmpty]="false"
+            [ngModel]="monedaDirecta()"
+            (ngModelChange)="monedaDirecta.set($event)"
+            ariaLabel="Moneda de la compra"
+          />
+        </div>
         <app-selector-producto
           [almacenId]="almacenId()"
           [excluir]="ids()"
@@ -139,7 +151,7 @@
               (ngModelChange)="cambiar(i, 'costo', $event)"
               [min]="0"
               mode="currency"
-              [currency]="enDolares() ? 'USD' : 'PEN'"
+              [currency]="monedaCompra()"
               locale="es-PE"
               [maxFractionDigits]="4"
               inputStyleClass="w-full"
@@ -161,11 +173,15 @@
     @case (3) {
       <div class="confirmar">
         <div class="lg-form">
-          @if (enDolares()) {
+          @if (necesitaTc()) {
             <div class="full tc">
               <label for="ll-tc"
-                >Tipo de cambio del día
-                <small>(la orden está en dólares; el inventario se lleva en soles)</small></label
+                >Tipo de cambio
+                <small
+                  >(la compra está en {{ monedaCompra() === 'USD' ? 'dólares' : 'soles' }} y el
+                  inventario en {{ base() === 'USD' ? 'dólares' : 'soles' }} · ya viene el
+                  referencial, cámbialo solo si es otro)</small
+                ></label
               >
               <div class="tc-fila">
                 <span>S/</span>
@@ -180,8 +196,8 @@
                   (ngModelChange)="tipoCambio.set($event)"
                 />
                 <span
-                  >por cada US$ · {{ total() | number: '1.2-2' }} US$ =
-                  <b>S/ {{ totalSoles() | number: '1.2-2' }}</b></span
+                  >por cada US$ · al inventario entran
+                  <b>{{ totalInventario() | dinero: '1.2-2' }}</b></span
                 >
               </div>
             </div>
@@ -258,8 +274,7 @@
             ><strong>{{ lineas().length }} / {{ unidades() | number: '1.0-3' }}</strong>
           </div>
           <div class="fila total">
-            <span>Valor ingresado</span
-            ><strong>{{ totalSoles() | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
+            <span>Valor ingresado</span><strong>{{ totalInventario() | dinero: '1.2-2' }}</strong>
           </div>
         </div>
       </div>

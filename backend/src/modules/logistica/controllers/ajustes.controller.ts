@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiHeader,
@@ -17,6 +17,7 @@ import {
 } from '../../../common/index.js';
 import {
   AjustesLogisticaDto,
+  CambiarMonedaDto,
   GuardarAjustesLogisticaDto,
 } from '../dto/index.js';
 import { AjustesService } from '../services/index.js';
@@ -50,5 +51,17 @@ export class AjustesController {
     @Body() dto: GuardarAjustesLogisticaDto,
   ) {
     return this.ajustes.guardar(u, e, dto);
+  }
+
+  /** Moneda del inventario: convierte los costos ya registrados. Solo el dueño (la BD lo exige). */
+  @Post('moneda')
+  @RequiereEmpresa(Rol.Dueno)
+  @ApiOkResponse({ type: AjustesLogisticaDto })
+  cambiarMoneda(
+    @Usuario() u: UsuarioActual,
+    @Empresa() e: EmpresaActual,
+    @Body() dto: CambiarMonedaDto,
+  ) {
+    return this.ajustes.cambiarMoneda(u, e, dto);
   }
 }

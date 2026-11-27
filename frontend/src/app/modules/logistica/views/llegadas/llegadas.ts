@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,13 +11,14 @@ import type { Llegada, OrdenCompra } from '../../models/logistica.model';
 import { LogisticaStore } from '../../services/logistica-store.service';
 import { MovimientosService } from '../../services/movimientos.service';
 import { OrdenesCompraService } from '../../services/ordenes-compra.service';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 /** Vista: LLEGADA DE PRODUCTO (historial + asistente de registro). */
 @Component({
   selector: 'app-llegadas',
   imports: [
+    DineroPipe,
     FormsModule,
-    CurrencyPipe,
     DatePipe,
     DecimalPipe,
     DialogModule,

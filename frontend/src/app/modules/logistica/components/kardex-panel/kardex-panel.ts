@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, effect, inject, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DrawerModule } from 'primeng/drawer';
@@ -19,11 +19,12 @@ import { usarEliminarProducto } from '../../services/eliminar-producto';
 import { MovimientosService } from '../../services/movimientos.service';
 import { ProductosService } from '../../services/productos.service';
 import { MedidorStock } from '../medidor-stock/medidor-stock';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 /** Panel lateral de un producto: stock por almacén y kardex (línea de tiempo). */
 @Component({
   selector: 'app-kardex-panel',
-  imports: [DrawerModule, FormsModule, CurrencyPipe, DatePipe, DecimalPipe, MedidorStock],
+  imports: [DineroPipe, DrawerModule, FormsModule, DatePipe, DecimalPipe, MedidorStock],
   templateUrl: './kardex-panel.html',
   styleUrl: './kardex-panel.scss',
 })

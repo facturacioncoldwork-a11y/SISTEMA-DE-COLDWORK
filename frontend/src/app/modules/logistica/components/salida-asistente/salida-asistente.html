@@ -188,8 +188,7 @@
             </div>
           }
           <div class="fila total">
-            <span>Valor al costo</span
-            ><strong>{{ total() | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
+            <span>Valor al costo</span><strong>{{ total() | dinero: '1.2-2' }}</strong>
           </div>
         </div>
       </div>

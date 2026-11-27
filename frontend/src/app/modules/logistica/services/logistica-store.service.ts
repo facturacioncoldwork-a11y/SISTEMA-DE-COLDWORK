@@ -7,7 +7,13 @@ import {
   textoAntiguedad,
   type Antiguedad,
 } from '../models/antiguedad';
-import type { Almacen, Producto, Proveedor } from '../models/logistica.model';
+import type {
+  AjustesLogistica,
+  Almacen,
+  Moneda,
+  Producto,
+  Proveedor,
+} from '../models/logistica.model';
 import { AlmacenesService } from './almacenes.service';
 import { ProductosService } from './productos.service';
 import { ProveedoresService } from './proveedores.service';
@@ -30,6 +36,10 @@ export class LogisticaStore {
   readonly cargando = signal(false);
   /** Meses desde los que un producto es antiguo (ajuste de la empresa). */
   readonly mesesAntiguedad = signal(MESES_ANTIGUEDAD_POR_DEFECTO);
+  /** Moneda en que se lleva el inventario (soles hasta que el dueño elija dólares). */
+  readonly moneda = signal<Moneda>('PEN');
+  /** S/ por US$ que se propone en compras de otra moneda. */
+  readonly tipoCambioRef = signal<number | null>(null);
   private cargado = false;
 
   readonly productosActivos = computed(() => this.productos().filter((p) => p.activo));
@@ -70,7 +80,7 @@ export class LogisticaStore {
         // Si falla (p. ej. falta la migración), se sigue con el límite por defecto
         this.productosApi.ajustes().catch(() => null),
       ]);
-      if (aj) this.mesesAntiguedad.set(aj.mesesAntiguedad);
+      if (aj) this.aplicarAjustes(aj);
       this.productos.set(p);
       this.almacenes.set(a);
       this.proveedores.set(v);
@@ -82,11 +92,50 @@ export class LogisticaStore {
     }
   }
 
+  private aplicarAjustes(aj: AjustesLogistica) {
+    this.mesesAntiguedad.set(aj.mesesAntiguedad);
+    this.moneda.set(aj.moneda ?? 'PEN');
+    this.tipoCambioRef.set(aj.tipoCambioRef ?? null);
+  }
+
+  /** Tipo de cambio referencial para compras en otra moneda (solo dueño o admin). */
+  async guardarTipoCambioRef(tc: number | null): Promise<boolean> {
+    try {
+      this.aplicarAjustes(await this.productosApi.guardarAjustes({ tipoCambioRef: tc }));
+      this.ok(
+        'Tipo de cambio guardado',
+        tc ? `S/ ${tc} por US$` : 'Sin tipo de cambio referencial',
+      );
+      return true;
+    } catch (e) {
+      this.error('No se pudo guardar el tipo de cambio', e);
+      return false;
+    }
+  }
+
+  /** Lleva el inventario en otra moneda convirtiendo los costos ya registrados (solo el dueño). */
+  async cambiarMoneda(moneda: Moneda, tipoCambio?: number): Promise<boolean> {
+    try {
+      this.aplicarAjustes(await this.productosApi.cambiarMoneda(moneda, tipoCambio));
+      await this.recargar();
+      this.ok(
+        'Moneda del inventario cambiada',
+        moneda === 'USD'
+          ? 'Ahora todo se lleva en dólares (US$)'
+          : 'Ahora todo se lleva en soles (S/)',
+      );
+      return true;
+    } catch (e) {
+      this.error('No se pudo cambiar la moneda', e);
+      return false;
+    }
+  }
+
   /** Cambia desde cuántos meses un producto es antiguo (solo dueño o admin). */
   async guardarMesesAntiguedad(meses: number): Promise<boolean> {
     try {
       const r = await this.productosApi.guardarAjustes({ mesesAntiguedad: meses });
-      this.mesesAntiguedad.set(r.mesesAntiguedad);
+      this.aplicarAjustes(r);
       this.ok('Límite guardado', `Antiguo desde ${r.mesesAntiguedad} meses en almacén`);
       return true;
     } catch (e) {

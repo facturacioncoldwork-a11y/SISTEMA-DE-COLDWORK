@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -9,13 +9,14 @@ import { SalidaAsistente } from '../../components/salida-asistente/salida-asiste
 import { MOTIVOS_SALIDA, type MotivoSalida, type Salida } from '../../models/logistica.model';
 import { LogisticaStore } from '../../services/logistica-store.service';
 import { MovimientosService } from '../../services/movimientos.service';
+import { DineroPipe } from '../../pipes/dinero.pipe';
 
 /** Vista: SALIDA DE PRODUCTO / despachos (historial + asistente). */
 @Component({
   selector: 'app-salidas',
   imports: [
+    DineroPipe,
     FormsModule,
-    CurrencyPipe,
     DatePipe,
     DecimalPipe,
     DialogModule,

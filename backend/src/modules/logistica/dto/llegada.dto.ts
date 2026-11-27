@@ -4,7 +4,6 @@ import {
   ArrayMinSize,
   IsDateString,
   IsIn,
-  ValidateIf,
   IsArray,
   IsNumber,
   IsOptional,
@@ -72,9 +71,10 @@ export class CrearLlegadaDto {
 
   @ApiPropertyOptional({
     example: 3.75,
-    description: 'Obligatorio si moneda = USD',
+    description:
+      'S/ por US$. Solo si la compra está en otra moneda que el inventario; si falta se usa el referencial',
   })
-  @ValidateIf((o: CrearLlegadaDto) => o.moneda === 'USD')
+  @IsOptional()
   @IsNumber({}, { message: 'Indica el tipo de cambio' })
   @IsPositive({ message: 'El tipo de cambio debe ser mayor a 0' })
   tipoCambio?: number;

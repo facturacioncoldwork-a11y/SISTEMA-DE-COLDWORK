@@ -20,7 +20,8 @@
   .actividad {
     grid-column: span 6;
   }
-  .almacenes {
+  .almacenes,
+  .moneda {
     grid-column: span 12;
   }
   @media (max-width: 1100px) {
@@ -189,6 +190,76 @@
     .cuanto,
     .valor {
       justify-items: start;
+    }
+  }
+}
+
+.moneda-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.moneda-ico {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.85rem;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #fff;
+  background: linear-gradient(135deg, #059669, #0ea5e9);
+}
+.moneda-txt {
+  flex: 1;
+  min-width: 14rem;
+  strong {
+    display: block;
+    font-size: 0.92rem;
+  }
+  small {
+    color: var(--lg-muted);
+    font-size: 0.78rem;
+  }
+}
+.dlg-moneda {
+  p {
+    margin: 0 0 0.8rem;
+    font-size: 0.86rem;
+  }
+  label {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 0.7rem;
+    small {
+      font-weight: 400;
+      color: var(--lg-muted);
+    }
+  }
+  input {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--lg-line);
+    border-radius: 0.55rem;
+    font: inherit;
+    width: 9rem;
+  }
+  .cambiar {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.8rem;
+    margin: 0.4rem 0 0.8rem;
+    border: 1px dashed #93c5fd;
+    border-radius: 0.8rem;
+    background: rgb(59 130 246 / 0.05);
+    small {
+      color: var(--lg-muted);
+      font-size: 0.76rem;
+    }
+    .lg-cta {
+      justify-self: start;
     }
   }
 }

@@ -168,7 +168,8 @@ export class OrdenDialogo {
           this.cotizacionFecha.set('');
           this.compromiso.set('');
           this.notas.set('');
-          this.moneda.set('PEN');
+          // Por defecto, la moneda en que se lleva el inventario
+          this.moneda.set(this.store.moneda());
           this.lineas.set(
             this.sugeridos().map((p) => ({
               producto: p,
