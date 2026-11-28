@@ -15,7 +15,7 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   const { apiUrl } = getConfig();
   if (!req.url.startsWith(apiUrl)) return next(req);
 
-  const supabase = inject(SupabaseService).client;
+  const supabase = inject(SupabaseService);
   const empresa = inject(EmpresaActualService);
 
   return from(supabase.auth.getSession()).pipe(

@@ -3,6 +3,7 @@ import { datosOError, type Area, type Rol, type UsuarioActual } from '../../../c
 import { SupabaseService } from '../../../database/supabase/supabase.service.js';
 import {
   ActualizarEmpresaDto,
+  ConfigEmpresaDto,
   CrearEmpresaDto,
   EmpresaCreadaDto,
   EmpresaRespuestaDto,
@@ -85,4 +86,33 @@ export class EmpresasService {
     );
     return EmpresaRespuestaDto.desde(fila);
   }
+
+  /** Configuración de la empresa (contacto, cuentas, valores de cotización). Si no la guardó, valores por defecto. */
+  async config(u: UsuarioActual, empresaId: string): Promise<ConfigEmpresaDto> {
+    const f = datosOError(
+      await this.supabase.paraUsuario(u.token).from('empresa_config').select('*').eq('empresa_id', empresaId).maybeSingle(),
+    ) as Record<string, unknown> | null;
+    return aConfig(f);
+  }
+
+  async guardarConfig(u: UsuarioActual, empresaId: string, dto: ConfigEmpresaDto): Promise<void> {
+    datosOError(await this.supabase.paraUsuario(u.token).rpc('empresa_guardar_config', { p_empresa: empresaId, p_datos: dto }));
+  }
+}
+
+const texto = (v: unknown, defecto = '') => (typeof v === 'string' ? v : defecto);
+
+export function aConfig(f: Record<string, unknown> | null): ConfigEmpresaDto {
+  return {
+    telefono: texto(f?.['telefono']),
+    correo: texto(f?.['correo']),
+    web: texto(f?.['web']),
+    correoOrdenes: texto(f?.['correo_ordenes']),
+    cuentas: Array.isArray(f?.['cuentas']) ? (f['cuentas'] as ConfigEmpresaDto['cuentas']) : [],
+    cotPrefijo: texto(f?.['cot_prefijo'], 'COT-'),
+    cotValidezProy: Number(f?.['cot_validez_proy'] ?? 15),
+    cotValidezServ: Number(f?.['cot_validez_serv'] ?? 7),
+    cotDetraccion: Number(f?.['cot_detraccion'] ?? 12),
+    cotNotas: texto(f?.['cot_notas'], 'No incluye obras civiles ni acometidas eléctricas.'),
+  };
 }

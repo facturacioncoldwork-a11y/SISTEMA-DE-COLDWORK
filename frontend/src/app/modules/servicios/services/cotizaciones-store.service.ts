@@ -1,5 +1,6 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { EmpresaActualService } from '../../../core/empresa/services/empresa-actual.service';
+import { ConfigEmpresaService } from '../../configuracion/services/config-empresa.service';
 import { hoy } from '../../finanzas/utils/calculos';
 import type { Cotizacion, LineaCot, SerieCotizacion } from '../models/cotizacion.model';
 import { hitosConMonto, totalesCotizacion } from '../utils/cotizacion';
@@ -29,15 +30,16 @@ export class CotizacionesStore {
   private readonly datos = inject(DatosEmpresa);
   private readonly api = inject(OperacionesApi);
   private readonly empresa = inject(EmpresaActualService);
+  private readonly config = inject(ConfigEmpresaService);
   private cargadoPara: string | null = null;
 
   readonly cargando = signal(false);
 
-  /** Datos de la empresa que salen en el PDF. */
-  readonly datosPdf = computed(() => ({
-    enviarOrdenA: this.datos.yo().correo,
-    cuentas: [] as { banco: string; moneda: string; numero: string; cci: string }[],
-  }));
+  /** Datos de la empresa que salen en el PDF (Sistema → Configuración). */
+  readonly datosPdf = computed(() => {
+    const c = this.config.config();
+    return { enviarOrdenA: c.correoOrdenes || c.correo || this.datos.yo().correo, cuentas: c.cuentas };
+  });
 
   readonly cotizaciones = signal<Cotizacion[]>([]);
 
@@ -68,6 +70,7 @@ export class CotizacionesStore {
 
   /** Crea el borrador en la base y devuelve la cotización ya con su número. */
   async nueva(serie: SerieCotizacion): Promise<Cotizacion> {
+    const cfg = this.config.config();
     const c: Cotizacion = {
       id: id(),
       serie,
@@ -78,7 +81,7 @@ export class CotizacionesStore {
       proyecto: '',
       ubicacion: '',
       fecha: hoy(),
-      validezDias: serie === 'PROY' ? 15 : 7,
+      validezDias: serie === 'PROY' ? cfg.cotValidezProy : cfg.cotValidezServ,
       moneda: serie === 'PROY' ? 'USD' : 'PEN',
       secciones: [{ id: id(), titulo: serie === 'PROY' ? 'Equipos de frío' : 'Servicio', lineas: [linea('', 'UND.', 1, 0)] }],
       tiempoEntrega: '',
@@ -93,8 +96,8 @@ export class CotizacionesStore {
               { id: id(), descripcion: 'Adelanto con la orden', porcentaje: 50 },
               { id: id(), descripcion: 'Saldo con la conformidad', porcentaje: 50 },
             ],
-      notas: 'No incluye obras civiles ni acometidas eléctricas.',
-      detraccion: 12,
+      notas: cfg.cotNotas,
+      detraccion: cfg.cotDetraccion,
       estado: 'borrador',
       version: 0,
     };

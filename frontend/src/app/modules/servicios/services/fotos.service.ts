@@ -15,7 +15,7 @@ const VIGENCIA_S = 3600;
  */
 @Injectable({ providedIn: 'root' })
 export class FotosService {
-  private readonly supabase = inject(SupabaseService).client;
+  private readonly supabase = inject(SupabaseService);
   private readonly empresa = inject(EmpresaActualService);
   private readonly enlaces = signal<Record<string, string>>({});
   private readonly pedidos = new Set<string>();
@@ -26,7 +26,7 @@ export class FotosService {
     if (!empresa) throw new Error('Sin empresa');
     const blob = await comprimir(archivo);
     const ruta = `${empresa}/${ordenId}/${crypto.randomUUID()}.jpg`;
-    const { error } = await this.supabase.storage.from(BUCKET).upload(ruta, blob, { contentType: 'image/jpeg', upsert: false });
+    const { error } = await (await this.supabase.cliente()).storage.from(BUCKET).upload(ruta, blob, { contentType: 'image/jpeg', upsert: false });
     if (error) throw new Error('No se pudo subir la foto');
     this.enlaces.update((m) => ({ ...m, [ruta]: URL.createObjectURL(blob) }));
     return ruta;
@@ -38,9 +38,9 @@ export class FotosService {
     const u = this.enlaces()[ruta];
     if (!u && !this.pedidos.has(ruta)) {
       this.pedidos.add(ruta);
-      void this.supabase.storage
-        .from(BUCKET)
-        .createSignedUrl(ruta, VIGENCIA_S)
+      void this.supabase
+        .cliente()
+        .then((sb) => sb.storage.from(BUCKET).createSignedUrl(ruta, VIGENCIA_S))
         .then(({ data }) => {
           if (data?.signedUrl) this.enlaces.update((m) => ({ ...m, [ruta]: data.signedUrl }));
           setTimeout(() => this.pedidos.delete(ruta), (VIGENCIA_S - 120) * 1000);
@@ -53,7 +53,7 @@ export class FotosService {
   async urls(rutas: string[]): Promise<Record<string, string>> {
     const faltan = rutas.filter((r) => !this.enlaces()[r]);
     if (faltan.length) {
-      const { data } = await this.supabase.storage.from(BUCKET).createSignedUrls(faltan, VIGENCIA_S);
+      const { data } = await (await this.supabase.cliente()).storage.from(BUCKET).createSignedUrls(faltan, VIGENCIA_S);
       const nuevos: Record<string, string> = {};
       for (const d of data ?? []) if (d.path && d.signedUrl) nuevos[d.path] = d.signedUrl;
       this.enlaces.update((m) => ({ ...m, ...nuevos }));

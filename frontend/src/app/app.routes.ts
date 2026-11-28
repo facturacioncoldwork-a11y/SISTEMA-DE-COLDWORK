@@ -1,7 +1,6 @@
-import { Route, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { conSesion } from './core/auth/guards/auth.guards';
-import { alPortalCorrecto, conArea, conEmpresaElegida, soloAdmin } from './core/permisos/permisos.guards';
-import type { Area } from './core/permisos/areas';
+import { alPortalCorrecto, conEmpresaElegida, soloAdmin } from './core/permisos/permisos.guards';
 import { AUTH_ROUTES } from './modules/auth/auth.routes';
 import { CONTABILIDAD_ROUTES } from './modules/contabilidad/contabilidad.routes';
 import { PORTAL_TRABAJO_ROUTES } from './modules/contabilidad/portal/portal.routes';
@@ -18,17 +17,6 @@ import { SERVICIOS_ROUTES } from './modules/servicios/servicios.routes';
  * Rutas raíz. Cada módulo tiene su propio `<modulo>.routes.ts` y aquí solo se juntan.
  * Todo se carga solo cuando se entra (lazy loading).
  */
-
-/** Módulo aún no construido: muestra "Próximamente", pero ya protegido por área. */
-function enConstruccion(path: string, titulo: string, acceso: Area | 'admin'): Route {
-  return {
-    path,
-    canActivate: [acceso === 'admin' ? soloAdmin : conArea(acceso)],
-    data: { titulo },
-    loadComponent: () => import('./shared/components/proximamente/proximamente').then((m) => m.Proximamente),
-  };
-}
-
 export const routes: Routes = [
   ...AUTH_ROUTES,
 
@@ -59,9 +47,11 @@ export const routes: Routes = [
       ...PROYECTOS_ROUTES,
       ...SERVICIOS_ROUTES,
       ...PERSONAL_ROUTES,
-
-      // Etapas siguientes
-      enConstruccion('configuracion', 'Configuración', 'admin'),
+      {
+        path: 'configuracion',
+        canActivate: [soloAdmin],
+        loadComponent: () => import('./modules/configuracion/views/configuracion/configuracion').then((m) => m.Configuracion),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

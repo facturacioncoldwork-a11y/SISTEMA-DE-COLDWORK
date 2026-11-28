@@ -11,5 +11,3 @@ export enum Area {
   Tecnica = 'tecnica',
   Personal = 'personal',
 }
-
-export const AREAS = Object.values(Area);

@@ -8,12 +8,10 @@ function crear(signUp: () => Promise<unknown>) {
       {
         provide: SupabaseService,
         useValue: {
-          client: {
-            auth: {
-              getSession: async () => ({ data: { session: null } }),
-              onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
-              signUp,
-            },
+          auth: {
+            getSession: async () => ({ data: { session: null } }),
+            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+            signUp,
           },
         },
       },

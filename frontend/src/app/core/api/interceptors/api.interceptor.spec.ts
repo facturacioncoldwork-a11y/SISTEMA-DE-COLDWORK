@@ -24,7 +24,7 @@ describe('apiInterceptor', () => {
         provideHttpClientTesting(),
         {
           provide: SupabaseService,
-          useValue: { client: { auth: { getSession: async () => ({ data: { session: { access_token: 'TOKEN' } } }) } } },
+          useValue: { auth: { getSession: async () => ({ data: { session: { access_token: 'TOKEN' } } }) } },
         },
       ],
     });

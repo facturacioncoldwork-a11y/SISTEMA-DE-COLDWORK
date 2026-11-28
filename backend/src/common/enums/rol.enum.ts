@@ -5,5 +5,3 @@ export enum Rol {
   Contador = 'contador',
   Trabajador = 'trabajador',
 }
-
-export const ROLES = Object.values(Rol);

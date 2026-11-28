@@ -1,11 +1,13 @@
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { Router, Routes } from '@angular/router';
 import { conArea } from '../../core/permisos/permisos.guards';
-import { ContabilidadService } from './services/contabilidad.service';
 
 /** Solo quien aprueba (el dueño); los demás vuelven al inicio del módulo. */
-const soloQuienAprueba = () =>
-  inject(ContabilidadService).permisos().aprobar || inject(Router).parseUrl('/contabilidad');
+const soloQuienAprueba = async () => {
+  const injector = inject(Injector);
+  const { ContabilidadService } = await import('./services/contabilidad.service');
+  return injector.get(ContabilidadService).permisos().aprobar || injector.get(Router).parseUrl('/contabilidad');
+};
 
 /**
  * Rutas de Contabilidad para el DUEÑO (dentro del shell del ERP). Área: contabilidad.

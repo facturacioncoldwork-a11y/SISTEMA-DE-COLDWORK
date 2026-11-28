@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Patch, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiHeader, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
   Empresa,
@@ -10,6 +10,7 @@ import {
 } from '../../../common/index.js';
 import {
   ActualizarEmpresaDto,
+  ConfigEmpresaDto,
   CrearEmpresaDto,
   EmpresaCreadaDto,
   EmpresaRespuestaDto,
@@ -55,5 +56,23 @@ export class EmpresasController {
   @ApiOkResponse({ type: EmpresaRespuestaDto })
   actualizar(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual, @Body() dto: ActualizarEmpresaDto) {
     return this.empresas.actualizar(u, e.id, dto);
+  }
+
+  /** Configuración de la empresa: la lee todo miembro (sale en los PDF). */
+  @Get('actual/config')
+  @RequiereEmpresa()
+  @ApiHeader(CABECERA_EMPRESA)
+  @ApiOkResponse({ type: ConfigEmpresaDto })
+  config(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual) {
+    return this.empresas.config(u, e.id);
+  }
+
+  /** Solo dueño o administrador (la base de datos también lo exige). */
+  @Put('actual/config')
+  @HttpCode(204)
+  @RequiereEmpresa(Rol.Dueno, Rol.Admin)
+  @ApiHeader(CABECERA_EMPRESA)
+  guardarConfig(@Usuario() u: UsuarioActual, @Empresa() e: EmpresaActual, @Body() dto: ConfigEmpresaDto) {
+    return this.empresas.guardarConfig(u, e.id, dto);
   }
 }

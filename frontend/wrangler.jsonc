@@ -1,4 +1,4 @@
-// Cloudflare Workers (solo archivos estáticos): sirve la pantalla de Angular ya compilada.
+// Cloudflare Workers: sirve la pantalla de Angular ya compilada y mantiene despierto el backend.
 // En Cloudflare: Path = frontend · Build command = node scripts/generar-config.mjs && npx ng build
 // · Deploy command = npx wrangler deploy · variable de compilación API_URL = URL del backend en Render.
 // "name" debe ser igual al nombre del proyecto en Cloudflare.
@@ -6,9 +6,15 @@
   "$schema": "https://unpkg.com/wrangler/config-schema.json",
   "name": "coldwork",
   "compatibility_date": "2026-11-01",
+  "main": "./worker/index.js",
   "assets": {
     "directory": "./dist/app/browser",
+    "binding": "ASSETS",
     // Rutas como /equipo o /login: devuelve index.html y Angular decide qué mostrar
     "not_found_handling": "single-page-application"
-  }
+  },
+  // Cada 5 minutos avisa al backend (plan gratis de Render) para que no se duerma.
+  // Con el plan pagado de Render esto ya no hace falta.
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "vars": { "API_SALUD": "https://coldwork-api.onrender.com/api/health" }
 }

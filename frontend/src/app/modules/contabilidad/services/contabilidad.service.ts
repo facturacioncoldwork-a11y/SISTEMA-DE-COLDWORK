@@ -50,7 +50,7 @@ export class ContabilidadService {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly empresa = inject(EmpresaActualService);
-  private readonly supabase = inject(SupabaseService).client;
+  private readonly supabase = inject(SupabaseService);
 
   // ─── Plan de cuentas (PCGE 2019, fijo) ──────────────────────────
   readonly cuentas: Cuenta[] = PCGE;
@@ -100,6 +100,7 @@ export class ContabilidadService {
   });
 
   private canal: RealtimeChannel | null = null;
+  private turnoCanal = 0;
   private pendiente: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
@@ -231,7 +232,7 @@ export class ContabilidadService {
     if (!empresaId) throw new Error('Elige una empresa primero.');
     const limpio = archivo.name.replace(/[^\w.-]+/g, '_').slice(-80);
     const ruta = `${empresaId}/${crypto.randomUUID()}/${limpio}`;
-    const { error } = await this.supabase.storage
+    const { error } = await (await this.supabase.cliente()).storage
       .from('comprobantes')
       .upload(ruta, archivo, { contentType: archivo.type, upsert: false });
     if (error) throw new Error('No se pudo subir el archivo. Intenta de nuevo.');
@@ -240,7 +241,7 @@ export class ContabilidadService {
 
   /** Abre el comprobante con un enlace temporal (5 minutos). */
   async verAdjunto(ruta: string): Promise<void> {
-    const { data, error } = await this.supabase.storage.from('comprobantes').createSignedUrl(ruta, 300);
+    const { data, error } = await (await this.supabase.cliente()).storage.from('comprobantes').createSignedUrl(ruta, 300);
     if (error || !data) throw new Error('No se pudo abrir el archivo.');
     window.open(data.signedUrl, '_blank', 'noopener');
   }
@@ -272,15 +273,19 @@ export class ContabilidadService {
     this.dejarDeEscuchar();
     if (!empresaId) return;
     const filtro = `empresa_id=eq.${empresaId}`;
-    this.canal = this.supabase
-      .channel(`contabilidad-${empresaId}`)
+    const turno = ++this.turnoCanal;
+    void this.supabase.cliente().then((sb) => {
+      if (turno !== this.turnoCanal) return; // cambió de empresa mientras cargaba
+      this.canal = sb
+        .channel(`contabilidad-${empresaId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conta_asientos', filter: filtro }, () =>
         this.recargarPronto(),
       )
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conta_actividad', filter: filtro }, () =>
-        this.recargarPronto(),
-      )
-      .subscribe();
+          this.recargarPronto(),
+        )
+        .subscribe();
+    });
   }
 
   /** Agrupa varios cambios seguidos en una sola recarga. */
@@ -290,7 +295,9 @@ export class ContabilidadService {
   }
 
   private dejarDeEscuchar(): void {
-    if (this.canal) void this.supabase.removeChannel(this.canal);
+    this.turnoCanal++;
+    const canal = this.canal;
+    if (canal) void this.supabase.cliente().then((sb) => sb.removeChannel(canal));
     this.canal = null;
   }
 }

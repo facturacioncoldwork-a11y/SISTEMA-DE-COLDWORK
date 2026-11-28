@@ -5,7 +5,7 @@ import { getConfig } from '../../config/runtime-config';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly supabase = inject(SupabaseService).client;
+  private readonly supabase = inject(SupabaseService);
 
   /** undefined = todavía no sabemos; null = sin sesión. */
   readonly session = signal<Session | null | undefined>(undefined);
@@ -78,6 +78,11 @@ export class AuthService {
 
   async salir(): Promise<void> {
     await this.supabase.auth.signOut({ scope: 'local' });
+  }
+
+  /** Cierra la sesión en TODOS los dispositivos (ej. si perdiste el celular o usaste una PC ajena). */
+  async salirDeTodo(): Promise<void> {
+    await this.supabase.auth.signOut({ scope: 'global' });
   }
 }
 

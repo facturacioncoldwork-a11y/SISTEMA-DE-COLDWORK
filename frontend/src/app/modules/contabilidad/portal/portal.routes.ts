@@ -1,11 +1,15 @@
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { Router, Routes } from '@angular/router';
 import { conSesion } from '../../../core/auth/guards/auth.guards';
 import { conEmpresaElegida, conPortal } from '../../../core/permisos/permisos.guards';
-import { ContabilidadService } from '../services/contabilidad.service';
 
 /** Libros de la empresa: solo si el dueño se lo permitió al contador. */
-const conPermisoLibros = () => inject(ContabilidadService).permisos().verLibros || inject(Router).parseUrl('/trabajo');
+/** El servicio de Contabilidad se descarga recién al entrar (no en la primera carga de la app). */
+const conPermisoLibros = async () => {
+  const injector = inject(Injector);
+  const { ContabilidadService } = await import('../services/contabilidad.service');
+  return injector.get(ContabilidadService).permisos().verLibros || injector.get(Router).parseUrl('/trabajo');
+};
 
 /**
  * Portal del contador: interfaz PROPIA, fuera del menú del ERP.
