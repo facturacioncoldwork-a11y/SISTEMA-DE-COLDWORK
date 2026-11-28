@@ -7,6 +7,7 @@ import { DialogModule } from 'primeng/dialog';
 import { map } from 'rxjs';
 import { mensajeError } from '../../../../core/api/errores';
 import { EmpresaActualService } from '../../../../core/empresa/services/empresa-actual.service';
+import { EmpresasService } from '../../../empresas/services/empresas.service';
 import { dinero, hoy } from '../../../finanzas/utils/calculos';
 import type { Cotizacion, LineaCot } from '../../models/cotizacion.model';
 import { CotizacionesStore } from '../../services/cotizaciones-store.service';
@@ -27,6 +28,7 @@ export class CotizacionView {
   private readonly router = inject(Router);
   private readonly avisos = inject(MessageService);
   private readonly empresa = inject(EmpresaActualService);
+  private readonly empresasApi = inject(EmpresasService);
   protected readonly sim = inject(CotizacionesStore);
   protected readonly servicios = inject(ServiciosStore);
 
@@ -198,12 +200,15 @@ export class CotizacionView {
     if (!c) return;
     this.generando.set(true);
     try {
-      const { descargarCotizacionPdf } = await import('../../services/cotizacion-pdf');
+      const [{ descargarCotizacionPdf: generar }, empresa] = await Promise.all([
+        import('../../services/cotizacion-pdf'),
+        this.empresasApi.actual().catch(() => null),
+      ]);
       const e = this.empresa.actual();
-      await descargarCotizacionPdf({
+      await generar({
         cotizacion: c,
         cliente: this.servicios.cliente(c.clienteId),
-        empresa: { razonSocial: e?.razonSocial ?? 'COLD WORK S.A.C.', ruc: e?.ruc ?? null },
+        empresa: { razonSocial: empresa?.razonSocial ?? e?.razonSocial ?? '', ruc: empresa?.ruc ?? e?.ruc ?? null, direccion: empresa?.direccion },
         datos: this.sim.datosPdf(),
       });
     } catch {

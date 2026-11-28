@@ -38,7 +38,7 @@ export class CotizacionesStore {
   /** Datos de la empresa que salen en el PDF (Sistema → Configuración). */
   readonly datosPdf = computed(() => {
     const c = this.config.config();
-    return { enviarOrdenA: c.correoOrdenes || c.correo || this.datos.yo().correo, cuentas: c.cuentas };
+    return { enviarOrdenA: c.correoOrdenes || c.correo || this.datos.yo().correo, cuentas: c.cuentas, cuentaDetraccion: c.cuentaDetraccion };
   });
 
   readonly cotizaciones = signal<Cotizacion[]>([]);

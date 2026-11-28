@@ -109,6 +109,10 @@ export function aConfig(f: Record<string, unknown> | null): ConfigEmpresaDto {
     web: texto(f?.['web']),
     correoOrdenes: texto(f?.['correo_ordenes']),
     cuentas: Array.isArray(f?.['cuentas']) ? (f['cuentas'] as ConfigEmpresaDto['cuentas']) : [],
+    cuentaDetraccion: {
+      numero: texto((f?.['cuenta_detraccion'] as Record<string, unknown> | undefined)?.['numero']),
+      cci: texto((f?.['cuenta_detraccion'] as Record<string, unknown> | undefined)?.['cci']),
+    },
     cotPrefijo: texto(f?.['cot_prefijo'], 'COT-'),
     cotValidezProy: Number(f?.['cot_validez_proy'] ?? 15),
     cotValidezServ: Number(f?.['cot_validez_serv'] ?? 7),

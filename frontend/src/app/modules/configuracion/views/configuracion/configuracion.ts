@@ -10,6 +10,9 @@ import { EmpresasService } from '../../../empresas/services/empresas.service';
 import { ConfigEmpresaService, type ConfigEmpresa, type CuentaBancaria } from '../../services/config-empresa.service';
 
 const RUC = /^(10|15|17|20)\d{9}$/;
+const CUENTA = /^[0-9][0-9 -]{4,28}[0-9]$/;
+/** Vacío, o 20 dígitos con guiones o espacios opcionales (como lo escriben los bancos). */
+const CCI = /^$|^(?=(?:[^0-9]*[0-9]){20}[^0-9]*$)[0-9 -]+$/;
 
 /**
  * Sistema → Configuración (dueño y administradores): datos de la empresa, contacto, cuentas
@@ -72,12 +75,17 @@ const RUC = /^(10|15|17|20)\d{9}$/;
                   <input [name]="'b' + i" maxlength="60" placeholder="Banco (ej. BCP)" [(ngModel)]="cu.banco" aria-label="Banco" />
                   <select [name]="'m' + i" [(ngModel)]="cu.moneda" aria-label="Moneda"><option value="PEN">Soles</option><option value="USD">Dólares</option></select>
                   <input [name]="'n' + i" maxlength="30" inputmode="numeric" placeholder="N.° de cuenta" [(ngModel)]="cu.numero" aria-label="Número de cuenta" />
-                  <input [name]="'c' + i" maxlength="20" inputmode="numeric" placeholder="CCI (20 dígitos)" [(ngModel)]="cu.cci" aria-label="CCI" />
+                  <input [name]="'c' + i" maxlength="26" inputmode="numeric" placeholder="CCI (20 dígitos)" [(ngModel)]="cu.cci" aria-label="CCI" />
                   <button type="button" class="quitar" (click)="quitarCuenta(i)" aria-label="Quitar cuenta"><i class="pi pi-trash"></i></button>
                 </div>
               } @empty {
                 <p class="nota">Aún no hay cuentas. Agrega la cuenta en soles y, si cobras en dólares, también esa.</p>
               }
+              <div class="cuenta detraccion">
+                <span class="etiqueta">Cuenta de detracciones (Banco de la Nación)</span>
+                <input name="detNum" maxlength="30" inputmode="numeric" placeholder="N.° de cuenta" [(ngModel)]="c.cuentaDetraccion.numero" aria-label="Número de la cuenta de detracciones" />
+                <input name="detCci" maxlength="26" inputmode="numeric" placeholder="CCI (opcional)" [(ngModel)]="c.cuentaDetraccion.cci" aria-label="CCI de la cuenta de detracciones" />
+              </div>
             </section>
 
             <div class="full barra">
@@ -129,6 +137,7 @@ const RUC = /^(10|15|17|20)\d{9}$/;
     .texto { font-size: 0.88rem; margin: 0 0 0.8rem; }
     .cuenta { display: grid; grid-template-columns: 1.2fr 0.8fr 1.3fr 1.5fr auto; gap: 0.5rem; padding: 0.45rem 0; border-top: 1px solid var(--lg-line); }
     @media (max-width: 760px) { .cuenta { grid-template-columns: 1fr 1fr; } }
+    .detraccion { grid-template-columns: 1.2fr 1.3fr 1.5fr; align-items: center; margin-top: 0.4rem; }
     .quitar { border: 0; background: transparent; color: var(--lg-danger); cursor: pointer; padding: 0 0.5rem; }
     .barra { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
     .espacio { flex: 1; }
@@ -198,9 +207,12 @@ export class Configuracion implements OnInit {
     if (!/^[A-Z0-9-]{1,8}$/.test(this.c.cotPrefijo)) return 'Prefijo: solo mayúsculas, números y guion (máximo 8).';
     for (const cu of this.c.cuentas) {
       if (cu.banco.trim().length < 2) return 'Indica el banco de cada cuenta.';
-      if (!/^[0-9][0-9 -]{4,28}[0-9]$/.test(cu.numero.trim())) return `Revisa el número de cuenta de ${cu.banco || 'la cuenta'}.`;
-      if (cu.cci && !/^\d{20}$/.test(cu.cci.trim())) return `El CCI de ${cu.banco || 'la cuenta'} debe tener 20 dígitos.`;
+      if (!CUENTA.test(cu.numero.trim())) return `Revisa el número de cuenta de ${cu.banco || 'la cuenta'}.`;
+      if (!CCI.test(cu.cci.trim())) return `El CCI de ${cu.banco || 'la cuenta'} debe tener 20 dígitos (con o sin guiones).`;
     }
+    const det = this.c.cuentaDetraccion;
+    if (det.numero.trim() && !CUENTA.test(det.numero.trim())) return 'Revisa el número de la cuenta de detracciones.';
+    if (!CCI.test(det.cci.trim())) return 'El CCI de la cuenta de detracciones debe tener 20 dígitos.';
     return null;
   }
 

@@ -18,14 +18,23 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-const recortar = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
+/** Vacío, o 20 dígitos con guiones o espacios opcionales (como lo escriben los bancos). */
+const CCI = /^$|^(?=(?:[^0-9]*[0-9]){20}[^0-9]*$)[0-9 -]+$/;
+
+const recortar =({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
 /** Cuenta bancaria de la empresa (sale en las cotizaciones). */
 export class CuentaBancariaDto {
   @ApiProperty() @IsString() @MinLength(2) @MaxLength(60) @Transform(recortar) banco!: string;
   @ApiProperty({ enum: ['PEN', 'USD'] }) @IsIn(['PEN', 'USD']) moneda!: 'PEN' | 'USD';
   @ApiProperty() @Matches(/^[0-9][0-9 -]{4,28}[0-9]$/, { message: 'Número de cuenta inválido' }) @Transform(recortar) numero!: string;
-  @ApiProperty() @Matches(/^([0-9]{20})?$/, { message: 'El CCI tiene 20 dígitos' }) @Transform(recortar) cci!: string;
+  @ApiProperty() @Matches(CCI, { message: 'El CCI tiene 20 dígitos' }) @Transform(recortar) cci!: string;
+}
+
+/** Cuenta de detracciones (Banco de la Nación). Vacía si no se usa. */
+export class CuentaDetraccionDto {
+  @ApiProperty() @Matches(/^$|^[0-9][0-9 -]{4,28}[0-9]$/, { message: 'Número de cuenta de detracciones inválido' }) @Transform(recortar) numero!: string;
+  @ApiProperty() @Matches(CCI, { message: 'El CCI tiene 20 dígitos' }) @Transform(recortar) cci!: string;
 }
 
 /** Configuración que ajusta el dueño o un administrador. */
@@ -41,6 +50,11 @@ export class ConfigEmpresaDto {
   @ValidateNested({ each: true })
   @Type(() => CuentaBancariaDto)
   cuentas!: CuentaBancariaDto[];
+
+  @ApiProperty({ type: CuentaDetraccionDto })
+  @ValidateNested()
+  @Type(() => CuentaDetraccionDto)
+  cuentaDetraccion!: CuentaDetraccionDto;
 
   @ApiProperty({ example: 'COT-' }) @Matches(/^[A-Z0-9-]{1,8}$/, { message: 'Prefijo: solo mayúsculas, números y guion (máx. 8)' }) cotPrefijo!: string;
   @ApiProperty() @IsInt() @Min(1) @Max(365) cotValidezProy!: number;

@@ -16,6 +16,8 @@ export interface ConfigEmpresa {
   web: string;
   correoOrdenes: string;
   cuentas: CuentaBancaria[];
+  /** Cuenta de detracciones (Banco de la Nación); vacía si no se usa. */
+  cuentaDetraccion: { numero: string; cci: string };
   cotPrefijo: string;
   cotValidezProy: number;
   cotValidezServ: number;
@@ -29,6 +31,7 @@ export const CONFIG_POR_DEFECTO: ConfigEmpresa = {
   web: '',
   correoOrdenes: '',
   cuentas: [],
+  cuentaDetraccion: { numero: '', cci: '' },
   cotPrefijo: 'COT-',
   cotValidezProy: 15,
   cotValidezServ: 7,
